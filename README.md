@@ -178,12 +178,12 @@ account-book/
 │   ├── ui/              # 화면 서버 — 도메인 로직 없음
 │   └── shared/          # 서비스 공통 — 도메인 지식 없음
 ├── tests/               # src/와 같은 구조. LLM 호출 없는 목 기반 테스트
-├── docs/
+├── docs/                # 다른 프로젝트에도 통하는 규칙
 │   ├── development-rules.md
 │   ├── api-contract.md
-│   ├── git-flow-guide.md
-│   └── ui_docs/         # 화면 설계
-│       └── ui-design.md
+│   └── git-flow-guide.md
+├── ui_docs/             # 이 프로젝트에만 해당하는 화면 설계
+│   └── ui-design.md
 ├── scripts/               # 룰 검사 스크립트
 ├── docker-compose.yml
 ├── Dockerfile
