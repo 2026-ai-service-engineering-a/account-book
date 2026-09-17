@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>리포트 · account-book (목)</title>
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<div class="mock-banner">목 UI — 데이터는 전부 가짜이고 버튼은 아무것도 하지 않는다. 설계는 <code>ui_docs/</code></div>
+<nav>
+  <a href="index.html">채팅</a>
+  <a href="transactions.html">거래</a>
+  <a href="transaction-form.html">입력</a>
+  <a href="reports.html" class="on">리포트</a>
+  <a href="budgets.html">예산</a>
+  <a href="transactions-empty.html">빈 상태</a>
+</nav>
+<main>
+<h1>2026년 9월</h1>
+<p class="sub">ui_docs/pages/reports.md — 집계는 api가 계산한다. 화면은 그리기만</p>
+
+<section>
+  <div class="row-split">
+    <button>← 8월</button><strong>2026-09</strong><button disabled>10월 →</button>
+  </div>
+</section>
+
+<section>
+  <div class="totals">
+    <div>지출<strong class="amount out">1,284,300원</strong></div>
+    <div>수입<strong class="amount in">3,200,000원</strong></div>
+  </div>
+</section>
+
+<section>
+  <h2>카테고리별</h2>
+  <table>
+    <thead><tr><th>카테고리</th><th class="num">이번 달</th><th class="num">지난 달</th><th class="num">증감</th></tr></thead>
+    <tbody>
+      <tr><td>식비</td><td class="num amount out">412,000원</td><td class="num amount out">350,000원</td><td class="num"><strong>+62,000 (18%)</strong></td></tr>
+      <tr><td>생활</td><td class="num amount out">318,000원</td><td class="num amount out">301,000원</td><td class="num">+17,000 (6%)</td></tr>
+      <tr><td>교통</td><td class="num amount out">88,000원</td><td class="num amount out">92,000원</td><td class="num">-4,000 (4%)</td></tr>
+    </tbody>
+  </table>
+  <p class="sub" style="margin:12px 0 0">늘어난 것만 강조한다. 이 화면을 여는 사람은 대개 "왜 이렇게 많이 썼지"를 알고 싶어 한다.</p>
+</section>
+
+<section>
+  <h2>눈에 띈 것</h2>
+  <p style="margin:0">식비가 지난달보다 62,000원 늘었어요. 카페가 그중 31,000원입니다.</p>
+  <p style="margin:6px 0 0">교통비는 예산의 40%만 썼어요.</p>
+  <div style="margin-top:14px"><a class="btn" href="index.html">왜 늘었는지 물어보기</a></div>
+  <p class="sub" style="margin:10px 0 0">
+    리포트는 <em>무엇이</em> 달라졌는지까지. <em>왜</em>는 대화가 답한다.
+  </p>
+</section>
+
+<section>
+  <h2>첫 달이라면</h2>
+  <table>
+    <thead><tr><th>카테고리</th><th class="num">이번 달</th></tr></thead>
+    <tbody><tr><td>식비</td><td class="num amount out">412,000원</td></tr></tbody>
+  </table>
+  <p class="sub" style="margin:12px 0 0">
+    비교 대상이 없으면 지난 달·증감 열을 숨긴다. -100%는 아무 의미가 없다.
+  </p>
+</section>
+</main>
+</body>
+</html>

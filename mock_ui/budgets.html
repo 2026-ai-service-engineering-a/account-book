@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>예산 · account-book (목)</title>
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<div class="mock-banner">목 UI — 데이터는 전부 가짜이고 버튼은 아무것도 하지 않는다. 설계는 <code>ui_docs/</code></div>
+<nav>
+  <a href="index.html">채팅</a>
+  <a href="transactions.html">거래</a>
+  <a href="transaction-form.html">입력</a>
+  <a href="reports.html">리포트</a>
+  <a href="budgets.html" class="on">예산</a>
+  <a href="transactions-empty.html">빈 상태</a>
+</nav>
+<main>
+<h1>예산</h1>
+<p class="sub">ui_docs/pages/budgets.md — 알려주는 장치이지 막는 장치가 아니다</p>
+
+<section>
+  <table>
+    <thead><tr><th>카테고리</th><th class="num">예산</th><th class="num">쓴 돈</th><th class="num">남음</th><th style="width:96px">진행</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>식비</td><td class="num">300,000</td><td class="num">182,300</td><td class="num">117,700</td>
+        <td><div class="bar"><i style="width:61%"></i></div><span class="sub">61%</span></td>
+      </tr>
+      <tr>
+        <td>교통</td><td class="num">100,000</td><td class="num">40,000</td><td class="num">60,000</td>
+        <td><div class="bar"><i style="width:40%"></i></div><span class="sub">40%</span></td>
+      </tr>
+      <tr>
+        <td>생활</td><td class="num">250,000</td><td class="num">318,000</td><td class="num">-68,000</td>
+        <td><div class="bar"><i class="over" style="width:100%"></i></div><span class="sub">128%</span></td>
+      </tr>
+      <tr style="opacity:.55">
+        <td>카페</td><td class="num">정하지 않음</td><td class="num">31,000</td><td class="num">—</td><td>—</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="sub" style="margin:12px 0 0">
+    막대와 숫자를 같이 낸다. 막대만 두면 색과 길이로만 읽어야 한다.
+    예산을 정하지 않은 줄은 흐리게 두고 경고하지 않는다 — 안 정한 건 잘못이 아니다.
+  </p>
+</section>
+
+<section>
+  <h2>페이스</h2>
+  <div class="note">식비 — 남은 13일을 지금 페이스로 쓰면 예산을 32,000원쯤 넘깁니다.</div>
+  <p class="sub" style="margin:10px 0 0">계산은 api가 한다. 화면은 문구만 고른다.</p>
+</section>
+
+<section>
+  <h2>줄 단위 편집</h2>
+  <div class="row-split">
+    <span>식비</span>
+    <span style="display:flex;gap:8px"><input value="300000" style="width:120px"><button class="primary">저장</button><button>취소</button></span>
+  </div>
+  <p class="sub" style="margin:12px 0 0">
+    저장이 곧 확인이다. 전체 저장 버튼 하나를 두면 어느 줄이 실패했는지 알기 어렵다.
+  </p>
+</section>
+</main>
+</body>
+</html>

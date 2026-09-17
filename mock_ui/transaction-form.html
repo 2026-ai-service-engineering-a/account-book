@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>입력 · account-book (목)</title>
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<div class="mock-banner">목 UI — 데이터는 전부 가짜이고 버튼은 아무것도 하지 않는다. 설계는 <code>ui_docs/</code></div>
+<nav>
+  <a href="index.html">채팅</a>
+  <a href="transactions.html">거래</a>
+  <a href="transaction-form.html" class="on">입력</a>
+  <a href="reports.html">리포트</a>
+  <a href="budgets.html">예산</a>
+  <a href="transactions-empty.html">빈 상태</a>
+</nav>
+<main>
+<h1>거래 입력</h1>
+<p class="sub">ui_docs/pages/transaction-form.md — 방향을 먼저, 제출이 곧 확인</p>
+
+<section>
+  <form onsubmit="return false">
+    <label>방향</label>
+    <div class="radios">
+      <label><input type="radio" name="d" checked><span>지출</span></label>
+      <label><input type="radio" name="d"><span>수입</span></label>
+    </div>
+    <p class="sub" style="margin:6px 0 0">
+      방향을 먼저 고른다. 카테고리 목록이 여기에 딸려 있어서, 지출에 "급여"가 보이면 안 된다.
+    </p>
+
+    <label for="a">금액</label>
+    <input id="a" inputmode="numeric" value="8,500">
+
+    <label for="dt">날짜·시각</label>
+    <input id="dt" type="datetime-local" value="2026-09-16T12:30">
+
+    <label for="c">카테고리</label>
+    <select id="c"><option>식비</option><option>카페</option><option>교통</option><option>생활</option></select>
+
+    <label for="p">결제수단</label>
+    <select id="p"><option>카드</option><option>현금</option><option>계좌이체</option></select>
+
+    <label for="m">가맹점</label>
+    <input id="m" value="김밥천국">
+    <p class="sub" style="margin:4px 0 0">넣고 포커스를 옮기면 카테고리를 제안한다. 고른 값은 덮지 않는다.</p>
+
+    <label for="n">메모</label>
+    <input id="n" placeholder="선택">
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+      <a class="btn" href="transactions.html">취소</a>
+      <button class="primary">저장</button>
+    </div>
+  </form>
+</section>
+
+<section>
+  <h2>검증 실패는 그 필드 옆에만</h2>
+  <label for="e">금액</label>
+  <input id="e" value="-500" style="border-color:#b91c1c">
+  <div class="field-error">금액은 0보다 커야 합니다.</div>
+  <p class="sub" style="margin:10px 0 0">
+    폼 전체를 다시 그리면 사용자가 이미 쓴 것이 날아간다.
+  </p>
+</section>
+
+<section>
+  <h2>삭제 확인</h2>
+  <div class="note">
+    <strong>2026-09-16 · 식비 · 8,500원 · 김밥천국</strong><br>
+    이 거래를 지울까요? 되돌릴 수 없습니다.
+  </div>
+  <p class="sub" style="margin:10px 0 0">
+    "정말 삭제할까요?"만으로는 무엇을 지우는지 모른다. 금액과 가맹점을 다시 보여준다.
+  </p>
+</section>
+</main>
+</body>
+</html>
