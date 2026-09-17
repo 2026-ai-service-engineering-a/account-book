@@ -92,9 +92,9 @@ git diff --name-only --diff-filter=d develop...HEAD
 | 서비스 격리 | `src/api` ↔ `src/agent` ↔ `src/ui` 상호 import | 2.3 |
 | 테스트 미러 | 새 `src/` 파일마다 `tests/` 같은 경로에 테스트가 있는지 | 4.1 |
 | 빈 계층 폴더 | 쓰지도 않을 폴더를 미리 만들지 않았는지 | 2.4 |
+| 문서 정합성 | 문서를 고쳤다면 `python3 scripts/check_docs.py` | — |
 
-`scripts/check_file_length.py`는 의존성 없이 표준 라이브러리만 쓴다. 컨테이너가 떠 있지 않아도
-돈다.
+`scripts/`의 검사들은 의존성 없이 표준 라이브러리만 쓴다. 컨테이너가 떠 있지 않아도 돈다.
 
 ```
   주의  src/api/domain/entities/near.py  260줄 (상한 300)

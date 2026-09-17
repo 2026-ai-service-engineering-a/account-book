@@ -114,6 +114,20 @@ X-Agent-Run-Id: 01J9X...
 - `500`의 `message`는 항상 일반 문구다. 스택·SQL·경로는 로그에만 남는다(6.4).
 - `details`는 선택이다. 에이전트가 사용자에게 설명할 때 쓸 값만 담는다.
 
+### 5.1 프로토콜 코드
+
+도메인 예외에서 나오지 않는, 이 계약 자체의 코드들. 도메인 쪽 코드는
+[development-rules.md 6.5](development-rules.md#65-예외)에 있다.
+
+| 상태 | 코드 | 언제 |
+|---|---|---|
+| `400` | `idempotency_key_required` | 쓰기 요청에 `Idempotency-Key`가 없다 |
+| `409` | `idempotency_key_reused` | 같은 키로 다른 본문이 왔다 |
+| `409` | `request_in_progress` | 같은 키의 요청이 아직 처리 중이다 |
+
+에이전트는 `request_in_progress`를 받으면 재시도하지 않고 기다린다. 이미 같은 일이
+진행 중이라는 뜻이라서, 재시도가 중복을 만들지는 않지만 루프 예산만 태운다.
+
 ---
 
 ## 6. 엔드포인트 (초안)

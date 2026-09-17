@@ -429,8 +429,13 @@ class Settings(BaseSettings):
 
 ```bash
 git diff --name-only --diff-filter=d develop...HEAD   # 점검 대상
-python3 scripts/check_file_length.py --base develop     # 300줄 상한
+python3 scripts/check_file_length.py --base develop   # 300줄 상한
+python3 scripts/check_docs.py                         # 문서끼리 어긋난 곳
 ```
+
+문서를 고쳤다면 `check_docs.py`를 먼저 돌린다. 장 번호·앵커·도구 이름·에러 코드가
+문서 넷에 흩어져 있어서, 하나를 고치면 다른 셋이 조용히 어긋난다. 사람이나 에이전트가
+문서를 통째로 다시 읽으며 대조할 일이 아니다.
 
 **2) CI** — 기계가 판정할 수 있는 것 전부.
 
@@ -440,6 +445,7 @@ ruff format --check src tests   # 포맷
 mypy                            # 타입 — 우리 코드만 strict (설정은 pyproject.toml)
 lint-imports                    # 계층·서비스 의존 규칙 (import-linter)
 python3 scripts/check_file_length.py  # 300줄 상한 (전체)
+python3 scripts/check_docs.py   # 문서 간 참조
 pytest -m "not integration"     # 단위 테스트
 ```
 
