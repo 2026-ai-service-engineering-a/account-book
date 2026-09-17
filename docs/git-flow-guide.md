@@ -133,6 +133,8 @@ domain/values/money.py는 Money 전용 Enum을 같이 둠 — 규칙 1.2 예외.
 
 ## 4. release / hotfix
 
+절차와 체크리스트는 [release.md](release.md)에 있다.
+
 ```bash
 git flow release start 0.1.0     # develop에서 딴다
 # 버전 표기, 변경 로그, 막판 수정만. 새 기능은 넣지 않는다

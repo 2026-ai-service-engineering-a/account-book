@@ -181,7 +181,8 @@ account-book/
 ├── docs/                # 다른 프로젝트에도 통하는 규칙
 │   ├── development-rules.md
 │   ├── api-contract.md
-│   └── git-flow-guide.md
+│   ├── git-flow-guide.md
+│   └── release.md
 ├── ui_docs/             # 이 프로젝트에만 해당하는 화면 설계
 │   ├── ui-design.md     # 모든 화면에 걸리는 공통 규칙
 │   └── pages/           # 화면 하나에 문서 하나

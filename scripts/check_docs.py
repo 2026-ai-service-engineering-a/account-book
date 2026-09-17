@@ -15,8 +15,9 @@ import sys
 from pathlib import Path
 
 DOC_DIRS = ("docs", "ui_docs", "mock_ui")
+ROOT_DOCS = ("README.md", "CHANGELOG.md")
 DOCS = [
-    Path("README.md"),
+    *(Path(n) for n in ROOT_DOCS if Path(n).exists()),
     *sorted(p for d in DOC_DIRS for p in Path(d).rglob("*.md") if Path(d).is_dir()),
 ]
 RULES = Path("docs/development-rules.md")
@@ -170,6 +171,22 @@ def check_rule_refs() -> list[str]:
     return sorted(set(problems))
 
 
+def check_version() -> list[str]:
+    """VERSION과 CHANGELOG 맨 위 버전이 같은지. 둘 다 있을 때만 본다."""
+    version_file, changelog = Path("VERSION"), Path("CHANGELOG.md")
+    if not version_file.exists() or not changelog.exists():
+        return []
+    current = version_file.read_text(encoding="utf-8").strip()
+    heads = re.findall(
+        r"^## \[?(\d+\.\d+\.\d+)\]?", changelog.read_text(encoding="utf-8"), re.MULTILINE
+    )
+    if not heads:
+        return [f"{changelog}: 버전 제목을 찾지 못했다"]
+    if heads[0] != current:
+        return [f"{changelog}: 맨 위가 {heads[0]}인데 VERSION은 {current}이다"]
+    return []
+
+
 def check_env_sample() -> list[str]:
     """README에 적은 환경변수와 .env.sample이 같은지. 파일이 생기면 검사한다."""
     sample = Path(".env.sample")
@@ -190,6 +207,7 @@ def main() -> int:
         + check_tool_names()
         + check_error_codes()
         + check_rule_refs()
+        + check_version()
         + check_env_sample()
     )
     if not problems:
