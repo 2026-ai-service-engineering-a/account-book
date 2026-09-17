@@ -90,9 +90,9 @@ class TransactionRepository(ABC):
     @abstractmethod
     def add(self, transaction: Transaction) -> Transaction: ...
 
+
 # src/api/infrastructure/repositories/sql_transaction_repository.py  — 구현
-class SqlTransactionRepository(TransactionRepository):
-    ...
+class SqlTransactionRepository(TransactionRepository): ...
 ```
 
 유스케이스는 `SqlTransactionRepository`를 모른다. `TransactionRepository`만 안다.
@@ -228,6 +228,9 @@ module = ["litellm.*"]              # 스텁 없는 패키지가 나올 때마�
 ignore_missing_imports = true
 ```
 
+> mypy는 없는 경로를 읽지 못한다. `src`·`tests`가 생기기 전까지 `pyproject.toml`의
+> `files`에는 `scripts`만 들어 있다. 코드가 들어오는 커밋에서 함께 넓힌다.
+
 `strict = true`가 켜는 것 중 **우리 코드에서** 실제로 부딪히는 것들.
 
 | 옵션 | 막아주는 것 |
@@ -258,7 +261,7 @@ ignore_missing_imports = true
 ```python
 # interfaces — 바깥과 닿는 자리
 def handle(payload: dict[str, Any]) -> TransactionResponse:
-    request = CreateTransactionRequest.model_validate(payload)   # Any는 여기서 끝난다
+    request = CreateTransactionRequest.model_validate(payload)  # Any는 여기서 끝난다
     ...
 ```
 
@@ -272,7 +275,7 @@ def handle(payload: dict[str, Any]) -> TransactionResponse:
 # src/agent/infrastructure/llm/litellm_client.py
 def complete(self, messages: list[Message]) -> Completion:
     raw = litellm.completion(model=self._model, messages=[m.to_dict() for m in messages])
-    return Completion.from_raw(raw)   # Any는 이 줄에서 끝난다
+    return Completion.from_raw(raw)  # Any는 이 줄에서 끝난다
 ```
 
 `warn_return_any`가 켜져 있으니, 어댑터가 `raw`를 그대로 반환하면 CI가 잡는다.
@@ -289,10 +292,11 @@ def complete(self, messages: list[Message]) -> Completion:
 # src/api/domain/values/transaction_id.py
 TransactionId = NewType("TransactionId", str)
 
+
 # src/api/domain/values/money.py
 @dataclass(frozen=True, slots=True)
 class Money:
-    amount: int                  # 최소단위(원). float는 쓰지 않는다
+    amount: int  # 최소단위(원). float는 쓰지 않는다
     currency: str = "KRW"
 ```
 
@@ -343,7 +347,7 @@ pydantic은 **바깥과 닿는 경계에서만** 쓴다. 도메인 엔티티를 
 # src/api/application/ports/clock.py
 class Clock(ABC):
     @abstractmethod
-    def now(self) -> datetime: ...      # 언제나 aware, UTC
+    def now(self) -> datetime: ...  # 언제나 aware, UTC
 ```
 
 ### 6.2 async / sync 경계
@@ -373,7 +377,7 @@ result = await anyio.to_thread.run_sync(blocking_call, arg)
 ```python
 # src/api/infrastructure/config.py
 class Settings(BaseSettings):
-    database_url: str                      # 기본값 없음 = 필수
+    database_url: str  # 기본값 없음 = 필수
     user_timezone: str = "Asia/Seoul"
     model_config = SettingsConfigDict(env_file=".env")
 ```
@@ -436,6 +440,8 @@ python3 scripts/check_docs.py                         # 문서끼리 어긋난 �
 문서를 고쳤다면 `check_docs.py`를 먼저 돌린다. 장 번호·앵커·도구 이름·에러 코드가
 문서 넷에 흩어져 있어서, 하나를 고치면 다른 셋이 조용히 어긋난다. 사람이나 에이전트가
 문서를 통째로 다시 읽으며 대조할 일이 아니다.
+
+컨테이너 안에서 한 번에 돌리려면 `make check`, 전부 돌리려면 `make all`.
 
 **2) CI** — 기계가 판정할 수 있는 것 전부.
 

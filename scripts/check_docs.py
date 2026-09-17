@@ -15,9 +15,10 @@ import sys
 from pathlib import Path
 
 DOC_DIRS = ("docs", "ui_docs")
-DOCS = [Path("README.md")] + sorted(
-    p for d in DOC_DIRS for p in Path(d).rglob("*.md") if Path(d).is_dir()
-)
+DOCS = [
+    Path("README.md"),
+    *sorted(p for d in DOC_DIRS for p in Path(d).rglob("*.md") if Path(d).is_dir()),
+]
 RULES = Path("docs/development-rules.md")
 CONTRACT = Path("docs/api-contract.md")
 README = Path("README.md")
@@ -42,7 +43,7 @@ def anchors_of(text: str) -> set[str]:
 def section(text: str, heading_prefix: str) -> str:
     """`## 4. 도구` 처럼 시작하는 장 하나를 잘라낸다."""
     lines = text.splitlines()
-    start = next((i for i, l in enumerate(lines) if l.startswith(heading_prefix)), None)
+    start = next((i for i, line in enumerate(lines) if line.startswith(heading_prefix)), None)
     if start is None:
         return ""
     level = len(lines[start]) - len(lines[start].lstrip("#"))
@@ -176,7 +177,8 @@ def check_env_sample() -> list[str]:
         return []
     readme = README.read_text(encoding="utf-8")
     documented = set(re.findall(r"^([A-Z][A-Z0-9_]+)=", readme, re.MULTILINE))
-    actual = set(re.findall(r"^([A-Z][A-Z0-9_]+)=", sample.read_text(encoding="utf-8"), re.MULTILINE))
+    sample_text = sample.read_text(encoding="utf-8")
+    actual = set(re.findall(r"^([A-Z][A-Z0-9_]+)=", sample_text, re.MULTILINE))
     problems = [f"{README}: .env.sample에 없는 변수 — {n}" for n in sorted(documented - actual)]
     problems += [f"{sample}: README에 없는 변수 — {n}" for n in sorted(actual - documented)]
     return problems

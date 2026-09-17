@@ -191,9 +191,12 @@ account-book/
 │       ├── reports.md
 │       └── budgets.md
 ├── scripts/               # 룰 검사 스크립트
-├── docker-compose.yml
+├── Makefile               # 모든 명령은 컨테이너 안에서 돈다
 ├── Dockerfile
-├── requirements.txt
+├── docker-compose.yml
+├── pyproject.toml         # ruff · mypy · pytest 설정
+├── requirements.txt       # 런타임 의존성
+├── requirements-dev.txt   # 개발 도구
 └── .env.sample
 ```
 
@@ -208,12 +211,27 @@ src/api/
 └── main.py              # 조립 지점
 ```
 
-## 9. 실행 방법 (구현 후)
+## 9. 실행 방법
+
+### 지금 되는 것 — 개발 기반
 
 ```bash
-cp .env.sample .env          # 키 채우기 — 셋 중 하나면 된다
+make up       # .env를 만들고 도구 컨테이너를 띄운다
+make all      # 규칙 검사 + 린트 + 타입 + 테스트
+make shell    # 컨테이너 안으로
+```
+
+호스트에 필요한 건 `make`와 docker뿐이다. 파이썬도 ruff도 mypy도 설치하지 않는다.
+명령 목록은 그냥 `make`.
+
+compose에는 지금 `dev` 컨테이너 하나뿐이다. `db`·`api`·`agent`·`ui`는 각 코드가
+생길 때 붙는다.
+
+### 서비스가 생긴 뒤
+
+```bash
 docker compose up --build -d
-docker compose exec api python -m api.seed      # 카테고리 초기 데이터 (PYTHONPATH=/app/src)
+docker compose exec api python -m api.seed   # 카테고리 초기 데이터
 ```
 
 브라우저에서 <http://localhost:8080> — `ui`만 호스트로 열려 있다.
@@ -233,6 +251,9 @@ GEMINI_API_KEY=
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 AGENT_MODEL=
+
+# 공통 — "어제", "이번 달"의 경계를 이 타임존으로 계산한다
+USER_TIMEZONE=
 
 # DB
 POSTGRES_USER=
