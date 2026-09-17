@@ -49,26 +49,43 @@ DB도 LLM도 모른다. 하나라도 하기 시작하면 같은 규칙이 두 �
 
 에이전트가 돈 기록을 바꾸려 할 때 사용자가 보는 화면이다. **`ui` 설계에서 가장 중요한 부분이다.**
 
-```
-┌─────────────────────────────────────┐
-│ 이렇게 기록할게요                    │
-│                                     │
-│ 2026-09-16 · 식비 · 8,500원         │
-│ 카드 · 김밥천국                      │
-│                                     │
-│        [ 취소 ]      [ 확인 ]        │
-└─────────────────────────────────────┘
-```
+### 3.1 카드에 담기는 것
 
-흐름은 이렇다.
+> **이렇게 기록할게요**
+>
+> 2026-09-16 · 식비 · **8,500원**
+> 카드 · 김밥천국
+>
+> `취소`  `확인`
 
-1. `agent`가 `proposal` 이벤트를 보낸다 — `proposal_id`, 사람이 읽을 요약, 금액, 그리고
-   에이전트가 이미 만들어 둔 `Idempotency-Key`.
-2. `ui`가 카드를 그린다. 이 시점에 `api`로는 아무것도 가지 않았다.
-3. 확인을 누르면 `POST /chat/{run_id}/confirm`(ui 자체 라우트)으로 `proposal_id`를 보낸다.
-4. `ui`가 `agent`에 전달하고, `agent`가 **같은 `Idempotency-Key`에 `X-Confirmed-By: user`를
-   붙여** `api`를 다시 호출한다.
-5. 결과가 SSE로 흘러와 카드가 결과 표시로 바뀐다.
+| 영역 | 값 | 어디서 오나 |
+|---|---|---|
+| 제목 | 고정 문구 | `ui` |
+| 첫 줄 | 날짜 · 카테고리 · 금액 | `proposal.summary` |
+| 둘째 줄 | 결제수단 · 가맹점 | `proposal.detail` |
+| 버튼 | 취소 / 확인 | `proposal.proposal_id`를 실어 보낸다 |
+
+금액은 굵게 낸다. 사용자가 이 카드에서 확인해야 할 건 결국 숫자 하나다.
+
+### 3.2 확인이 오가는 순서
+
+```mermaid
+sequenceDiagram
+    participant B as 브라우저
+    participant U as ui
+    participant AG as agent
+    participant API as api
+
+    AG-->>U: SSE proposal
+    U-->>B: 확인 카드
+    Note over B,API: 아직 api로는 아무것도 가지 않았다
+    B->>U: POST /chat/.../confirm
+    U->>AG: proposal_id 전달
+    AG->>API: 같은 Idempotency-Key + X-Confirmed-By
+    API-->>AG: 201 Created
+    AG-->>U: SSE message
+    U-->>B: 카드를 결과로 교체
+```
 
 **`ui`는 확인된 쓰기를 `api`로 직접 보내지 않는다.** 확인은 대화 맥락에 속하고, 그 맥락을
 들고 있는 건 `agent`다. `ui`가 질러버리면 `agent`는 자기가 제안한 일이 실행됐는지 모른다.
