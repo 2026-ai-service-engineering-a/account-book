@@ -14,7 +14,7 @@ import re
 import sys
 from pathlib import Path
 
-DOCS = [Path("README.md"), *sorted(Path("docs").glob("*.md"))]
+DOCS = [Path("README.md"), *sorted(Path("docs").rglob("*.md"))]
 RULES = Path("docs/development-rules.md")
 CONTRACT = Path("docs/api-contract.md")
 README = Path("README.md")

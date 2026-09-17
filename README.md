@@ -181,7 +181,9 @@ account-book/
 ├── docs/
 │   ├── development-rules.md
 │   ├── api-contract.md
-│   └── git-flow-guide.md
+│   ├── git-flow-guide.md
+│   └── ui_docs/         # 화면 설계
+│       └── ui-design.md
 ├── scripts/               # 룰 검사 스크립트
 ├── docker-compose.yml
 ├── Dockerfile
