@@ -191,6 +191,7 @@ account-book/
 │       ├── reports.md
 │       └── budgets.md
 ├── scripts/               # 룰 검사 스크립트
+├── .devcontainer/         # Codespaces·Dev Containers — dev 서비스를 그대로 쓴다
 ├── Makefile               # 모든 명령은 컨테이너 안에서 돈다
 ├── Dockerfile
 ├── docker-compose.yml
@@ -226,6 +227,16 @@ make shell    # 컨테이너 안으로
 
 compose에는 지금 `dev` 컨테이너 하나뿐이다. `db`·`api`·`agent`·`ui`는 각 코드가
 생길 때 붙는다.
+
+### GitHub Codespaces에서 열기
+
+저장소를 Codespaces나 VS Code Dev Containers로 열면 **같은 컨테이너가 그대로 뜬다.**
+`.devcontainer/devcontainer.json`이 `docker-compose.yml`의 `dev` 서비스를 재사용하기
+때문이다 — 개발 환경을 두 벌 관리하지 않는다.
+
+열리면 `.env`가 자동으로 만들어지고, 터미널에서 바로 `make check`를 칠 수 있다.
+터미널이 이미 컨테이너 안이라는 걸 Makefile이 알아채고 `docker compose exec`를 건너뛴다.
+호스트에서 치든 컨테이너 안에서 치든 같은 명령이다.
 
 ### 서비스가 생긴 뒤
 

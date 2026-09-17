@@ -1,7 +1,14 @@
 # 모든 명령은 컨테이너 안에서 돈다. 호스트에는 아무것도 설치하지 않는다.
 COMPOSE := docker compose
-EXEC := $(COMPOSE) exec -T dev
 BASE ?= develop
+
+# devcontainer로 들어오면 터미널이 이미 컨테이너 안이다. 그때는 그대로 실행하고,
+# 호스트에서는 compose를 거친다. 같은 make 명령이 양쪽에서 똑같이 동작한다.
+ifeq ($(wildcard /.dockerenv),)
+EXEC := $(COMPOSE) exec -T dev
+else
+EXEC :=
+endif
 
 .DEFAULT_GOAL := help
 .PHONY: help env build up down shell review check lint format type test all

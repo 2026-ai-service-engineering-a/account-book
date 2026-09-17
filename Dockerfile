@@ -3,10 +3,12 @@
 # 로컬에는 아무것도 설치하지 않는다.
 FROM python:3.13-slim
 
-# git — scripts/check_file_length.py --base 가 변경 파일을 고르는 데 쓴다.
+# git — 변경 파일을 고르는 점검(--base)과 devcontainer 안에서의 작업에 쓴다.
+# make — devcontainer로 들어오면 터미널이 이미 컨테이너 안이라 여기서 make를 친다.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends git make \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --global --add safe.directory /app
 
 WORKDIR /app
 

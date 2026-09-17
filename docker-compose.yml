@@ -7,7 +7,10 @@
 services:
   dev:
     build: .
-    env_file: .env
+    # .env가 없어도 뜬다. Codespaces에서 처음 열릴 때 아직 없기 때문이다.
+    env_file:
+      - path: .env
+        required: false
     volumes:
       - .:/app
     working_dir: /app
