@@ -7,6 +7,12 @@
 
 ## Unreleased
 
+### 수정
+
+- 릴리스 태그에 `v`가 붙지 않던 것. 설정 키가 틀렸다 — `gitflow.prefix.versiontag`는
+  git-flow-avh의 것이고, 우리가 쓰는 git-flow-next는 `gitflow.branch.release.tagprefix`를
+  읽는다. `docs/release.md`도 함께 고쳤다.
+
 ## 0.1.0 — 2026-09-17
 
 첫 릴리스. **동작하는 가계부는 아직 없다.** 무엇을 만들지 정한 설계와, 그것을 만들

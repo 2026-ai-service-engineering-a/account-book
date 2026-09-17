@@ -24,8 +24,13 @@
 태그 접두사는 저장소 설정에 들어 있다. 클론한 뒤 한 번 맞춰 준다.
 
 ```bash
-git config gitflow.prefix.versiontag v
+git config gitflow.branch.release.tagprefix v
+git config gitflow.branch.hotfix.tagprefix v
 ```
+
+> 인터넷에 흔한 `gitflow.prefix.versiontag`는 git-flow-avh의 키다. 우리가 쓰는
+> git-flow-next는 읽지 않고, 설정해 둬도 태그가 `0.1.0`으로 붙는다. v0.1.0에서
+> 실제로 겪었다.
 
 ---
 
