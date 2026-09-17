@@ -76,6 +76,8 @@ feature/<이름>을 finish하기 전 점검해줘.
 git diff --name-only --diff-filter=d develop...HEAD
 ```
 
+기계가 보는 부분은 `make review` 한 줄로 끝난다. 컨테이너 안에서 돈다.
+
 | 확인 항목 | 방법 | 규칙 |
 |---|---|---|
 | 300줄 상한 | `python3 scripts/check_file_length.py --base develop` | 1.1 |

@@ -26,12 +26,17 @@ def _is_target(path: Path) -> bool:
 
 def changed_files(base: str) -> list[Path]:
     """base와 HEAD의 공통 조상 이후 추가·수정된 파일."""
-    out = subprocess.run(
-        ["git", "diff", "--name-only", "--diff-filter=d", f"{base}...HEAD"],
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout
+    try:
+        out = subprocess.run(
+            ["git", "diff", "--name-only", "--diff-filter=d", f"{base}...HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    except FileNotFoundError:
+        raise SystemExit("git을 찾지 못했다. --base는 git이 있는 곳에서만 쓸 수 있다.") from None
+    except subprocess.CalledProcessError as exc:
+        raise SystemExit(f"git diff 실패 — base '{base}'가 맞는지 본다.\n{exc.stderr}") from None
     return [Path(line) for line in out.splitlines() if line]
 
 

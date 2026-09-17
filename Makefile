@@ -1,9 +1,10 @@
 # 모든 명령은 컨테이너 안에서 돈다. 호스트에는 아무것도 설치하지 않는다.
 COMPOSE := docker compose
 EXEC := $(COMPOSE) exec -T dev
+BASE ?= develop
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up down shell check lint format type test all
+.PHONY: help env build up down shell review check lint format type test all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -22,6 +23,10 @@ down:  ## 컨테이너를 내린다
 
 shell:  ## 컨테이너 안으로 들어간다
 	$(COMPOSE) exec dev bash
+
+review:  ## finish 전 점검 — BASE 이후 바뀐 파일만 (기본 develop)
+	$(EXEC) python3 scripts/check_file_length.py --base $(BASE)
+	$(EXEC) python3 scripts/check_docs.py
 
 check:  ## 저장소 규칙 검사 — 300줄 상한, 문서 정합성
 	$(EXEC) python3 scripts/check_file_length.py

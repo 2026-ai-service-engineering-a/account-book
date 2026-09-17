@@ -3,6 +3,11 @@
 # 로컬에는 아무것도 설치하지 않는다.
 FROM python:3.13-slim
 
+# git — scripts/check_file_length.py --base 가 변경 파일을 고르는 데 쓴다.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # 의존성 레이어 — requirements가 바뀔 때만 다시 설치된다.
