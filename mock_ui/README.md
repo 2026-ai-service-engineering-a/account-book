@@ -30,10 +30,14 @@ make mock      # http://localhost:8080
 | `transactions.html` | [transactions.md](../ui_docs/pages/transactions.md) | 부호 표기, 출처 표시, 지출·수입 분리 합계 |
 | `transactions-empty.html` | [transactions.md](../ui_docs/pages/transactions.md) | 빈 화면 두 종류의 문구 차이 |
 | `transaction-form.html` | [transaction-form.md](../ui_docs/pages/transaction-form.md) | 방향 먼저, 필드 옆 검증, 삭제 확인 문구 |
-| `reports.html` | [reports.md](../ui_docs/pages/reports.md) | 증가만 강조, 첫 달 열 숨김, 대화로 넘기기 |
+| `reports.html` | [reports.md](../ui_docs/pages/reports.md) | 차트 세 장, 증가만 강조, 첫 달 열 숨김, 대화로 넘기기 |
 | `budgets.html` | [budgets.md](../ui_docs/pages/budgets.md) | 막대+숫자 병기, 초과 표시, 줄 단위 편집 |
 
 ## 고칠 때
 
 설계를 바꾸면 `ui_docs/`를 먼저 고치고 여기를 맞춘다. 반대로 하면
 그림만 남고 이유가 사라진다.
+
+예외가 한 번 있었다. 리포트 차트는 문서가 "표로 먼저 만들고 그림이 필요한지 써 보고
+정한다"고 적어 둔 자리라, 목에 먼저 그려 보고 그 결과로 문서를 고쳤다. 써 보기로 한
+것은 써 봐야 정해진다.

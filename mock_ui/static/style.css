@@ -131,3 +131,18 @@ input, select, textarea {
 .composer { display: flex; gap: 8px; margin-top: 16px; }
 .examples { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .examples .btn { font-size: 13px; color: var(--muted); }
+
+/* 차트 — 인라인 SVG. 라이브러리를 쓰지 않는다.
+   진짜 ui가 Jinja2로 서버에서 그려도 같은 마크업이 나온다. */
+.viz { --s1: #2a78d6; --s2: #eb6834; }
+.viz svg { display: block; width: 100%; height: auto; overflow: visible; }
+.viz text { fill: var(--muted); font-size: 11px; }
+.viz text.lab { fill: var(--text); font-size: 12px; }
+.viz text.val { fill: var(--text); font-size: 11px; font-variant-numeric: tabular-nums; }
+.viz .grid { stroke: var(--line); stroke-width: 1; }   /* 실선. 점선 격자는 잡음이다 */
+
+.legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 11px; height: 11px; border-radius: 3px; }
+.legend i.line { width: 16px; height: 0; border-radius: 0; border-top: 2px solid var(--s1); }
+.legend i.dash { width: 16px; height: 0; border-radius: 0; border-top: 2px dashed var(--s1); }
