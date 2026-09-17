@@ -176,7 +176,8 @@ account-book/
 │   └── shared/          # 서비스 공통 — 도메인 지식 없음
 ├── tests/               # src/와 같은 구조. LLM 호출 없는 목 기반 테스트
 ├── docs/
-│   └── development-rules.md
+│   ├── development-rules.md
+│   └── git-flow-guide.md
 ├── tools/               # 룰 검사 스크립트
 ├── docker-compose.yml
 ├── Dockerfile
@@ -255,5 +256,10 @@ git-flow(classic). `main`은 릴리스, `develop`이 기본 작업 브랜치,
 
 ```bash
 git flow feature start <name>
+# ... 작업 ...
+# finish 전에 바뀐 파일을 개발 룰 기준으로 점검한다
 git flow feature finish <name>
 ```
+
+브랜치 구성, finish 전 점검 절차, release·hotfix 흐름은
+[docs/git-flow-guide.md](docs/git-flow-guide.md)에 있다.

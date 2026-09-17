@@ -209,16 +209,27 @@ src/api/application/use_cases/create_transaction.py
 
 ---
 
-## 6. 자동 검사
+## 6. 검사
 
-규칙은 사람이 기억하는 게 아니라 CI가 막는다.
+규칙은 사람이 기억하는 게 아니라 두 지점에서 걸린다.
+
+**1) feature를 finish하기 전** — 바뀐 파일을 AI 에이전트가 이 문서 기준으로 훑는다.
+300줄처럼 기계적인 건 스크립트로 세고, "이 클래스가 이 계층에 있는 게 맞나" 같은 판단은
+읽고 본다. 절차는 [git-flow-guide.md 3장](git-flow-guide.md#3-finish-전-점검--ai-에이전트가-한다).
+
+```bash
+git diff --name-only --diff-filter=d develop...HEAD   # 점검 대상
+python3 tools/check_file_length.py --base develop     # 300줄 상한
+```
+
+**2) CI** — 기계가 판정할 수 있는 것 전부.
 
 ```bash
 ruff check src tests            # 린트 + import 정렬
 ruff format --check src tests   # 포맷
 mypy src                        # 타입
 lint-imports                    # 계층·서비스 의존 규칙 (import-linter)
-python tools/check_file_length.py   # 300줄 상한
+python3 tools/check_file_length.py  # 300줄 상한 (전체)
 pytest -m "not integration"     # 단위 테스트
 ```
 
@@ -248,6 +259,7 @@ modules =
 ## 7. 커밋·브랜치
 
 git-flow(classic). `main`은 릴리스, `develop`이 기본, 기능은 `feature/*`.
+브랜치를 따고 합치는 절차와 finish 전 점검은 [git-flow-guide.md](git-flow-guide.md)에 있다.
 
 커밋 메시지는 `<type>: <한 줄 요약>` — `feat` / `fix` / `docs` / `refactor` / `test` / `chore`.
 **왜 그렇게 했는지**는 본문에 적는다. 나중에 그 판단을 뒤집으려는 사람이 읽을 유일한 글이다.
