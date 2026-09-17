@@ -198,9 +198,122 @@ src/api/application/use_cases/create_transaction.py
 
 ---
 
-## 5. 코드 스타일
+## 5. 타입과 코드 스타일
 
-- 타입 힌트는 전부 붙인다. `mypy`가 CI에서 돈다.
+### 5.1 타입은 strict로 간다
+
+파이썬을 동적 언어로 쓰지 않는다. `mypy --strict`가 기본이고, 통과하지 못하는 코드는 합치지
+않는다. 타입을 나중에 붙이는 일은 없다 — 나중은 오지 않는다.
+
+**적용 범위는 우리가 쓴 코드다.** `src` · `tests` · `scripts`만 본다. PyPI에서 받은 패키지에
+타입이 붙어 있는지는 우리 문제가 아니고, 남의 스텁을 맞추느라 시간을 쓰지 않는다.
+
+```toml
+# pyproject.toml
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+files = ["src", "tests", "scripts"]   # 검사 대상은 우리 코드뿐
+plugins = ["pydantic.mypy"]
+
+# 외부 패키지: 따라 들어가되 그쪽 오류는 보고하지 않는다.
+follow_imports = "silent"
+# 타입이 없는 서드파티를 쓴다는 이유로 우리 코드가 막히지는 않게 한다.
+disallow_untyped_calls = false      # 스텁 없는 함수 호출 허용
+disallow_subclassing_any = false    # 스텁 없는 베이스 클래스 상속 허용
+
+[[tool.mypy.overrides]]
+module = ["litellm.*"]              # 스텁 없는 패키지가 나올 때마다 한 줄 추가한다
+ignore_missing_imports = true
+```
+
+`strict = true`가 켜는 것 중 **우리 코드에서** 실제로 부딪히는 것들.
+
+| 옵션 | 막아주는 것 |
+|---|---|
+| `disallow_untyped_defs` | 인자·반환에 타입이 없는 함수 |
+| `disallow_incomplete_defs` | 일부만 붙인 함수 |
+| `disallow_any_generics` | 벗은 제네릭. `list`가 아니라 `list[Transaction]` |
+| `warn_return_any` | `Any`를 그대로 반환하는 것 |
+| `warn_unused_ignores` | 필요 없어진 `# type: ignore` |
+| `no_implicit_reexport` | `__init__.py`의 import가 자동으로 재수출되는 것 |
+| `strict_equality` | 절대 같을 수 없는 값끼리의 `==` |
+
+위 설정에서 끈 둘(`disallow_untyped_calls`, `disallow_subclassing_any`)은 전부 **남의 코드가
+타입을 안 붙였을 때** 걸리는 것들이다. 우리가 쓴 함수에 타입이 없으면 `disallow_untyped_defs`가
+그대로 잡는다. 느슨해지는 건 경계 바깥뿐이다.
+
+> **`no_implicit_reexport`는 1.2의 re-export 패턴과 맞물린다.** `__init__.py`에
+> `from .transaction import Transaction`만 써두면 strict에서 그 이름은 밖으로 나가지 않는다.
+> `__all__`에 넣거나 `import Transaction as Transaction`으로 써야 통과한다.
+> 1.2의 예시가 `__all__`을 포함하는 이유다.
+
+### 5.2 `Any`는 경계에서만
+
+`Any`는 타입 검사를 끄는 스위치다. 쓸 자리는 하나뿐이다 — 외부에서 들어온 JSON처럼
+**아직 모양을 모르는 데이터**를 받는 순간. 받자마자 검증해서 타입이 있는 객체로 바꾸고,
+그 뒤로는 들고 다니지 않는다.
+
+```python
+# interfaces — 바깥과 닿는 자리
+def handle(payload: dict[str, Any]) -> TransactionResponse:
+    request = CreateTransactionRequest.model_validate(payload)   # Any는 여기서 끝난다
+    ...
+```
+
+`Any`가 `application`이나 `domain`에서 보이면 경계를 넘어 들어온 것이다.
+
+**스텁 없는 라이브러리의 반환값도 `Any`다.** 그 값을 그대로 안으로 흘리지 않는다.
+`infrastructure`의 어댑터가 받아서 우리 타입으로 바꾸고, 그 지점부터 안쪽은 전부 타입이 있다.
+어댑터가 `Any`를 막는 벽이다.
+
+```python
+# src/agent/infrastructure/llm/litellm_client.py
+def complete(self, messages: list[Message]) -> Completion:
+    raw = litellm.completion(model=self._model, messages=[m.to_dict() for m in messages])
+    return Completion.from_raw(raw)   # Any는 이 줄에서 끝난다
+```
+
+`warn_return_any`가 켜져 있으니, 어댑터가 `raw`를 그대로 반환하면 CI가 잡는다.
+
+`# type: ignore`도 같다. 코드 없는 알몸 `# type: ignore`는 금지한다. 항상
+`# type: ignore[arg-type]`처럼 무엇을 끄는지 밝히고, 왜인지 한 줄 남긴다.
+
+### 5.3 원시 타입을 그대로 쓰지 않는다
+
+`str` 하나가 여기저기서 다른 뜻으로 쓰이면 타입 검사기는 아무것도 막지 못한다.
+식별자는 `NewType`으로, 의미가 있는 값은 값 객체로 감싼다.
+
+```python
+# src/api/domain/values/transaction_id.py
+TransactionId = NewType("TransactionId", str)
+
+# src/api/domain/values/money.py
+@dataclass(frozen=True, slots=True)
+class Money:
+    amount: int                  # 최소단위(원). float는 쓰지 않는다
+    currency: str = "KRW"
+```
+
+`get(TransactionId)` 자리에 `CategoryId`를 넘기면 mypy가 막는다.
+둘 다 그냥 `str`이었다면 못 막는다. strict로 가는 값어치의 절반은 여기서 나온다.
+
+### 5.4 계층마다 타입을 표현하는 수단이 다르다
+
+| 계층 | 수단 | 이유 |
+|---|---|---|
+| `domain` | `@dataclass(frozen=True, slots=True)`, `NewType`, `Enum` | 프레임워크를 모른다 (2.2) |
+| `application` | dataclass DTO, `Protocol` 또는 `ABC` 포트 | 표준 라이브러리로 충분하다 |
+| `infrastructure` | 각 라이브러리의 타입 | 어차피 바깥이다 |
+| `interfaces` | pydantic 모델 | 런타임 검증이 필요한 유일한 자리 |
+
+pydantic은 **바깥과 닿는 경계에서만** 쓴다. 도메인 엔티티를 pydantic으로 만들면
+`domain`이 서드파티에 의존하게 되고 2.2가 깨진다.
+
+### 5.5 그 밖의 스타일
+
+- 모든 파일 맨 위에 `from __future__ import annotations`.
 - 금액은 정수 최소단위(원). `float` 금지. 값 객체 `Money`를 쓴다.
 - 도메인 객체를 API 응답으로 그대로 내보내지 않는다. `interfaces/schemas`를 거친다.
 - 예외는 계층에서 번역한다. `domain`의 `BudgetExceeded`가 `interfaces`에서 HTTP 409가 된다.
@@ -227,7 +340,7 @@ python3 scripts/check_file_length.py --base develop     # 300줄 상한
 ```bash
 ruff check src tests            # 린트 + import 정렬
 ruff format --check src tests   # 포맷
-mypy src                        # 타입
+mypy                            # 타입 — 우리 코드만 strict (설정은 pyproject.toml)
 lint-imports                    # 계층·서비스 의존 규칙 (import-linter)
 python3 scripts/check_file_length.py  # 300줄 상한 (전체)
 pytest -m "not integration"     # 단위 테스트
@@ -274,6 +387,8 @@ git-flow(classic). `main`은 릴리스, `develop`이 기본, 기능은 `feature/
 - [ ] `tests/`의 같은 경로에 테스트가 있는가?
 - [ ] `domain`에 프레임워크가 들어오지 않았는가?
 - [ ] 다른 서비스를 import하지 않았는가?
+- [ ] `mypy` strict를 통과하는가?
+- [ ] 새로 생긴 `Any`나 알몸 `# type: ignore`가 없는가?
 
 ---
 

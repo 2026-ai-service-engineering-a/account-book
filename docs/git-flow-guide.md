@@ -83,6 +83,8 @@ git diff --name-only --diff-filter=d develop...HEAD
 | 한 파일 한 클래스 | 새 `.py`마다 최상위 `class` 정의가 하나인지 | 1.2 |
 | 파일명 = 클래스명 | `Transaction` → `transaction.py` | 1.2 |
 | 금지된 이름 | `utils` · `helpers` · `common` · `misc` | 1.3 |
+| 타입 strict | `mypy` 통과 여부, 새로 생긴 `Any`·알몸 `# type: ignore` | 5.1~5.2 |
+| 원시 타입 | 식별자·금액을 맨 `str`·`int`로 넘기지 않았는지 | 5.3 |
 | 계층 의존 | `domain`의 import가 표준 라이브러리뿐인지 | 2.2 |
 | 서비스 격리 | `src/api` ↔ `src/agent` ↔ `src/ui` 상호 import | 2.3 |
 | 테스트 미러 | 새 `src/` 파일마다 `tests/` 같은 경로에 테스트가 있는지 | 4.1 |
