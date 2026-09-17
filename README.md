@@ -178,7 +178,7 @@ account-book/
 ├── docs/
 │   ├── development-rules.md
 │   └── git-flow-guide.md
-├── tools/               # 룰 검사 스크립트
+├── scripts/               # 룰 검사 스크립트
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt

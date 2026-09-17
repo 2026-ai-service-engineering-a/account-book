@@ -78,7 +78,7 @@ git diff --name-only --diff-filter=d develop...HEAD
 
 | 확인 항목 | 방법 | 규칙 |
 |---|---|---|
-| 300줄 상한 | `python3 tools/check_file_length.py --base develop` | 1.1 |
+| 300줄 상한 | `python3 scripts/check_file_length.py --base develop` | 1.1 |
 | 길어진 이유 | 250줄을 넘겼다면 책임이 둘인지 읽고 판단 | 1.1 |
 | 한 파일 한 클래스 | 새 `.py`마다 최상위 `class` 정의가 하나인지 | 1.2 |
 | 파일명 = 클래스명 | `Transaction` → `transaction.py` | 1.2 |
@@ -88,7 +88,7 @@ git diff --name-only --diff-filter=d develop...HEAD
 | 테스트 미러 | 새 `src/` 파일마다 `tests/` 같은 경로에 테스트가 있는지 | 4.1 |
 | 빈 계층 폴더 | 쓰지도 않을 폴더를 미리 만들지 않았는지 | 2.4 |
 
-`tools/check_file_length.py`는 의존성 없이 표준 라이브러리만 쓴다. 컨테이너가 떠 있지 않아도
+`scripts/check_file_length.py`는 의존성 없이 표준 라이브러리만 쓴다. 컨테이너가 떠 있지 않아도
 돈다.
 
 ```

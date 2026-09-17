@@ -3,8 +3,8 @@
 
 의존성 없이 표준 라이브러리만 쓴다. 컨테이너가 떠 있지 않아도 훅에서 돌아야 하기 때문이다.
 
-  python3 tools/check_file_length.py                # 작업 트리 전체
-  python3 tools/check_file_length.py --base develop # base 이후 바뀐 파일만
+  python3 scripts/check_file_length.py                # 작업 트리 전체
+  python3 scripts/check_file_length.py --base develop # base 이후 바뀐 파일만
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from pathlib import Path
 
 LIMIT = 300
 WARN = 250
-TARGET_DIRS = ("src", "tests", "tools")
+TARGET_DIRS = ("src", "tests", "scripts")
 SUFFIXES = {".py"}
 
 

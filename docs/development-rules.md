@@ -152,7 +152,7 @@ account-book/
 │       └── main.py
 ├── tests/                       # src/ 구조를 그대로 미러링 (4장)
 ├── docs/
-├── tools/                       # 룰 검사 스크립트
+├── scripts/                       # 룰 검사 스크립트
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
@@ -219,7 +219,7 @@ src/api/application/use_cases/create_transaction.py
 
 ```bash
 git diff --name-only --diff-filter=d develop...HEAD   # 점검 대상
-python3 tools/check_file_length.py --base develop     # 300줄 상한
+python3 scripts/check_file_length.py --base develop     # 300줄 상한
 ```
 
 **2) CI** — 기계가 판정할 수 있는 것 전부.
@@ -229,7 +229,7 @@ ruff check src tests            # 린트 + import 정렬
 ruff format --check src tests   # 포맷
 mypy src                        # 타입
 lint-imports                    # 계층·서비스 의존 규칙 (import-linter)
-python3 tools/check_file_length.py  # 300줄 상한 (전체)
+python3 scripts/check_file_length.py  # 300줄 상한 (전체)
 pytest -m "not integration"     # 단위 테스트
 ```
 
