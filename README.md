@@ -10,6 +10,9 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 
 > 이 문서는 **설계 문서**다. 아직 코드는 없고, 여기서 정한 형태대로 다음 단계에서
 > `docker-compose.yml` / `.env.sample` / 서비스 코드를 붙인다.
+>
+> 코드를 쓰기 전에 [docs/development-rules.md](docs/development-rules.md)를 읽는다 —
+> 파일·클래스 규칙, 계층 의존 규칙, 테스트 배치가 거기 있다.
 
 ---
 
@@ -160,28 +163,36 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 
 ## 8. 예정 디렉터리 구조
 
+서비스마다 clean architecture 네 계층(`domain` / `application` / `infrastructure` /
+`interfaces`)을 두고, `tests/`는 `src/`를 그대로 미러링한다. 계층별 의존 규칙과 파일 규칙은
+[docs/development-rules.md](docs/development-rules.md)에 있다.
+
 ```
 account-book/
-├── api/                 # FastAPI — 도메인 로직, 유일한 DB 접근자
-│   ├── models.py
-│   ├── routes/
-│   └── main.py
-├── agent/               # 에이전트 런타임 — 헤드리스
-│   ├── config.py        # 모델 문자열 한 곳에서 관리
-│   ├── tools.py         # 도구 정의 (Pydantic 스키마)
-│   ├── react.py         # ReAct 루프 + 트레이스
-│   ├── harness.py       # 권한·인젝션·비용 가드
-│   ├── server.py        # HTTP + SSE 엔드포인트 (ui가 호출)
-│   └── main.py          # CLI 진입점 (에이전트만 단독으로 돌려볼 때)
-├── ui/                  # 화면 서버 — 도메인 로직 없음
-│   ├── templates/       # Jinja2 — 채팅, 거래 목록, 리포트
-│   ├── static/          # HTMX, CSS
-│   └── main.py
-├── tests/               # LLM 호출 없는 목 기반 테스트
+├── src/
+│   ├── api/             # 도메인 로직, 유일한 DB 접근자
+│   ├── agent/           # 에이전트 런타임 — 헤드리스
+│   ├── ui/              # 화면 서버 — 도메인 로직 없음
+│   └── shared/          # 서비스 공통 — 도메인 지식 없음
+├── tests/               # src/와 같은 구조. LLM 호출 없는 목 기반 테스트
+├── docs/
+│   └── development-rules.md
+├── tools/               # 룰 검사 스크립트
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
 └── .env.sample
+```
+
+서비스 하나를 펼치면 이렇다.
+
+```
+src/api/
+├── domain/              # 엔티티·값 객체 — 프레임워크를 모른다
+├── application/         # 유스케이스, 포트(추상 인터페이스)
+├── infrastructure/      # 리포지토리 구현, DB 세션, 외부 클라이언트
+├── interfaces/          # 라우터, 요청·응답 스키마
+└── main.py              # 조립 지점
 ```
 
 ## 9. 실행 방법 (구현 후)
@@ -189,7 +200,7 @@ account-book/
 ```bash
 cp .env.sample .env          # 키 채우기 — 셋 중 하나면 된다
 docker compose up --build -d
-docker compose exec api python -m api.seed      # 카테고리 초기 데이터
+docker compose exec api python -m api.seed      # 카테고리 초기 데이터 (PYTHONPATH=/app/src)
 ```
 
 브라우저에서 <http://localhost:8080> — `ui`만 호스트로 열려 있다.
