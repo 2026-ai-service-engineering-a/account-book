@@ -183,7 +183,13 @@ account-book/
 │   ├── api-contract.md
 │   └── git-flow-guide.md
 ├── ui_docs/             # 이 프로젝트에만 해당하는 화면 설계
-│   └── ui-design.md
+│   ├── ui-design.md     # 모든 화면에 걸리는 공통 규칙
+│   └── pages/           # 화면 하나에 문서 하나
+│       ├── chat.md
+│       ├── transactions.md
+│       ├── transaction-form.md
+│       ├── reports.md
+│       └── budgets.md
 ├── scripts/               # 룰 검사 스크립트
 ├── docker-compose.yml
 ├── Dockerfile
