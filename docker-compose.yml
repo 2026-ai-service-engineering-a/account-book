@@ -1,0 +1,21 @@
+# 개발 기반. 지금은 도구 컨테이너 하나뿐이다.
+# db·api·agent·ui는 각 코드가 생길 때 여기에 붙인다(README 3장).
+#
+#   make up        # .env를 만들고 컨테이너를 띄운다
+#   make check     # 저장소 규칙 검사
+#   make shell     # 컨테이너 안으로
+services:
+  dev:
+    build: .
+    # .env가 없어도 뜬다. Codespaces에서 처음 열릴 때 아직 없기 때문이다.
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - .:/app
+    working_dir: /app
+    ports:
+      # 목 UI(make mock). 진짜 ui 서비스가 생기면 그쪽이 이 포트를 가져간다.
+      - "8080:8080"
+    # 명령을 exec로 하나씩 실행하는 방식이라 컨테이너는 떠 있기만 하면 된다.
+    command: sleep infinity

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>거래 · account-book (목)</title>
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<div class="mock-banner">목 UI — 데이터는 전부 가짜이고 버튼은 아무것도 하지 않는다. 설계는 <code>ui_docs/</code></div>
+<nav>
+  <a href="index.html">채팅</a>
+  <a href="transactions.html" class="on">거래</a>
+  <a href="transaction-form.html">입력</a>
+  <a href="reports.html">리포트</a>
+  <a href="budgets.html">예산</a>
+  <a href="transactions-empty.html">빈 상태</a>
+</nav>
+<main>
+<h1>거래</h1>
+<p class="sub">ui_docs/pages/transactions.md — 필터는 URL에, 더 보기는 눌러서</p>
+
+<section>
+  <div class="row-split" style="flex-wrap:wrap;gap:8px">
+    <select style="width:auto"><option>2026-09</option><option>2026-08</option></select>
+    <select style="width:auto"><option>전체</option><option>지출</option><option>수입</option></select>
+    <select style="width:auto"><option>모든 카테고리</option><option>식비</option><option>교통</option></select>
+    <input style="width:auto;flex:1;min-width:140px" placeholder="가맹점 검색">
+  </div>
+</section>
+
+<section>
+  <div class="totals">
+    <div>지출 합<strong class="amount out">1,284,300원</strong></div>
+    <div>수입 합<strong class="amount in">3,200,000원</strong></div>
+  </div>
+</section>
+
+<section>
+  <table>
+    <thead><tr><th>날짜</th><th>내역</th><th>카테고리</th><th class="num">금액</th></tr></thead>
+    <tbody>
+      <tr><td>09-16</td><td>김밥천국 <span class="bot">🤖</span></td><td><span class="badge">식비</span></td><td class="num amount out">8,500원</td></tr>
+      <tr><td></td><td>스타벅스 <span class="bot">🤖</span></td><td><span class="badge">카페</span></td><td class="num amount out">5,800원</td></tr>
+      <tr><td>09-15</td><td>지하철</td><td><span class="badge">교통</span></td><td class="num amount out">1,400원</td></tr>
+      <tr><td>09-14</td><td>이마트</td><td><span class="badge">생활</span></td><td class="num amount out">62,300원</td></tr>
+      <tr><td>09-10</td><td>9월 급여</td><td><span class="badge">급여</span></td><td class="num amount in">3,200,000원</td></tr>
+    </tbody>
+  </table>
+  <p class="sub" style="margin:14px 0 0">🤖 표시는 에이전트가 넣은 기록이다.</p>
+  <div style="text-align:center;margin-top:12px"><button>더 보기</button></div>
+</section>
+</main>
+</body>
+</html>

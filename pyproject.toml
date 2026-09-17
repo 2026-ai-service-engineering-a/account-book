@@ -1,0 +1,45 @@
+# 도구 설정 한 곳. 규칙 자체는 docs/development-rules.md에 있다.
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "scripts"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # import 정렬
+    "UP",   # 낡은 문법
+    "B",    # 흔한 버그
+    "SIM",  # 군더더기
+    "ANN",  # 타입 힌트 누락
+    "RUF",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN"]   # 테스트 함수까지 반환 타입을 요구하지는 않는다
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+# 검사 대상은 우리 코드뿐. src·tests가 생기면 여기에 더한다.
+files = ["scripts"]
+plugins = ["pydantic.mypy"]
+
+# 외부 패키지: 따라 들어가되 그쪽 오류는 보고하지 않는다.
+follow_imports = "silent"
+# 타입이 없는 서드파티를 쓴다는 이유로 우리 코드가 막히지는 않게 한다.
+disallow_untyped_calls = false
+disallow_subclassing_any = false
+
+[[tool.mypy.overrides]]
+module = ["litellm.*"]   # 스텁 없는 패키지가 나올 때마다 한 줄 추가한다
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: 실제 DB 등 외부 의존이 필요한 테스트",
+]
