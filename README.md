@@ -178,10 +178,18 @@ account-book/
 │   ├── ui/              # 화면 서버 — 도메인 로직 없음
 │   └── shared/          # 서비스 공통 — 도메인 지식 없음
 ├── tests/               # src/와 같은 구조. LLM 호출 없는 목 기반 테스트
-├── docs/
+├── docs/                # 다른 프로젝트에도 통하는 규칙
 │   ├── development-rules.md
 │   ├── api-contract.md
 │   └── git-flow-guide.md
+├── ui_docs/             # 이 프로젝트에만 해당하는 화면 설계
+│   ├── ui-design.md     # 모든 화면에 걸리는 공통 규칙
+│   └── pages/           # 화면 하나에 문서 하나
+│       ├── chat.md
+│       ├── transactions.md
+│       ├── transaction-form.md
+│       ├── reports.md
+│       └── budgets.md
 ├── scripts/               # 룰 검사 스크립트
 ├── docker-compose.yml
 ├── Dockerfile
@@ -248,7 +256,8 @@ UI_SESSION_SECRET=
 ## 10. 범위
 
 **한다**: 자연어 기록, 자동 분류, 대화형 조회, 월간 리포트, 예산 경고, 감사 로그,
-그리고 이것들을 쓰는 웹 화면(`ui`).
+그리고 이것들을 쓰는 웹 화면(`ui`). 대화로 넣는 길과 폼으로 직접 넣는 길을 **둘 다** 둔다
+([ui_docs/ui-design.md 2장](ui_docs/ui-design.md#2-입력-경로는-둘이다)).
 
 **아직 안 한다**: 은행·카드사 연동(수동 입력과 CSV 가져오기로 시작), 다중 사용자,
 영수증 이미지 OCR(텍스트 입력이 먼저), 모바일 앱.

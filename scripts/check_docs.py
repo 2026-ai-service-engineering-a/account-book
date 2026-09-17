@@ -14,7 +14,10 @@ import re
 import sys
 from pathlib import Path
 
-DOCS = [Path("README.md"), *sorted(Path("docs").glob("*.md"))]
+DOC_DIRS = ("docs", "ui_docs")
+DOCS = [Path("README.md")] + sorted(
+    p for d in DOC_DIRS for p in Path(d).rglob("*.md") if Path(d).is_dir()
+)
 RULES = Path("docs/development-rules.md")
 CONTRACT = Path("docs/api-contract.md")
 README = Path("README.md")

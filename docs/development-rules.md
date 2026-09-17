@@ -72,10 +72,10 @@ from api.domain.entities import Transaction
 
 ### 2.2 의존 규칙 — 화살표는 안쪽으로만
 
-```
-interfaces ─┐
-            ├─→ application ─→ domain
-infrastructure ─┘
+```mermaid
+graph LR
+    I[interfaces] --> A[application] --> D[domain]
+    F[infrastructure] --> A
 ```
 
 `domain`은 아무것도 import하지 않는다. sqlalchemy도, pydantic도, fastapi도 `domain`에

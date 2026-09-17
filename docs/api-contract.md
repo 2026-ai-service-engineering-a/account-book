@@ -30,7 +30,7 @@
 |---|---|---|
 | `X-User-Id` | `ui` → `agent` → `api` | 이 요청의 주인. **`agent`가 만들어 내지 않고 받은 것을 그대로 전달한다** |
 | `X-Request-Id` | `ui`가 생성 | 로그 상관관계. 끝까지 전파한다 |
-| `X-Agent-Run-Id` | `agent`만 | 있으면 `api`가 `source=agent`, `run_id`를 거래에 박는다 |
+| `X-Agent-Run-Id` | `agent`만 | 있으면 `source=agent`와 `run_id`를 거래에 박는다. 없으면 `source=manual` |
 | `X-Confirmed-By` | `ui` → `agent` → `api` | 사용자가 확인한 쓰기에만 붙는다 (4장) |
 | `Idempotency-Key` | 쓰기 요청 전부 | 3장 |
 
