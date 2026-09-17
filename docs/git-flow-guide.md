@@ -85,6 +85,9 @@ git diff --name-only --diff-filter=d develop...HEAD
 | 금지된 이름 | `utils` · `helpers` · `common` · `misc` | 1.3 |
 | 타입 strict | `mypy` 통과 여부, 새로 생긴 `Any`·알몸 `# type: ignore` | 5.1~5.2 |
 | 원시 타입 | 식별자·금액을 맨 `str`·`int`로 넘기지 않았는지 | 5.3 |
+| 시간 | `datetime`이 aware인지, `datetime.now()` 직접 호출이 없는지 | 6.1 |
+| 블로킹 | `async def` 안의 동기 I/O | 6.2 |
+| 로그 | 금액·가맹점·발화 원문·키가 로그에 들어갔는지 | 6.4 |
 | 계층 의존 | `domain`의 import가 표준 라이브러리뿐인지 | 2.2 |
 | 서비스 격리 | `src/api` ↔ `src/agent` ↔ `src/ui` 상호 import | 2.3 |
 | 테스트 미러 | 새 `src/` 파일마다 `tests/` 같은 경로에 테스트가 있는지 | 4.1 |
@@ -107,7 +110,7 @@ git diff --name-only --diff-filter=d develop...HEAD
 |---|---|
 | 걸린 게 없다 | `finish`한다 |
 | 걸렸다 | **`finish`하지 않는다.** 고치고 커밋한 뒤 3.2부터 다시 |
-| 고치면 더 나빠진다 | [development-rules.md 9장](development-rules.md#9-룰을-어겨야-할-때)의 예외 절차. 코드에 `# rule-exception:` 주석을 남긴다 |
+| 고치면 더 나빠진다 | [development-rules.md 10장](development-rules.md#10-룰을-어겨야-할-때)의 예외 절차. 코드에 `# rule-exception:` 주석을 남긴다 |
 
 점검 결과는 머지 커밋 메시지에 남긴다. 나중에 "이건 왜 통과됐지"에 답할 수 있다.
 

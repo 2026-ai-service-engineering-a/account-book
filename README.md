@@ -158,8 +158,11 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 | `budgets` | id, category_id, period(YYYY-MM), limit_amount |
 | `agent_runs` | id, utterance, model, steps, tokens, cost_usd, status |
 | `tool_calls` | id, run_id, tool, args, result, confirmed_at |
+| `idempotency_keys` | key, request_hash, response, status_code, created_at |
 
 금액은 정수 최소단위(원)로 저장한다. 부동소수점은 쓰지 않는다.
+시간은 전부 `TIMESTAMPTZ`에 UTC로 저장하고, "이번 달" 같은 경계는 사용자 타임존으로 계산한다.
+`idempotency_keys`가 필요한 이유는 [docs/api-contract.md 3장](docs/api-contract.md#3-멱등성--같은-거래가-두-번-들어가지-않게)에 있다.
 
 ## 8. 예정 디렉터리 구조
 
@@ -177,6 +180,7 @@ account-book/
 ├── tests/               # src/와 같은 구조. LLM 호출 없는 목 기반 테스트
 ├── docs/
 │   ├── development-rules.md
+│   ├── api-contract.md
 │   └── git-flow-guide.md
 ├── scripts/               # 룰 검사 스크립트
 ├── docker-compose.yml

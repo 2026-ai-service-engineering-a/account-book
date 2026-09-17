@@ -1,7 +1,7 @@
 # 개발 룰
 
 이 저장소의 코드가 지켜야 할 규칙. 리뷰에서 매번 다시 다투지 않으려고 미리 정해둔다.
-규칙을 어겨야 할 이유가 생기면 [9장](#9-룰을-어겨야-할-때)의 절차를 따른다.
+규칙을 어겨야 할 이유가 생기면 [10장](#10-룰을-어겨야-할-때)의 절차를 따른다.
 
 전체 구성은 [../README.md](../README.md)를 먼저 읽는다. 이 문서는 그 구성을
 **코드로 어떻게 배치하느냐**만 다룬다.
@@ -322,7 +322,104 @@ pydantic은 **바깥과 닿는 경계에서만** 쓴다. 도메인 엔티티를 
 
 ---
 
-## 6. 검사
+## 6. 파이썬 실무 규칙
+
+### 6.1 시간 — 저장은 UTC, 경계는 사용자 타임존
+
+가계부에서 "어제 점심"이 어느 날인지는 규칙이지 상식이 아니다. 정해두지 않으면 자정 근처와
+월말 거래가 엉뚱한 날짜로 들어간다.
+
+- **naive datetime 금지.** 모든 `datetime`은 tz-aware다. DB 컬럼은 `TIMESTAMPTZ`.
+- **저장은 UTC.** 표시와 경계 계산은 사용자 타임존(기본 `Asia/Seoul`).
+- **"어제"·"이번 달"의 경계는 사용자 타임존 기준으로 잡고 UTC로 바꿔 조회한다.**
+  2026-09월 = `[2026-09-01T00:00+09:00, 2026-10-01T00:00+09:00)`.
+  끝은 열린 구간이다. `<= 말일 23:59:59`로 자르지 않는다.
+- 자연어를 날짜로 바꾸는 쪽(에이전트)은 **기준 시각과 타임존을 인자로 받는다.** 추측하지 않는다.
+- `occurred_at`(사용자가 말한 시점)과 `created_at`(기록된 시각)은 다른 값이다. 섞지 않는다.
+
+`datetime.now()`를 직접 부르지 않는다. 그 함수는 테스트할 수 없다. 시계도 포트다.
+
+```python
+# src/api/application/ports/clock.py
+class Clock(ABC):
+    @abstractmethod
+    def now(self) -> datetime: ...      # 언제나 aware, UTC
+```
+
+### 6.2 async / sync 경계
+
+**`api`는 동기, `agent`와 `ui`는 async.** 서비스마다 하는 일이 달라서다.
+
+- `api`가 하는 I/O는 짧은 DB 호출뿐이다. 동기 SQLAlchemy + `def` 라우터로 두면
+  FastAPI가 알아서 스레드풀에서 돌린다. async를 네 계층에 전염시킬 값어치가 없다.
+- `agent`·`ui`는 30초짜리 LLM 호출과 SSE 스트리밍을 다룬다. 여기는 async가 맞다.
+
+어느 쪽이든 **`domain`은 언제나 동기다.** 도메인 규칙에 `await`가 낄 이유는 없다.
+
+**`async def` 안에서 블로킹 호출을 하지 않는다.** 동기 DB 드라이버, `requests`,
+`time.sleep`, 동기 `litellm.completion` — 하나라도 섞이면 이벤트 루프 전체가 멈춘다.
+요청 하나가 다른 모든 요청을 세운다. 불가피하면 어댑터 안에서 감싼다.
+
+```python
+result = await anyio.to_thread.run_sync(blocking_call, arg)
+```
+
+동기와 비동기가 만나는 지점은 `infrastructure`의 어댑터 한 곳뿐이어야 한다.
+
+### 6.3 설정은 한 곳에서만 읽는다
+
+`os.environ`을 아무 데서나 읽지 않는다. 서비스마다 한 파일에서만 읽고, 나머지는 주입받는다.
+
+```python
+# src/api/infrastructure/config.py
+class Settings(BaseSettings):
+    database_url: str                      # 기본값 없음 = 필수
+    user_timezone: str = "Asia/Seoul"
+    model_config = SettingsConfigDict(env_file=".env")
+```
+
+- `domain`과 `application`은 환경변수의 존재를 모른다. 설정 객체는 `main.py`에서 만들어 넣는다.
+- 시크릿에는 기본값을 주지 않는다. 없으면 뜨는 순간 죽는 게 낫다.
+- **`.env.sample`과 `Settings` 필드는 1:1이다.** 하나를 추가하면 둘 다 고친다.
+
+### 6.4 로깅 — 운영 로그와 감사 로그를 나눈다
+
+개인 재무 데이터를 다룬다. 무엇을 남기느냐보다 **무엇을 남기지 않느냐**가 먼저다.
+
+| | 애플리케이션 로그 | 감사 테이블 (`agent_runs` · `tool_calls`) |
+|---|---|---|
+| 남기는 것 | 식별자, 도구명, 소요 시간, 토큰 수, 결과 코드 | 사용자 발화, 도구 인자, 금액, 가맹점 |
+| 성격 | 운영자가 본다. 수집기로 흘러간다 | DB 안에 있고 접근 통제를 받는다 |
+
+- 로그에 **API 키·세션 토큰·사용자 발화 원문·금액·가맹점명을 넣지 않는다.**
+  "어느 거래인지"는 `transaction_id`로 충분하다.
+- 모든 로그에 상관관계 id를 붙인다 — `api`는 `request_id`, `agent`는 `run_id`.
+  `ui`가 만든 `request_id`를 헤더로 끝까지 전파한다.
+- `print()` 금지. 표준 `logging`에 JSON 포맷터, 한 줄에 한 이벤트.
+- **로깅하고 다시 raise하지 않는다.** 같은 예외가 스택마다 찍힌다. 처리하는 곳에서 한 번만 남긴다.
+
+### 6.5 예외
+
+계층마다 베이스를 두고, 경계를 넘을 때 번역한다. `sqlalchemy` 예외가 라우터까지 올라오면
+계층이 샌 것이다(5.5).
+
+| 도메인 예외 | HTTP | 에러 코드 |
+|---|---|---|
+| `TransactionNotFound` | 404 | `not_found` |
+| `InvalidTransaction` | 422 | `validation_error` |
+| `BudgetExceeded` | 409 | `budget_exceeded` |
+| `ConfirmationRequired` | 412 | `confirmation_required` |
+| `PermissionDenied` | 403 | `permission_denied` |
+| 그 밖의 모든 것 | 500 | `internal_error` |
+
+- 500 응답에 내부 정보를 담지 않는다. 스택 트레이스·SQL·파일 경로는 로그에만 남는다.
+- 예외 메시지에 시크릿을 넣지 않는다. 메시지는 사용자에게 보일 수 있다.
+- `except Exception: pass` 금지. 삼킬 거라면 왜 삼키는지 주석을 남긴다.
+- 전체 계약은 [api-contract.md](api-contract.md)에 있다.
+
+---
+
+## 7. 검사
 
 규칙은 사람이 기억하는 게 아니라 두 지점에서 걸린다.
 
@@ -369,7 +466,7 @@ modules =
 
 ---
 
-## 7. 커밋·브랜치
+## 8. 커밋·브랜치
 
 git-flow(classic). `main`은 릴리스, `develop`이 기본, 기능은 `feature/*`.
 브랜치를 따고 합치는 절차와 finish 전 점검은 [git-flow-guide.md](git-flow-guide.md)에 있다.
@@ -379,7 +476,7 @@ git-flow(classic). `main`은 릴리스, `develop`이 기본, 기능은 `feature/
 
 ---
 
-## 8. 새 코드를 넣기 전 체크리스트
+## 9. 새 코드를 넣기 전 체크리스트
 
 - [ ] 이 클래스는 어느 계층인가? 그 계층이 import해도 되는 것만 import하는가?
 - [ ] 파일에 클래스가 하나인가? 파일명이 클래스명과 일치하는가?
@@ -389,10 +486,14 @@ git-flow(classic). `main`은 릴리스, `develop`이 기본, 기능은 `feature/
 - [ ] 다른 서비스를 import하지 않았는가?
 - [ ] `mypy` strict를 통과하는가?
 - [ ] 새로 생긴 `Any`나 알몸 `# type: ignore`가 없는가?
+- [ ] `datetime`이 전부 aware인가? `datetime.now()`를 직접 부르지 않았는가?
+- [ ] `async def` 안에 블로킹 호출이 없는가?
+- [ ] `os.environ`을 설정 파일 밖에서 읽지 않았는가?
+- [ ] 로그에 금액·가맹점·발화 원문·키가 들어가지 않았는가?
 
 ---
 
-## 9. 룰을 어겨야 할 때
+## 10. 룰을 어겨야 할 때
 
 규칙이 코드를 나쁘게 만드는 순간이 온다. 그때는 어긴다. 대신 조용히 어기지 않는다.
 
