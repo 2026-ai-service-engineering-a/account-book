@@ -191,6 +191,7 @@ account-book/
 │       ├── reports.md
 │       └── budgets.md
 ├── scripts/               # 룰 검사 스크립트
+├── mock_ui/               # 서버 없는 목 화면 — 설계를 눈으로 본다
 ├── .devcontainer/         # Codespaces·Dev Containers — dev 서비스를 그대로 쓴다
 ├── Makefile               # 모든 명령은 컨테이너 안에서 돈다
 ├── Dockerfile
@@ -224,6 +225,9 @@ make shell    # 컨테이너 안으로
 
 호스트에 필요한 건 `make`와 docker뿐이다. 파이썬도 ruff도 mypy도 설치하지 않는다.
 명령 목록은 그냥 `make`.
+
+화면 설계를 눈으로 보려면 `make mock` — 서버 없는 정적 목 UI가
+<http://localhost:8080>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
 
 compose에는 지금 `dev` 컨테이너 하나뿐이다. `db`·`api`·`agent`·`ui`는 각 코드가
 생길 때 붙는다.

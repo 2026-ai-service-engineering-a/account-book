@@ -14,7 +14,7 @@ import re
 import sys
 from pathlib import Path
 
-DOC_DIRS = ("docs", "ui_docs")
+DOC_DIRS = ("docs", "ui_docs", "mock_ui")
 DOCS = [
     Path("README.md"),
     *sorted(p for d in DOC_DIRS for p in Path(d).rglob("*.md") if Path(d).is_dir()),

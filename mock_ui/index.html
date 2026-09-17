@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>채팅 · account-book (목)</title>
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<div class="mock-banner">목 UI — 데이터는 전부 가짜이고 버튼은 아무것도 하지 않는다. 설계는 <code>ui_docs/</code></div>
+<nav>
+  <a href="index.html" class="on">채팅</a>
+  <a href="transactions.html">거래</a>
+  <a href="transaction-form.html">입력</a>
+  <a href="reports.html">리포트</a>
+  <a href="budgets.html">예산</a>
+  <a href="transactions-empty.html">빈 상태</a>
+</nav>
+<main>
+<h1>채팅</h1>
+<p class="sub">ui_docs/pages/chat.md — 대화 입력, SSE, 확인 카드</p>
+
+<section>
+  <div class="row-split">
+    <span class="sub" style="margin:0">이번 달 지출</span>
+    <span class="amount out">1,284,300원</span>
+  </div>
+</section>
+
+<section>
+  <div class="chat">
+    <div class="bubble me">어제 점심 김밥천국 8500원 카드로</div>
+
+    <div class="progress">카테고리를 고르는 중…</div>
+
+    <div class="card-confirm">
+      <strong>이렇게 기록할게요</strong>
+      <p style="margin:10px 0 0">2026-09-16 · 식비 · <span class="amount out">8,500원</span></p>
+      <p style="margin:2px 0 0" class="sub">카드 · 김밥천국</p>
+      <div class="actions">
+        <button>취소</button>
+        <button class="primary">확인</button>
+      </div>
+    </div>
+
+    <div class="bubble bot">
+      기록했어요.<br>
+      이번 달 식비 182,300원 / 예산 300,000원 (61%).<br>
+      남은 13일을 지금 페이스로 쓰면 예산을 32,000원쯤 넘깁니다.
+    </div>
+
+    <div class="bubble me">이번 달 카페에 얼마 썼어?</div>
+    <div class="bubble bot">카페에 31,000원 썼어요. 지난달 같은 기간보다 9,000원 많습니다.</div>
+  </div>
+
+  <div class="composer">
+    <input placeholder="어제 점심 8,000원" aria-label="메시지">
+    <button class="primary">보내기</button>
+  </div>
+</section>
+
+<section>
+  <h2>빈 상태 — 첫 방문</h2>
+  <div class="empty">
+    <p>이렇게 말해보세요</p>
+    <div class="examples" style="justify-content:center">
+      <a class="btn">어제 점심 8,000원</a>
+      <a class="btn">이번 달 식비 얼마 썼어?</a>
+      <a class="btn">카페에 쓴 돈 보여줘</a>
+    </div>
+  </div>
+</section>
+</main>
+</body>
+</html>

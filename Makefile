@@ -6,12 +6,16 @@ BASE ?= develop
 # 호스트에서는 compose를 거친다. 같은 make 명령이 양쪽에서 똑같이 동작한다.
 ifeq ($(wildcard /.dockerenv),)
 EXEC := $(COMPOSE) exec -T dev
+RUN  := $(COMPOSE) exec dev
 else
 EXEC :=
+RUN  :=
 endif
 
+MOCK_PORT ?= 8080
+
 .DEFAULT_GOAL := help
-.PHONY: help env build up down shell review check lint format type test all
+.PHONY: help env build up down shell mock review check lint format type test all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -30,6 +34,10 @@ down:  ## 컨테이너를 내린다
 
 shell:  ## 컨테이너 안으로 들어간다
 	$(COMPOSE) exec dev bash
+
+mock:  ## 목 UI를 띄운다 — http://localhost:8080 (Ctrl+C로 멈춘다)
+	@echo "http://localhost:$(MOCK_PORT)"
+	$(RUN) python3 -m http.server $(MOCK_PORT) --directory mock_ui --bind 0.0.0.0
 
 review:  ## finish 전 점검 — BASE 이후 바뀐 파일만 (기본 develop)
 	$(EXEC) python3 scripts/check_file_length.py --base $(BASE)

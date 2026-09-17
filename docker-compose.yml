@@ -14,5 +14,8 @@ services:
     volumes:
       - .:/app
     working_dir: /app
+    ports:
+      # 목 UI(make mock). 진짜 ui 서비스가 생기면 그쪽이 이 포트를 가져간다.
+      - "8080:8080"
     # 명령을 exec로 하나씩 실행하는 방식이라 컨테이너는 떠 있기만 하면 된다.
     command: sleep infinity
