@@ -21,7 +21,7 @@ SUFFIXES = {".py"}
 
 
 def _is_target(path: Path) -> bool:
-    return path.suffix in SUFFIXES and path.parts and path.parts[0] in TARGET_DIRS
+    return path.suffix in SUFFIXES and bool(path.parts) and path.parts[0] in TARGET_DIRS
 
 
 def changed_files(base: str) -> list[Path]:

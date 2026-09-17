@@ -1,0 +1,15 @@
+# 개발 기반. 지금은 도구 컨테이너 하나뿐이다.
+# db·api·agent·ui는 각 코드가 생길 때 여기에 붙인다(README 3장).
+#
+#   make up        # .env를 만들고 컨테이너를 띄운다
+#   make check     # 저장소 규칙 검사
+#   make shell     # 컨테이너 안으로
+services:
+  dev:
+    build: .
+    env_file: .env
+    volumes:
+      - .:/app
+    working_dir: /app
+    # 명령을 exec로 하나씩 실행하는 방식이라 컨테이너는 떠 있기만 하면 된다.
+    command: sleep infinity
