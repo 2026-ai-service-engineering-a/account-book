@@ -4,8 +4,9 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 에이전트가 그걸 거래 한 건으로 바꿔 기록하고, "이번 달 식비 얼마 썼지?"라고 물으면
 직접 집계해서 답한다.
 
-서버 에이전트 구성으로 간다. 브라우저·앱이 아니라 컨테이너 안에서 도는 에이전트가
-API를 호출해 일하는 형태이고, 전체는 docker compose 하나로 뜬다.
+서버 에이전트 구성으로 간다. 컨테이너 안에서 도는 에이전트가 API를 호출해 일한다.
+도메인 서버(`api`)와 에이전트(`agent`)는 화면을 갖지 않는 **헤드리스**이고, 사람이 보는
+화면은 별도의 `ui` 서버가 맡는다. 전체는 docker compose 하나로 뜬다.
 
 > 이 문서는 **설계 문서**다. 아직 코드는 없고, 여기서 정한 형태대로 다음 단계에서
 > `docker-compose.yml` / `.env.sample` / 서비스 코드를 붙인다.
@@ -42,28 +43,55 @@ API를 호출해 일하는 형태이고, 전체는 docker compose 하나로 뜬�
 
 ## 3. 시스템 구성
 
+`api`와 `agent`는 헤드리스다. 화면을 갖지 않고 HTTP만 말한다. 사람이 보는 화면은
+별도의 `ui` 서버가 맡고, 브라우저는 `ui`만 안다.
+
 ```mermaid
 graph LR
-  U[사용자] -->|채팅/HTTP| AG[agent<br/>ReAct 루프 · 도구 · 하네스]
-  AG -->|도구 호출 = HTTP| API[api<br/>FastAPI · 검증 · 권한]
+  B[브라우저] -->|HTTP| UI[ui<br/>화면 · 세션 · BFF]
+  UI -->|채팅 · SSE| AG[agent<br/>ReAct 루프 · 도구 · 하네스]
+  UI -->|조회 · 수동 입력| API[api<br/>FastAPI · 검증 · 권한]
+  AG -->|도구 호출 = HTTP| API
   API --> DB[(db<br/>PostgreSQL)]
   AG -->|litellm| LLM[LLM 제공자<br/>Gemini / OpenAI / Anthropic]
 ```
 
-docker compose 서비스는 셋이다.
+docker compose 서비스는 넷이다.
 
-| 서비스 | 역할 | 비고 |
-|---|---|---|
-| `db` | PostgreSQL. 거래·예산·감사 로그의 저장소 | 볼륨으로 영속화 |
-| `api` | FastAPI. 가계부 도메인의 **단일 진실 공급원**. CRUD·집계·검증·권한 | DB에 접근하는 유일한 서비스 |
-| `agent` | 에이전트 런타임. ReAct 루프, 도구 정의, 하네스 | DB 접속 정보를 **모른다** |
+| 서비스 | 역할 | 포트 | 비고 |
+|---|---|---|---|
+| `ui` | 화면. 채팅창, 거래 목록, 리포트. 브라우저의 유일한 접점 | 8080 — **외부 공개** | 도메인 로직 없음 |
+| `agent` | 에이전트 런타임. ReAct 루프, 도구 정의, 하네스 | 8001 — 내부 | DB 접속 정보를 **모른다** |
+| `api` | FastAPI. 가계부 도메인의 **단일 진실 공급원**. CRUD·집계·검증·권한 | 8000 — 내부 | DB에 접근하는 유일한 서비스 |
+| `db` | PostgreSQL. 거래·예산·감사 로그의 저장소 | 5432 — 내부 | 볼륨으로 영속화 |
 
-**이 경계가 설계의 중심이다.** 에이전트는 DB에 직접 붙지 못하고 오직 `api`의 엔드포인트만
-호출할 수 있다. 덕분에 "에이전트가 할 수 있는 일"의 목록이 곧 API 표면이 되고,
-권한·검증·감사를 한 군데(`api`)에서만 지키면 된다. 에이전트가 오작동해도
-API가 거부하는 일은 일어나지 않는다.
-
+호스트로 포트를 여는 건 `ui` 하나뿐이다. `agent`·`api`·`db`는 compose 내부 네트워크에만 붙는다.
 LLM 호출은 `litellm`으로 추상화해서 Gemini / OpenAI / Anthropic 중 아무 키나 하나로 돌아가게 한다.
+
+### 경계 두 개
+
+이 구성의 값어치는 서비스 개수가 아니라 아래 두 선이 어디 그어져 있느냐에 있다.
+
+**1. `agent` → `api`** — 에이전트는 DB에 직접 붙지 못하고 오직 `api`의 엔드포인트만 호출할 수
+있다. 덕분에 "에이전트가 할 수 있는 일"의 목록이 곧 API 표면이 되고, 권한·검증·감사를
+한 군데(`api`)에서만 지키면 된다. 에이전트가 오작동해도 API가 거부하는 일은 일어나지 않는다.
+
+**2. `ui` → 나머지** — ui는 화면과 세션만 갖는다. 금액을 계산하지 않고, 권한을 판단하지 않고,
+DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그대로다. 반대로 CLI든 슬랙 봇이든
+클라이언트를 하나 더 붙이는 일은 `ui` 자리에 하나 더 세우는 일이 된다.
+
+### ui 서버의 범위
+
+**한다** — 채팅 화면(SSE로 에이전트 응답 스트리밍), 쓰기 확인 UI(에이전트가 올린 제안을
+카드로 그리고 확인/취소 버튼을 받는다), 거래 목록·필터, 월간 리포트 화면, 세션 관리.
+
+**안 한다** — 집계 계산, 카테고리 추론, 권한 판단, DB 접근, LLM 호출. 하나라도 하기 시작하면
+같은 규칙이 두 군데에 생긴다.
+
+스택은 **FastAPI + Jinja2 + HTMX**로 간다. 저장소 전체가 파이썬이라 `Dockerfile`과
+`requirements.txt`를 그대로 재사용할 수 있고, 노드 툴체인이 끼지 않는다. 화면이 채팅 + 목록 +
+리포트 정도면 HTMX의 부분 갱신으로 충분하다. SPA가 필요해지면 그때 `ui`만 Next.js로 바꾼다 —
+경계 2 덕분에 다른 서비스는 건드릴 게 없다.
 
 ## 4. 도구 (tools)
 
@@ -138,12 +166,17 @@ account-book/
 │   ├── models.py
 │   ├── routes/
 │   └── main.py
-├── agent/               # 에이전트 런타임
+├── agent/               # 에이전트 런타임 — 헤드리스
 │   ├── config.py        # 모델 문자열 한 곳에서 관리
 │   ├── tools.py         # 도구 정의 (Pydantic 스키마)
 │   ├── react.py         # ReAct 루프 + 트레이스
 │   ├── harness.py       # 권한·인젝션·비용 가드
-│   └── main.py          # CLI / 채팅 진입점
+│   ├── server.py        # HTTP + SSE 엔드포인트 (ui가 호출)
+│   └── main.py          # CLI 진입점 (에이전트만 단독으로 돌려볼 때)
+├── ui/                  # 화면 서버 — 도메인 로직 없음
+│   ├── templates/       # Jinja2 — 채팅, 거래 목록, 리포트
+│   ├── static/          # HTMX, CSS
+│   └── main.py
 ├── tests/               # LLM 호출 없는 목 기반 테스트
 ├── docker-compose.yml
 ├── Dockerfile
@@ -157,7 +190,13 @@ account-book/
 cp .env.sample .env          # 키 채우기 — 셋 중 하나면 된다
 docker compose up --build -d
 docker compose exec api python -m api.seed      # 카테고리 초기 데이터
-docker compose exec agent python -m agent.main  # 대화 시작
+```
+
+브라우저에서 <http://localhost:8080> — `ui`만 호스트로 열려 있다.
+에이전트만 따로 확인하고 싶으면 CLI로도 붙을 수 있다.
+
+```bash
+docker compose exec agent python -m agent.main
 ```
 
 `.env.sample`에는 실제 키를 절대 넣지 않는다. `.env`는 gitignore 되어 커밋되지 않는다.
@@ -180,11 +219,20 @@ POSTGRES_DB=
 AGENT_MAX_STEPS=
 AGENT_MAX_COST_USD=
 AGENT_CONFIRM_THRESHOLD=
+
+# 서비스 주소 — compose 내부 네트워크 기준
+API_BASE_URL=
+AGENT_BASE_URL=
+
+# ui
+UI_PORT=
+UI_SESSION_SECRET=
 ```
 
 ## 10. 범위
 
-**한다**: 자연어 기록, 자동 분류, 대화형 조회, 월간 리포트, 예산 경고, 감사 로그.
+**한다**: 자연어 기록, 자동 분류, 대화형 조회, 월간 리포트, 예산 경고, 감사 로그,
+그리고 이것들을 쓰는 웹 화면(`ui`).
 
 **아직 안 한다**: 은행·카드사 연동(수동 입력과 CSV 가져오기로 시작), 다중 사용자,
 영수증 이미지 OCR(텍스트 입력이 먼저), 모바일 앱.
