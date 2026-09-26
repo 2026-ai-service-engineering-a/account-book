@@ -1,0 +1,62 @@
+# 개발용 구성 — docker-compose.yml 위에 겹쳐 쓴다.
+#
+#   make dev    # 앞에서 띄우고 라이브 업데이트 (Ctrl+C로 멈춘다)
+#   make up     # 뒤에서 띄운다
+#
+# 풀어 쓰면
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --watch
+#
+# 라이브 업데이트는 두 겹이다.
+#   - 코드·템플릿·CSS: 저장소를 바인드 마운트하고 uvicorn --reload가 다시 띄운다.
+#     템플릿과 static은 요청마다 디스크에서 읽으므로 브라우저 새로고침이면 된다.
+#   - 의존성: requirements·Dockerfile이 바뀌면 Compose Watch가 이미지를 다시 만든다.
+#     --watch 없이 띄우면 이 겹만 빠진다.
+services:
+  ui:
+    build:
+      context: .
+      target: dev
+    # dev 서비스와 같은 단계지만 이름을 따로 둔다. 같은 이미지를 나눠 쓰면 ui를 다시 만들 때
+    # dev도 딸려서 다시 만들어지고, Watch는 ui만 다시 띄워서 dev가 내려간 채 남는다.
+    image: account-book-ui-dev
+    volumes:
+      - .:/app
+    command: >-
+      uvicorn ui.main:create_app --factory --app-dir src
+      --reload --reload-dir src --host 0.0.0.0 --port 8080
+    restart: "no"
+    develop:
+      watch:
+        - action: rebuild
+          path: requirements.txt
+        - action: rebuild
+          path: requirements-dev.txt
+        - action: rebuild
+          path: Dockerfile
+
+  # 도구 컨테이너. make check·lint·test가 여기서 돈다.
+  dev:
+    build:
+      context: .
+      target: dev
+    image: account-book-dev
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - .:/app
+    working_dir: /app
+    ports:
+      # 목 UI(make mock). 8080은 ui가 가져갔다.
+      - "8081:8081"
+    # 명령을 exec로 하나씩 실행하는 방식이라 컨테이너는 떠 있기만 하면 된다.
+    command: sleep infinity
+    # 의존성이 바뀌면 도구 컨테이너도 새 이미지로 다시 뜬다(ruff·mypy 버전이 따라간다).
+    develop:
+      watch:
+        - action: rebuild
+          path: requirements.txt
+        - action: rebuild
+          path: requirements-dev.txt
+        - action: rebuild
+          path: Dockerfile

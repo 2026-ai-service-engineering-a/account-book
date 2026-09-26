@@ -5,7 +5,7 @@
 진짜가 생기면 [../src/ui/main.py](../src/ui/main.py)에서 한 줄씩 바꾸고, 화면은 건드리지 않는다.
 
 ```bash
-make up      # dev와 함께 ui 컨테이너가 뜬다 — http://localhost:8080
+make dev     # 개발용으로 띄우고 라이브 업데이트 — http://localhost:8080
 make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직접 띄운다
 ```
 
