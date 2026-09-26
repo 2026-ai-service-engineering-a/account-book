@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ui.application.values import CategoryId
+
 from .direction import Direction
 from .period import Period
 
@@ -10,7 +12,7 @@ from .period import Period
 class TransactionFilter:
     period: Period
     direction: Direction | None = None
-    category_id: str | None = None
+    category_id: CategoryId | None = None
     query: str = ""
 
     @property

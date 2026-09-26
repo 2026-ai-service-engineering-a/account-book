@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from ui.application.dto import Direction, TransactionDraft
+from ui.application.values import AccountId, CategoryId, Money
 from ui.infrastructure.memory import MemoryStore
 
 SEOUL = ZoneInfo("Asia/Seoul")
@@ -31,7 +32,7 @@ def store() -> MemoryStore:
 
 
 def draft(
-    amount: int = 8_500,
+    amount: int = 8_500,  # 테스트를 읽기 쉽게 맨 숫자로 받고 여기서 감싼다
     day: int = 16,
     category: str = "food",
     merchant: str = "김밥천국",
@@ -40,9 +41,9 @@ def draft(
 ) -> TransactionDraft:
     return TransactionDraft(
         direction=direction,
-        amount=amount,
+        amount=Money(amount),
         occurred_at=datetime(2026, month, day, 12, 30, tzinfo=SEOUL),
-        category_id=category,
-        account_id="card",
+        category_id=CategoryId(category),
+        account_id=AccountId("card"),
         merchant=merchant,
     )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ui.application.dto import CategorySuggestion, Direction
+from ui.application.values import CategoryId
 
 # 키워드 → (카테고리, 방향). 진짜 api의 규칙 테이블이 이 자리에 온다.
 _KEYWORDS: tuple[tuple[str, str, Direction], ...] = (
@@ -44,5 +45,6 @@ class ScriptedCategorySuggester:
         text = merchant.strip()
         for keyword, category_id, kind in _KEYWORDS:
             if kind == direction and keyword.lower() in text.lower():
-                return CategorySuggestion(category_id, f"각본 대역이 낸 값입니다 — '{keyword}'")
+                reason = f"각본 대역이 낸 값입니다 — '{keyword}'"
+                return CategorySuggestion(CategoryId(category_id), reason)
         return None

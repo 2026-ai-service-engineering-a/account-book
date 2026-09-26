@@ -6,6 +6,7 @@ import pytest
 
 from tests.ui.conftest import draft
 from ui.application.dto import Source
+from ui.application.values import CategoryId, Money
 from ui.infrastructure.memory import (
     MemoryBudgetGateway,
     MemoryCatalogGateway,
@@ -42,7 +43,7 @@ def test_record_needs_confirmation(agent, store):
     proposal = events[2].proposal
     assert (proposal.category_name, proposal.amount, str(proposal.occurred_on)) == (
         "식비",
-        8_500,
+        Money(8_500),
         "2026-09-16",
     )
     assert store.transactions == {}  # 확인 전에는 아무것도 쓰지 않는다
@@ -61,7 +62,7 @@ def test_cancel_writes_nothing_and_cannot_replay(agent, store):
 
 
 def test_budget_line_after_record(agent, store):
-    store.limits["food"] = 300_000
+    store.limits[CategoryId("food")] = Money(300_000)
     asyncio.run(MemoryTransactionGateway(store).create(draft(amount=173_800, day=2), "k"))
     proposal = collect(agent.run("어제 점심 김밥천국 8500원"))[2].proposal
     text = collect(agent.decide(proposal.id, accepted=True))[-2].text

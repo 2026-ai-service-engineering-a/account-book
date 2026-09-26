@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+from ui.application.values import Money
+
 from .category import Category
 
 
@@ -11,8 +13,8 @@ class PaceSeries:
     """한 카테고리의 날짜별 누적 지출. 리포트의 페이스 차트가 그린다."""
 
     category: Category
-    limit: int
-    cumulative: tuple[int, ...]  # 1일부터 오늘(또는 말일)까지
+    limit: Money
+    cumulative: tuple[Money, ...]  # 1일부터 오늘(또는 말일)까지
     days_in_month: int
-    projected: int
+    projected: Money
     over_on: date | None

@@ -40,8 +40,11 @@ class PaceChart:
     @classmethod
     def build(cls, series: PaceSeries) -> PaceChart:
         days = series.days_in_month
-        spent = series.cumulative[-1] if series.cumulative else 0
-        peak = max(series.limit, series.projected, spent)
+        # 좌표 계산은 픽셀 산수다. 금액을 정수로 한 번 풀고 그 뒤로는 숫자만 다룬다.
+        amounts = [m.amount for m in series.cumulative]
+        spent = amounts[-1] if amounts else 0
+        limit, projected = series.limit.amount, series.projected.amount
+        peak = max(limit, projected, spent)
         step = nice_step(peak)
         top = scale_top(peak, step)
 
@@ -51,11 +54,9 @@ class PaceChart:
         def y(value: int) -> float:
             return round(_BOTTOM - value / top * (_BOTTOM - _TOP), 1)
 
-        elapsed = len(series.cumulative)
-        points = " ".join(f"{x(d)},{y(v)}" for d, v in enumerate(series.cumulative, start=1))
-        projection = (
-            f"{x(elapsed)},{y(spent)} {x(days)},{y(series.projected)}" if elapsed < days else None
-        )
+        elapsed = len(amounts)
+        points = " ".join(f"{x(d)},{y(v)}" for d, v in enumerate(amounts, start=1))
+        projection = f"{x(elapsed)},{y(spent)} {x(days)},{y(projected)}" if elapsed < days else None
         over = series.over_on
         tick_days = sorted({1, 10, 20, days, elapsed} - _crowded(elapsed, days))
         return cls(
@@ -66,7 +67,7 @@ class PaceChart:
             today_x=x(elapsed),
             today_y=y(spent),
             today_value=f"{spent:,}",
-            budget_y=y(series.limit),
+            budget_y=y(limit),
             budget_label=f"예산 {series.limit:,}",
             over_x=x(over.day) if over else None,
             over_title=f"{over.month}/{over.day} 예산 초과" if over else "",

@@ -8,6 +8,7 @@ from ui.application.dto import (
     TransactionPage,
 )
 from ui.application.errors import LedgerValidationError, TransactionNotFound
+from ui.application.values import TransactionId
 
 from .memory_store import MemoryStore
 
@@ -34,7 +35,7 @@ class MemoryTransactionGateway:
             items=tuple(rows[start:end]), next_cursor=str(end) if end < len(rows) else None
         )
 
-    async def get(self, transaction_id: str) -> Transaction:
+    async def get(self, transaction_id: TransactionId) -> Transaction:
         found = self._store.transactions.get(transaction_id)
         if found is None:
             raise TransactionNotFound(transaction_id)
@@ -55,7 +56,7 @@ class MemoryTransactionGateway:
         return created
 
     async def update(
-        self, transaction_id: str, draft: TransactionDraft, idempotency_key: str
+        self, transaction_id: TransactionId, draft: TransactionDraft, idempotency_key: str
     ) -> Transaction:
         existing = await self.get(transaction_id)
         self._check(draft)
@@ -64,7 +65,7 @@ class MemoryTransactionGateway:
         self._store.replies[idempotency_key] = existing.id
         return updated
 
-    async def delete(self, transaction_id: str, idempotency_key: str) -> None:
+    async def delete(self, transaction_id: TransactionId, idempotency_key: str) -> None:
         if idempotency_key in self._store.replies:
             return
         await self.get(transaction_id)
@@ -73,7 +74,7 @@ class MemoryTransactionGateway:
 
     def _replay(self, idempotency_key: str) -> Transaction | None:
         previous = self._store.replies.get(idempotency_key)
-        return self._store.transactions.get(previous) if previous else None
+        return self._store.transactions.get(TransactionId(previous)) if previous else None
 
     def _check(self, draft: TransactionDraft) -> None:
         errors = self._store.validate(draft)
@@ -81,7 +82,9 @@ class MemoryTransactionGateway:
             raise LedgerValidationError(errors)
 
     @staticmethod
-    def _build(transaction_id: str, draft: TransactionDraft, source: Source) -> Transaction:
+    def _build(
+        transaction_id: TransactionId, draft: TransactionDraft, source: Source
+    ) -> Transaction:
         return Transaction(
             id=transaction_id,
             direction=draft.direction,

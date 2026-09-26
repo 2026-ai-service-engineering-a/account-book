@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 
 from ui.application.dto import Direction, Period, TransactionFilter
 from ui.application.errors import TransactionNotFound
+from ui.application.values import CategoryId, TransactionId
 from ui.interfaces.services import Services, ServicesDep
 from ui.interfaces.templating import render
 
@@ -23,7 +24,7 @@ async def read_filter(
     return TransactionFilter(
         period=Period.parse(period) or current,
         direction=Direction(direction) if direction in {d.value for d in Direction} else None,
-        category_id=category or None,
+        category_id=CategoryId(category) if category else None,
         query=q.strip(),
     )
 
@@ -98,7 +99,7 @@ async def _saved_notice(services: Services, saved: str) -> dict[str, str] | None
     if not saved:
         return None
     try:
-        transaction = await services.transactions.get(saved)
+        transaction = await services.transactions.get(TransactionId(saved))
     except TransactionNotFound:
         return None
     if transaction.direction != Direction.EXPENSE:

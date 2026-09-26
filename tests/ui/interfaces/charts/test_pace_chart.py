@@ -3,13 +3,15 @@ from __future__ import annotations
 from datetime import date
 
 from ui.application.dto import Category, Direction, PaceSeries
+from ui.application.values import CategoryId, Money
 from ui.interfaces.charts.pace_chart import PaceChart
 
-FOOD = Category("food", "식비", Direction.EXPENSE)
+FOOD = Category(CategoryId("food"), "식비", Direction.EXPENSE)
 
 
 def series(cumulative, over_on=None, projected=321_705):
-    return PaceSeries(FOOD, 300_000, tuple(cumulative), 30, projected, over_on)
+    amounts = tuple(Money(v) for v in cumulative)
+    return PaceSeries(FOOD, Money(300_000), amounts, 30, Money(projected), over_on)
 
 
 def test_projection_reaches_month_end():

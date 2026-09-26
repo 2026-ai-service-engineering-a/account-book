@@ -2,11 +2,20 @@ from __future__ import annotations
 
 from tests.ui.conftest import NOW
 from ui.application.dto import Direction, Source, Transaction
+from ui.application.values import AccountId, CategoryId, Money, TransactionId
 
 
 def tx(merchant="", memo=""):
     return Transaction(
-        "t1", Direction.EXPENSE, 1_000, NOW, "food", "card", merchant, memo, Source.MANUAL
+        TransactionId("t1"),
+        Direction.EXPENSE,
+        Money(1_000),
+        NOW,
+        CategoryId("food"),
+        AccountId("card"),
+        merchant,
+        memo,
+        Source.MANUAL,
     )
 
 

@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ui.application.dto import Direction, Period, Transaction
 from ui.application.errors import LedgerValidationError
+from ui.application.values import TransactionId
 from ui.interfaces.forms.transaction_form import TransactionForm
 from ui.interfaces.services import Services, ServicesDep
 from ui.interfaces.templating import is_htmx, render
@@ -31,14 +32,16 @@ async def create(request: Request, services: ServicesDep) -> Response:
 
 @router.get("/transactions/{transaction_id}", response_class=HTMLResponse)
 async def edit_form(request: Request, services: ServicesDep, transaction_id: str) -> HTMLResponse:
-    transaction = await services.transactions.get(transaction_id)
+    transaction = await services.transactions.get(TransactionId(transaction_id))
     form = TransactionForm.of(transaction, services.zone())
     return await _render_form(request, services, form, {}, transaction)
 
 
 @router.post("/transactions/{transaction_id}")
 async def update(request: Request, services: ServicesDep, transaction_id: str) -> Response:
-    return await _save(request, services, await services.transactions.get(transaction_id))
+    return await _save(
+        request, services, await services.transactions.get(TransactionId(transaction_id))
+    )
 
 
 @router.get("/transactions/{transaction_id}/delete", response_class=HTMLResponse)
@@ -46,7 +49,7 @@ async def delete_confirm(
     request: Request, services: ServicesDep, transaction_id: str
 ) -> HTMLResponse:
     """되돌릴 수 없으니 금액과 가맹점을 다시 보여 주고 묻는다(transaction-form.md 4.3)."""
-    transaction = await services.transactions.get(transaction_id)
+    transaction = await services.transactions.get(TransactionId(transaction_id))
     names = {c.id: c.name for c in await services.catalog.categories()}
     context = {
         "section": "transactions",
@@ -62,8 +65,8 @@ async def delete_confirm(
 async def delete(
     services: ServicesDep, transaction_id: str, idempotency_key: Annotated[str, Form()]
 ) -> RedirectResponse:
-    transaction = await services.transactions.get(transaction_id)
-    await services.transactions.delete(transaction_id, idempotency_key)
+    transaction = await services.transactions.get(TransactionId(transaction_id))
+    await services.transactions.delete(TransactionId(transaction_id), idempotency_key)
     period = Period.of(transaction.occurred_at.astimezone(services.zone()).date())
     return RedirectResponse(f"/transactions?period={period}", status_code=303)
 

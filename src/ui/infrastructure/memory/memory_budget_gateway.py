@@ -3,6 +3,7 @@ from __future__ import annotations
 from ui.application.dto import BudgetStatus, Category, Direction, Period, TransactionFilter
 from ui.application.errors import LedgerValidationError
 from ui.application.ports import Clock
+from ui.application.values import CategoryId, Money
 
 from . import pace_math
 from .memory_store import MemoryStore
@@ -22,16 +23,16 @@ class MemoryBudgetGateway:
             if c.direction == Direction.EXPENSE
         )
 
-    async def status(self, category_id: str, period: Period) -> BudgetStatus:
+    async def status(self, category_id: CategoryId, period: Period) -> BudgetStatus:
         return self._status(self._expense_category(category_id), period)
 
     async def set_limit(
-        self, category_id: str, amount: int | None, idempotency_key: str
+        self, category_id: CategoryId, amount: Money | None, idempotency_key: str
     ) -> BudgetStatus:
         category = self._expense_category(category_id)
         if amount is None:
             self._store.limits.pop(category_id, None)
-        elif amount <= 0:
+        elif amount <= Money(0):
             raise LedgerValidationError({"amount": "예산은 0보다 커야 합니다."})
         else:
             self._store.limits[category_id] = amount
@@ -39,7 +40,7 @@ class MemoryBudgetGateway:
         self._store.replies[idempotency_key] = category_id
         return self._status(category, Period.of(self._clock.now().date()))
 
-    def _expense_category(self, category_id: str) -> Category:
+    def _expense_category(self, category_id: CategoryId) -> Category:
         category = self._store.categories.get(category_id)
         if category is None or category.direction != Direction.EXPENSE:
             raise LedgerValidationError({"category_id": "지출 카테고리가 아닙니다."})
@@ -47,7 +48,7 @@ class MemoryBudgetGateway:
 
     def _status(self, category: Category, period: Period) -> BudgetStatus:
         rows = self._store.matching(TransactionFilter(period, Direction.EXPENSE, category.id))
-        spent = sum(t.amount for t in rows)
+        spent = Money.total(t.amount for t in rows)
         limit = self._store.limits.get(category.id)
         if limit is None:
             return BudgetStatus(category, None, spent, None, None, None, None)
@@ -60,7 +61,7 @@ class MemoryBudgetGateway:
             limit=limit,
             spent=spent,
             remaining=limit - spent,
-            percent=spent * 100 // limit,
+            percent=spent.amount * 100 // limit.amount,
             projected=pace_math.project(spent, through, period.days),
             over_on=pace_math.day_in(period, pace_math.crossing_day(series, limit, period.days)),
         )

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from ui.application.dto import MonthlyReport, PaceSeries, Period, Totals, TransactionFilter
+from ui.application.values import CategoryId
 
 
 class ReportGateway(Protocol):
@@ -12,6 +13,6 @@ class ReportGateway(Protocol):
 
     async def monthly(self, period: Period) -> MonthlyReport: ...
 
-    async def pace(self, category_id: str, period: Period) -> PaceSeries | None:
+    async def pace(self, category_id: CategoryId, period: Period) -> PaceSeries | None:
         """예산이 없는 카테고리면 None."""
         ...

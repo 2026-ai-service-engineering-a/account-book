@@ -7,6 +7,7 @@ import pytest
 from tests.ui.conftest import draft
 from ui.application.dto import Direction, Period, Source, TransactionFilter
 from ui.application.errors import LedgerValidationError, TransactionNotFound
+from ui.application.values import CategoryId, Money
 from ui.infrastructure.memory import MemoryTransactionGateway
 
 
@@ -37,7 +38,7 @@ def test_search_filters_and_pages(store):
     for day in range(1, 6):
         asyncio.run(gateway.create(draft(day=day), f"k{day}"))
     asyncio.run(gateway.create(draft(day=3, category="cafe", merchant="스타벅스"), "c"))
-    criteria = TransactionFilter(Period(2026, 9), Direction.EXPENSE, "food")
+    criteria = TransactionFilter(Period(2026, 9), Direction.EXPENSE, CategoryId("food"))
     page = asyncio.run(gateway.search(criteria, limit=3))
     assert [t.occurred_at.day for t in page.items] == [5, 4, 3]
     rest = asyncio.run(gateway.search(criteria, cursor=page.next_cursor, limit=3))
@@ -51,7 +52,7 @@ def test_update_keeps_source_and_delete_removes(store):
     gateway = MemoryTransactionGateway(store)
     created = asyncio.run(gateway.create(draft(), "k1", run_id="r1"))
     updated = asyncio.run(gateway.update(created.id, draft(amount=9_000), "k2"))
-    assert (updated.amount, updated.source) == (9_000, Source.AGENT)
+    assert (updated.amount, updated.source) == (Money(9_000), Source.AGENT)
     asyncio.run(gateway.delete(created.id, "k3"))
     asyncio.run(gateway.delete(created.id, "k3"))  # 같은 키로 다시 와도 404가 아니다
     with pytest.raises(TransactionNotFound):

@@ -3,24 +3,25 @@
 from __future__ import annotations
 
 from ui.application.dto import Direction
+from ui.application.values import Money
 
 
-def won(amount: int) -> str:
-    return f"{amount:,}원"
+def won(money: Money) -> str:
+    return f"{money:,}원"
 
 
-def signed_won(amount: int, direction: Direction) -> str:
-    if amount == 0:
+def signed_won(money: Money, direction: Direction) -> str:
+    if not money:
         return "0원"
     sign = "+" if direction == Direction.INCOME else "-"
-    return f"{sign}{amount:,}원"
+    return f"{sign}{money:,}원"
 
 
-def grouped(amount: int) -> str:
-    return f"{amount:,}"
+def grouped(money: Money) -> str:
+    return f"{money:,}"
 
 
-def change(delta: int | None, percent: int | None) -> str:
+def change(delta: Money | None, percent: int | None) -> str:
     """증감은 금액과 퍼센트를 같이 낸다. 1,000원이 2,000원이 된 것도 100%다."""
     if not delta:
         return "—"

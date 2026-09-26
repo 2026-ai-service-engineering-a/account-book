@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from ui.application.dto import MonthlyReport, Period, Totals
+from ui.application.values import Money
 
 
 def report(expense, income):
-    return MonthlyReport(Period(2026, 9), Totals(expense, income), None, (), (), None)
+    return MonthlyReport(Period(2026, 9), Totals(Money(expense), Money(income)), None, (), (), None)
 
 
 def test_empty_only_without_any_money():

@@ -54,7 +54,7 @@
         {% if report.previous %}
         <td class="num amount out">{{ c.last_month | signed("expense") }}</td>
         {# 늘어난 것만 강조한다. 이 화면을 여는 사람은 "왜 이렇게 많이 썼지"를 알고 싶다 #}
-        <td class="num">{% if c.delta and c.delta > 0 %}<strong>{{ c.delta | change(c.percent) }}</strong>{% else %}{{ c.delta | change(c.percent) }}{% endif %}</td>
+        <td class="num">{% if c.delta and c.delta.amount > 0 %}<strong>{{ c.delta | change(c.percent) }}</strong>{% else %}{{ c.delta | change(c.percent) }}{% endif %}</td>
         {% endif %}
       </tr>
       {% endfor %}

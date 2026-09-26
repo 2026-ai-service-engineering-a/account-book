@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from ui.application.dto import Transaction, TransactionDraft, TransactionFilter, TransactionPage
+from ui.application.values import TransactionId
 
 
 class TransactionGateway(Protocol):
@@ -14,7 +15,7 @@ class TransactionGateway(Protocol):
         self, criteria: TransactionFilter, cursor: str | None = None, limit: int = 50
     ) -> TransactionPage: ...
 
-    async def get(self, transaction_id: str) -> Transaction: ...
+    async def get(self, transaction_id: TransactionId) -> Transaction: ...
 
     async def create(
         self, draft: TransactionDraft, idempotency_key: str, run_id: str | None = None
@@ -23,7 +24,7 @@ class TransactionGateway(Protocol):
         ...
 
     async def update(
-        self, transaction_id: str, draft: TransactionDraft, idempotency_key: str
+        self, transaction_id: TransactionId, draft: TransactionDraft, idempotency_key: str
     ) -> Transaction: ...
 
-    async def delete(self, transaction_id: str, idempotency_key: str) -> None: ...
+    async def delete(self, transaction_id: TransactionId, idempotency_key: str) -> None: ...

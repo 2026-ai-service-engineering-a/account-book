@@ -19,4 +19,4 @@ class MonthlyReport:
 
     @property
     def is_empty(self) -> bool:
-        return self.totals.expense == 0 and self.totals.income == 0
+        return not self.totals.expense and not self.totals.income

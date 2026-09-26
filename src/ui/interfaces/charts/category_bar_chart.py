@@ -4,6 +4,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TypedDict
 
+from ui.application.values import Money
+
 _LEFT, _WIDTH, _TOP, _PITCH, _HEIGHT, _RADIUS = 54, 400, 6, 30, 18, 4
 
 
@@ -24,10 +26,11 @@ class CategoryBarChart:
     bars: tuple[_Bar, ...]
 
     @classmethod
-    def build(cls, rows: Sequence[tuple[str, int]]) -> CategoryBarChart:
-        peak = max((value for _, value in rows), default=0) or 1
+    def build(cls, rows: Sequence[tuple[str, Money]]) -> CategoryBarChart:
+        peak = max((money.amount for _, money in rows), default=0) or 1
         bars = []
-        for index, (label, value) in enumerate(rows):
+        for index, (label, money) in enumerate(rows):
+            value = money.amount
             top = _TOP + index * _PITCH
             end = _LEFT + max(value / peak * _WIDTH, 2)
             bars.append(

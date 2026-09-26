@@ -8,6 +8,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 
 from ui.application.dto import ChatEvent, Period, TransactionFilter
+from ui.application.values import ProposalId
 from ui.interfaces.presenters.tool_labels import progress_label
 from ui.interfaces.request_id import request_id_of
 from ui.interfaces.services import ServicesDep
@@ -45,7 +46,7 @@ async def chat_decide(
     proposal_id: str,
     decision: Literal["confirm", "cancel"],
 ) -> StreamingResponse:
-    return _stream(request, services.chat.decide(proposal_id, decision == "confirm"))
+    return _stream(request, services.chat.decide(ProposalId(proposal_id), decision == "confirm"))
 
 
 async def _nothing() -> AsyncIterator[ChatEvent]:

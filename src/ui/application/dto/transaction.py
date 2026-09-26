@@ -3,18 +3,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from ui.application.values import AccountId, CategoryId, Money, TransactionId
+
 from .direction import Direction
 from .source import Source
 
 
 @dataclass(frozen=True, slots=True)
 class Transaction:
-    id: str
+    id: TransactionId
     direction: Direction
-    amount: int
+    amount: Money
     occurred_at: datetime
-    category_id: str
-    account_id: str
+    category_id: CategoryId
+    account_id: AccountId
     merchant: str
     memo: str
     source: Source
