@@ -210,7 +210,8 @@ account-book/
 ├── .devcontainer/         # Codespaces·Dev Containers — dev 서비스를 그대로 쓴다
 ├── Makefile               # 모든 명령은 컨테이너 안에서 돈다
 ├── Dockerfile
-├── docker-compose.yml
+├── docker-compose.yml     # 기본 — 운영처럼 뜬다
+├── docker-compose.dev.yml # 개발용 — 기본 위에 겹쳐 라이브 업데이트
 ├── pyproject.toml         # ruff · mypy · pytest 설정
 ├── requirements.txt       # 런타임 의존성
 ├── requirements-dev.txt   # 개발 도구
@@ -233,13 +234,23 @@ src/api/
 ### 지금 되는 것 — 개발 기반
 
 ```bash
-make up       # .env를 만들고 dev·ui 컨테이너를 띄운다 — ui는 http://localhost:8080
+make dev      # 개발용으로 띄우고 라이브 업데이트 — ui는 http://localhost:8080 (Ctrl+C로 멈춘다)
+make up       # 같은 것을 뒤에서 띄운다
 make all      # 규칙 검사 + 린트 + 타입 + 테스트
 make shell    # 컨테이너 안으로
 ```
 
-`requirements*.txt`가 바뀐 뒤에는 이미지를 다시 만든다 — `make build` 또는
-`docker compose up --build`. 옛 이미지로 뜨면 `ui`가 uvicorn을 찾지 못하고 죽는다.
+compose 파일은 둘이다.
+
+| 파일 | 쓰임 | ui는 |
+|---|---|---|
+| `docker-compose.yml` | 기본. 운영처럼 뜬다 — `docker compose up`, `make prod` | 코드를 이미지에 굽는다. 고쳐도 다시 뜨지 않는다 |
+| `docker-compose.dev.yml` | 개발용. 기본 위에 겹쳐 쓴다 — `make dev`, `make up` | 저장소를 마운트하고 고치면 바로 반영된다 |
+
+개발용의 라이브 업데이트는 두 겹이다. 코드·템플릿·CSS는 바인드 마운트와 `uvicorn --reload`가
+맡고, 브라우저를 새로고침하면 보인다. `requirements*.txt`와 `Dockerfile`이 바뀌면 Compose
+Watch가 이미지를 다시 만들어 띄운다 — 이 겹은 `make dev`(`up --watch`)로 띄웠을 때만 돈다.
+`make up`으로 띄웠다면 의존성이 바뀐 뒤 `make build`를 한 번 친다.
 
 호스트에 필요한 건 `make`와 docker뿐이다. 파이썬도 ruff도 mypy도 설치하지 않는다.
 명령 목록은 그냥 `make`.
@@ -247,16 +258,17 @@ make shell    # 컨테이너 안으로
 화면 설계를 눈으로 보려면 `make mock` — 서버 없는 정적 목 UI가
 <http://localhost:8081>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
 
-화면을 실제로 만져 보려면 <http://localhost:8080> — `make up`(또는 `docker compose up`)이
-`api`·`agent` 자리에 대역을 세운 진짜 `ui`를 함께 띄운다. 버튼이 전부 동작하고, AI가
-들어갈 자리 셋은 각본 대역이 채운다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)).
+화면을 실제로 만져 보려면 <http://localhost:8080> — `api`·`agent` 자리에 대역을 세운 진짜
+`ui`가 뜬다. 버튼이 전부 동작하고, AI가 들어갈 자리는 각본 대역이
+채운다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)).
 
-compose에는 지금 `dev`와 `ui` 둘이다. `db`·`api`·`agent`는 각 코드가 생길 때 붙는다.
+compose에는 지금 `ui` 하나, 개발용에는 도구 컨테이너 `dev`가 더 붙는다.
+`db`·`api`·`agent`는 각 코드가 생길 때 붙는다.
 
 ### GitHub Codespaces에서 열기
 
 저장소를 Codespaces나 VS Code Dev Containers로 열면 **같은 컨테이너가 그대로 뜬다.**
-`.devcontainer/devcontainer.json`이 `docker-compose.yml`의 `dev` 서비스를 재사용하기
+`.devcontainer/devcontainer.json`이 개발용 구성의 `dev` 서비스를 재사용하기
 때문이다 — 개발 환경을 두 벌 관리하지 않는다.
 
 열리면 `.env`가 자동으로 만들어지고, 터미널에서 바로 `make check`를 칠 수 있다.

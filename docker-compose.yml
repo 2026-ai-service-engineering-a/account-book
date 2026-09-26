@@ -1,40 +1,20 @@
-# 개발 기반. 도구 컨테이너(dev)와 화면 서버(ui) 둘이다.
+# 기본 구성 — 운영처럼 뜬다. 코드를 이미지에 굽고, 고쳐도 다시 뜨지 않는다.
 # db·api·agent는 각 코드가 생길 때 여기에 붙인다(README 3장).
 #
-#   docker compose up -d   # dev와 ui를 띄운다 — ui는 http://localhost:8080
-#   make check             # 저장소 규칙 검사
-#   make shell             # 컨테이너 안으로
+#   docker compose up -d --build   # http://localhost:8080
+#
+# 개발할 때는 docker-compose.dev.yml을 겹쳐 쓴다 — make up / make dev.
 services:
-  dev:
-    build: .
-    # ui와 같은 이미지를 쓴다. 이름을 붙여 두 번 만들지 않게 한다.
-    image: account-book-dev
-    # .env가 없어도 뜬다. Codespaces에서 처음 열릴 때 아직 없기 때문이다.
-    env_file:
-      - path: .env
-        required: false
-    volumes:
-      - .:/app
-    working_dir: /app
-    ports:
-      # 목 UI(make mock). 8080은 ui가 가져갔다.
-      - "8081:8081"
-    # 명령을 exec로 하나씩 실행하는 방식이라 컨테이너는 떠 있기만 하면 된다.
-    command: sleep infinity
-
   ui:
-    build: .
-    image: account-book-dev
+    build:
+      context: .
+      target: runtime
+    image: account-book-ui
+    # .env가 없어도 뜬다. 값은 전부 기본값이 있다.
     env_file:
       - path: .env
         required: false
-    volumes:
-      - .:/app
-    working_dir: /app
     ports:
       # 호스트로 여는 건 ui 하나뿐이다(README 3장). 지금은 api·agent 자리에 대역이 선다.
       - "${UI_PORT:-8080}:8080"
-    # 코드가 바인드 마운트라 고치면 바로 다시 뜬다.
-    command: >-
-      uvicorn ui.main:create_app --factory --app-dir src
-      --reload --reload-dir src --host 0.0.0.0 --port 8080
+    restart: unless-stopped
