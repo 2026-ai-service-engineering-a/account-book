@@ -1,31 +1,38 @@
 {% extends "base.html" %}
+{% from "icons.html" import icon %}
 {% block title %}예산{% endblock %}
 {% block main %}
-<h1>예산</h1>
-<p class="sub">{{ period.label }} · 금액 칸을 누르면 그 줄만 고칩니다</p>
-{% if none_set %}<div class="notice ok">많이 쓰는 카테고리부터 정해보세요.</div>{% endif %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">예산</h1>
+    <p class="page-description">{{ period.label }} · 금액을 누르면 그 줄만 고칩니다. 넘겨도 막지 않고 알리기만 합니다.</p>
+  </div>
+</div>
+<div class="stack">
+  {% if none_set %}
+  <div class="alert">{{ icon("info") }}<div class="alert-title">많이 쓰는 카테고리부터 정해보세요.</div></div>
+  {% endif %}
 
-<section>
-  <table>
-    <thead><tr><th>카테고리</th><th class="num">예산</th><th class="num">쓴 돈</th><th class="num">남음</th><th class="progress-col">진행</th></tr></thead>
-    <tbody>
-      {% for status in statuses %}{% include "partials/budget_row.html" %}{% endfor %}
-    </tbody>
-  </table>
-</section>
-
-{% if pace_notes %}
-<section>
-  <h2>페이스</h2>
   {% for s in pace_notes %}
-  <div class="note">
-    {% if s.is_over %}
-    {{ s.category.name }} — 이미 예산을 {{ (s.spent - s.limit) | won }} 넘었어요. 지금 페이스면 말일에 {{ s.projected | won }}이 됩니다.
-    {% else %}
-    {{ s.category.name }} — 지금 페이스면 {{ s.over_on.month }}월 {{ s.over_on.day }}일에 예산을 넘고, 말일에 {{ s.projected | won }}이 됩니다.
-    {% endif %}
+  <div class="alert alert-warning">
+    {{ icon("alert") }}
+    <div class="alert-title">{{ s.category.name }}</div>
+    <div class="alert-description">
+      {% if s.is_over %}이미 예산을 {{ (s.spent - s.limit) | won }} 넘었어요. 지금 페이스면 말일에 {{ s.projected | won }}이 됩니다.
+      {% else %}지금 페이스면 {{ s.over_on.month }}월 {{ s.over_on.day }}일에 예산을 넘고, 말일에 {{ s.projected | won }}이 됩니다.{% endif %}
+    </div>
   </div>
   {% endfor %}
-</section>
-{% endif %}
+
+  <div class="card">
+    <div class="card-content flush">
+      <table class="table">
+        <thead><tr><th>카테고리</th><th class="num">예산</th><th class="num">쓴 돈</th><th class="num">남음</th><th class="progress-col">진행</th></tr></thead>
+        <tbody>
+          {% for status in statuses %}{% include "partials/budget_row.html" %}{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 {% endblock %}

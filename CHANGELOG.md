@@ -19,6 +19,9 @@
 - **개발용 compose** — `docker-compose.dev.yml`을 기본 위에 겹쳐 쓴다. `make dev`로 띄우면
   코드·템플릿·CSS는 저장하는 대로, 의존성은 Compose Watch가 이미지를 다시 만들어 반영한다.
   기본 `docker-compose.yml`은 코드를 이미지에 구워 운영처럼 뜬다. ([README.md](README.md) 9장)
+- **shadcn/ui 모양** — 화면 전체에 shadcn/ui(new-york, neutral)의 토큰과 컴포넌트 모양을
+  입혔다. React·Tailwind는 설치하지 않고 CSS 한 파일로 옮겼다 — 빌드 단계가 없다.
+  ([ui_docs/ui-design.md](ui_docs/ui-design.md) 7장)
 
 ## 0.1.1 — 2026-09-17
 

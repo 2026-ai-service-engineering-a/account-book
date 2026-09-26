@@ -1,7 +1,8 @@
 {% set c = pace_chart %}
-<section class="viz">
-  <h2>{{ c.title }}</h2>
-  <div class="legend">
+<section class="card viz">
+  <div class="card-header"><h2 class="card-title">{{ c.title }}</h2></div>
+  <div class="card-content">
+  <div class="legend" style="margin-bottom:12px">
     <span><i class="line"></i>실제 누적</span>
     {% if c.projection %}<span><i class="dash"></i>지금 페이스</span>{% endif %}
     <span><i class="budget"></i>예산</span>
@@ -24,4 +25,5 @@
     {% endif %}
     {% for t in c.ticks %}<text x="{{ t.x }}" y="194" text-anchor="middle">{{ t.label }}</text>{% endfor %}
   </svg>
+  </div>
 </section>

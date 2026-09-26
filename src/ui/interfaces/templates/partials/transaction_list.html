@@ -1,25 +1,35 @@
-<section id="transaction-list">
+{% from "icons.html" import icon %}
+<section id="transaction-list" class="card">
 {% if page.items %}
-  <table>
-    <thead><tr><th>날짜</th><th>내역</th><th>카테고리</th><th class="num">금액</th></tr></thead>
-    <tbody>{% include "partials/transaction_rows.html" %}</tbody>
-  </table>
-  <p class="sub" style="margin:14px 0 0">🤖 표시는 에이전트가 넣은 기록입니다.</p>
+  <div class="card-content flush">
+    <table class="table">
+      <thead><tr><th>날짜</th><th>내역</th><th>카테고리</th><th class="num">금액</th></tr></thead>
+      <tbody>{% include "partials/transaction_rows.html" %}</tbody>
+    </table>
+  </div>
+  <div class="card-footer"><p class="field-description"><span class="badge badge-ai">{{ icon("bot") }}AI</span> 표시는 에이전트가 넣은 기록입니다.</p></div>
 {% elif not has_any %}
   <div class="empty">
-    <p>아직 기록이 없어요. 대화로 넣거나 직접 넣어보세요.</p>
-    <a class="btn primary" href="/">대화로 넣기</a>
-    <a class="btn" href="/transactions/new">직접 넣기</a>
+    <div class="empty-icon">{{ icon("inbox") }}</div>
+    <p class="empty-title">아직 기록이 없어요.</p>
+    <p class="empty-description">대화로 넣거나 직접 넣어보세요.</p>
+    <div class="empty-actions">
+      <a class="btn" href="/">{{ icon("message") }}대화로 넣기</a>
+      <a class="btn btn-outline" href="/transactions/new">{{ icon("plus") }}직접 넣기</a>
+    </div>
   </div>
 {% elif criteria.is_narrowed %}
   <div class="empty">
-    <p>조건에 맞는 거래가 없어요. 필터를 지워볼까요?</p>
-    <a class="btn" href="/transactions?{{ period_query }}">필터 지우기</a>
+    <div class="empty-icon">{{ icon("search") }}</div>
+    <p class="empty-title">조건에 맞는 거래가 없어요.</p>
+    <p class="empty-description">필터를 지워볼까요?</p>
+    <div class="empty-actions"><a class="btn btn-outline" href="/transactions?{{ period_query }}">필터 지우기</a></div>
   </div>
 {% else %}
   <div class="empty">
-    <p>{{ criteria.period.label }}에는 기록이 없어요.</p>
-    <a class="btn" href="/transactions/new">직접 넣기</a>
+    <div class="empty-icon">{{ icon("inbox") }}</div>
+    <p class="empty-title">{{ criteria.period.label }}에는 기록이 없어요.</p>
+    <div class="empty-actions"><a class="btn btn-outline" href="/transactions/new">{{ icon("plus") }}직접 넣기</a></div>
   </div>
 {% endif %}
 </section>

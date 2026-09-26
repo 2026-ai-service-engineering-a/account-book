@@ -4,9 +4,9 @@
     {{ proposal.occurred_on }} · {{ proposal.category_name }} ·
     <strong class="amount {{ 'in' if proposal.direction == 'income' else 'out' }}">{{ proposal.amount | signed(proposal.direction) }}</strong>
   </p>
-  <p class="sub card-detail">{{ proposal.account_name }}{% if proposal.merchant %} · {{ proposal.merchant }}{% endif %}</p>
+  <p class="card-detail">{{ proposal.account_name }}{% if proposal.merchant %} · {{ proposal.merchant }}{% endif %}</p>
   <div class="actions">
-    <button type="button" data-decision="cancel">취소</button>
-    <button type="button" class="primary" data-decision="confirm">확인</button>
+    <button type="button" class="btn btn-outline btn-sm" data-decision="cancel">취소</button>
+    <button type="button" class="btn btn-sm" data-decision="confirm">확인</button>
   </div>
 </div>

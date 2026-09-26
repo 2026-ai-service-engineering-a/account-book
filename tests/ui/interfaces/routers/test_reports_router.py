@@ -8,7 +8,7 @@ def test_current_month_report(client):
     for heading in ("어디에 썼나", "여섯 달", "카테고리별", "눈에 띈 것", "9월 17일까지"):
         assert heading in page.text
     assert "/?q=" in page.text
-    assert 'aria-disabled="true">10월 →' in page.text
+    assert 'aria-disabled="true">10월<svg' in page.text  # 다음 달은 이번 달까지만
 
 
 def test_future_month_goes_back_to_now(client):

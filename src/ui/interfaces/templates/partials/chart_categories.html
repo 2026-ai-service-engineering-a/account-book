@@ -1,5 +1,6 @@
-<section class="viz">
-  <h2>어디에 썼나</h2>
+<section class="card viz">
+  <div class="card-header"><h2 class="card-title">어디에 썼나</h2></div>
+  <div class="card-content">
   <svg viewBox="0 0 640 {{ category_chart.height }}" role="img" aria-label="카테고리별 지출 막대 그래프">
     {% for b in category_chart.bars %}
     <text class="lab" x="46" y="{{ b.text_y }}" text-anchor="end">{{ b.label }}</text>
@@ -7,4 +8,5 @@
     <text class="val" x="{{ b.value_x }}" y="{{ b.text_y }}">{{ b.value }}</text>
     {% endfor %}
   </svg>
+  </div>
 </section>

@@ -14,7 +14,7 @@
   function progress(text) {
     let line = document.getElementById("chat-progress");
     if (!line) {
-      append('<div class="progress" id="chat-progress"></div>');
+      append('<div class="thinking" id="chat-progress"></div>');
       line = document.getElementById("chat-progress");
     }
     line.textContent = text;

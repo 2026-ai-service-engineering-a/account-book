@@ -1,9 +1,9 @@
-<div id="category-select">
+<div id="category-select" class="field">
   {% set picked = "category_id" in (filled or ()) %}
-  <label for="category_id">카테고리 {% if picked %}<span class="ai-tag">AI가 채움</span>{% endif %}</label>
-  <select id="category_id" name="category_id" {% if picked %}class="ai-filled"{% endif %} {% if errors.category_id %}aria-invalid="true"{% endif %}>
+  <label class="label" for="category_id">카테고리 {% if picked %}<span class="ai-tag">AI가 채움</span>{% endif %}</label>
+  <select id="category_id" class="select{% if picked %} ai-filled{% endif %}" name="category_id" {% if errors.category_id %}aria-invalid="true"{% endif %}>
     <option value="" {% if not form.category_id %}selected{% endif %}>고르세요</option>
     {% for c in categories %}<option value="{{ c.id }}" {% if c.id == form.category_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
   </select>
-  {% if errors.category_id %}<div class="field-error">{{ errors.category_id }}</div>{% endif %}
+  {% if errors.category_id %}<p class="field-error">{{ errors.category_id }}</p>{% endif %}
 </div>

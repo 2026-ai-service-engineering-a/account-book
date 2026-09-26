@@ -5,11 +5,11 @@
     <form class="inline-edit" hx-put="/budgets/{{ id }}" hx-target="#budget-row-{{ id }}" hx-swap="outerHTML"
           hx-disabled-elt="find button">
       <input type="hidden" name="idempotency_key" value="{{ key }}">
-      <input name="amount" inputmode="numeric" value="{{ value }}" placeholder="비우면 예산을 지웁니다"
+      <input class="input" name="amount" inputmode="numeric" value="{{ value }}" placeholder="비우면 예산을 지웁니다"
              aria-label="{{ status.category.name }} 월 예산" autofocus {% if error %}aria-invalid="true"{% endif %}>
-      <button type="submit" class="primary">저장</button>
-      <button type="button" hx-get="/budgets/{{ id }}" hx-target="#budget-row-{{ id }}" hx-swap="outerHTML">취소</button>
+      <button type="submit" class="btn btn-sm">저장</button>
+      <button type="button" class="btn btn-ghost btn-sm" hx-get="/budgets/{{ id }}" hx-target="#budget-row-{{ id }}" hx-swap="outerHTML">취소</button>
     </form>
-    {% if error %}<div class="field-error">{{ error }}</div>{% endif %}
+    {% if error %}<p class="field-error" style="margin-top:6px">{{ error }}</p>{% endif %}
   </td>
 </tr>
