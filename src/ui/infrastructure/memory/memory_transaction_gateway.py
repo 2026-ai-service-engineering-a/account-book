@@ -8,7 +8,7 @@ from ui.application.dto import (
     TransactionPage,
 )
 from ui.application.errors import LedgerValidationError, TransactionNotFound
-from ui.application.values import TransactionId
+from ui.application.values import IdempotencyKey, PageCursor, RunId, TransactionId
 
 from .memory_store import MemoryStore
 
@@ -23,7 +23,7 @@ class MemoryTransactionGateway:
         return bool(self._store.transactions)
 
     async def search(
-        self, criteria: TransactionFilter, cursor: str | None = None, limit: int = 50
+        self, criteria: TransactionFilter, cursor: PageCursor | None = None, limit: int = 50
     ) -> TransactionPage:
         rows = sorted(
             self._store.matching(criteria), key=lambda t: (t.occurred_at, t.id), reverse=True
@@ -32,7 +32,8 @@ class MemoryTransactionGateway:
         start = int(cursor) if cursor and cursor.isdigit() else 0
         end = start + min(limit, 200)
         return TransactionPage(
-            items=tuple(rows[start:end]), next_cursor=str(end) if end < len(rows) else None
+            items=tuple(rows[start:end]),
+            next_cursor=PageCursor(str(end)) if end < len(rows) else None,
         )
 
     async def get(self, transaction_id: TransactionId) -> Transaction:
@@ -42,7 +43,7 @@ class MemoryTransactionGateway:
         return found
 
     async def create(
-        self, draft: TransactionDraft, idempotency_key: str, run_id: str | None = None
+        self, draft: TransactionDraft, idempotency_key: IdempotencyKey, run_id: RunId | None = None
     ) -> Transaction:
         replayed = self._replay(idempotency_key)
         if replayed is not None:
@@ -56,7 +57,10 @@ class MemoryTransactionGateway:
         return created
 
     async def update(
-        self, transaction_id: TransactionId, draft: TransactionDraft, idempotency_key: str
+        self,
+        transaction_id: TransactionId,
+        draft: TransactionDraft,
+        idempotency_key: IdempotencyKey,
     ) -> Transaction:
         existing = await self.get(transaction_id)
         self._check(draft)
@@ -65,14 +69,14 @@ class MemoryTransactionGateway:
         self._store.replies[idempotency_key] = existing.id
         return updated
 
-    async def delete(self, transaction_id: TransactionId, idempotency_key: str) -> None:
+    async def delete(self, transaction_id: TransactionId, idempotency_key: IdempotencyKey) -> None:
         if idempotency_key in self._store.replies:
             return
         await self.get(transaction_id)
         del self._store.transactions[transaction_id]
         self._store.replies[idempotency_key] = transaction_id
 
-    def _replay(self, idempotency_key: str) -> Transaction | None:
+    def _replay(self, idempotency_key: IdempotencyKey) -> Transaction | None:
         previous = self._store.replies.get(idempotency_key)
         return self._store.transactions.get(TransactionId(previous)) if previous else None
 

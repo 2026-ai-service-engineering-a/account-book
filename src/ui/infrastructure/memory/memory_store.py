@@ -12,7 +12,7 @@ from ui.application.dto import (
     TransactionDraft,
     TransactionFilter,
 )
-from ui.application.values import AccountId, CategoryId, Money, TransactionId
+from ui.application.values import AccountId, CategoryId, IdempotencyKey, Money, TransactionId
 
 _CATEGORIES = (
     Category(CategoryId("food"), "식비", Direction.EXPENSE),
@@ -46,7 +46,7 @@ class MemoryStore:
     transactions: dict[TransactionId, Transaction] = field(default_factory=dict)
     limits: dict[CategoryId, Money] = field(default_factory=dict)  # 월 예산
     # Idempotency-Key → 그 키로 처리한 대상의 id
-    replies: dict[str, str] = field(default_factory=dict)
+    replies: dict[IdempotencyKey, str] = field(default_factory=dict)
     sequence: int = 0
 
     @classmethod

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import date
 
-from tests.ui.conftest import draft
+from tests.ui.conftest import draft, key
 from ui.application.dto import Direction, Period
 from ui.application.values import CategoryId, Money
 from ui.infrastructure.memory import MemoryReportGateway, MemoryTransactionGateway
@@ -21,7 +21,7 @@ def _fill(store):
         draft(amount=3_200_000, day=10, category="salary", direction=Direction.INCOME),
     ]
     for i, row in enumerate(rows):
-        asyncio.run(gateway.create(row, f"k{i}"))
+        asyncio.run(gateway.create(row, key(f"k{i}")))
 
 
 def test_monthly_compares_with_previous_month(store, clock):

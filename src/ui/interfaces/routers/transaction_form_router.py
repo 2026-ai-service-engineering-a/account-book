@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ui.application.dto import Direction, Period, Transaction
 from ui.application.errors import LedgerValidationError
-from ui.application.values import TransactionId
+from ui.application.values import IdempotencyKey, TransactionId
 from ui.interfaces.forms.transaction_form import TransactionForm
 from ui.interfaces.services import Services, ServicesDep
 from ui.interfaces.templating import is_htmx, render
@@ -66,7 +66,9 @@ async def delete(
     services: ServicesDep, transaction_id: str, idempotency_key: Annotated[str, Form()]
 ) -> RedirectResponse:
     transaction = await services.transactions.get(TransactionId(transaction_id))
-    await services.transactions.delete(TransactionId(transaction_id), idempotency_key)
+    await services.transactions.delete(
+        TransactionId(transaction_id), IdempotencyKey(idempotency_key)
+    )
     period = Period.of(transaction.occurred_at.astimezone(services.zone()).date())
     return RedirectResponse(f"/transactions?period={period}", status_code=303)
 
@@ -96,11 +98,12 @@ async def _save(request: Request, services: Services, existing: Transaction | No
     form = TransactionForm.from_mapping(await request.form())
     draft, errors = form.parse(services.zone())
     if draft is not None:
+        key = IdempotencyKey(form.idempotency_key)
         try:
             if existing is None:
-                saved = await services.transactions.create(draft, form.idempotency_key)
+                saved = await services.transactions.create(draft, key)
             else:
-                saved = await services.transactions.update(existing.id, draft, form.idempotency_key)
+                saved = await services.transactions.update(existing.id, draft, key)
         except LedgerValidationError as error:
             errors = error.details
         else:

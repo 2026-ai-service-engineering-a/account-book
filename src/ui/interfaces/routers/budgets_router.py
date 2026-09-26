@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse
 
 from ui.application.dto import BudgetStatus, Period
 from ui.application.errors import LedgerValidationError
-from ui.application.values import CategoryId, Money
+from ui.application.values import CategoryId, IdempotencyKey, Money
 from ui.interfaces.services import Services, ServicesDep
 from ui.interfaces.templating import render
 
@@ -58,7 +58,9 @@ async def budget_save(
         return _edit_row(request, status, amount, "숫자로 넣어 주세요. 비우면 예산을 지웁니다.")
     try:
         saved = await services.budgets.set_limit(
-            CategoryId(category_id), Money(int(digits)) if digits else None, idempotency_key
+            CategoryId(category_id),
+            Money(int(digits)) if digits else None,
+            IdempotencyKey(idempotency_key),
         )
     except LedgerValidationError as error:
         return _edit_row(request, status, amount, " ".join(error.details.values()))

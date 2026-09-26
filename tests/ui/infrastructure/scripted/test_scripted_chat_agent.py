@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from tests.ui.conftest import draft
+from tests.ui.conftest import draft, key
 from ui.application.dto import Source
 from ui.application.values import CategoryId, Money
 from ui.infrastructure.memory import (
@@ -63,7 +63,7 @@ def test_cancel_writes_nothing_and_cannot_replay(agent, store):
 
 def test_budget_line_after_record(agent, store):
     store.limits[CategoryId("food")] = Money(300_000)
-    asyncio.run(MemoryTransactionGateway(store).create(draft(amount=173_800, day=2), "k"))
+    asyncio.run(MemoryTransactionGateway(store).create(draft(amount=173_800, day=2), key("k")))
     proposal = collect(agent.run("어제 점심 김밥천국 8500원"))[2].proposal
     text = collect(agent.decide(proposal.id, accepted=True))[-2].text
     assert "9월 식비 182,300원 / 예산 300,000원 (60%)." in text
@@ -71,7 +71,9 @@ def test_budget_line_after_record(agent, store):
 
 
 def test_question_is_answered_from_report(agent, store):
-    asyncio.run(MemoryTransactionGateway(store).create(draft(amount=31_000, category="cafe"), "k"))
+    asyncio.run(
+        MemoryTransactionGateway(store).create(draft(amount=31_000, category="cafe"), key("k"))
+    )
     events = collect(agent.run("이번 달 카페에 얼마 썼어?"))
     assert events[0].text == "summarize_spending"
     assert events[-2].text == "이번 달 카페에 31,000원 썼어요."

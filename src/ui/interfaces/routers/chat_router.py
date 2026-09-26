@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from ui.application.dto import ChatEvent, Period, TransactionFilter
 from ui.application.values import ProposalId
 from ui.interfaces.presenters.tool_labels import progress_label
-from ui.interfaces.request_id import request_id_of
+from ui.interfaces.request_id import RequestId, request_id_of
 from ui.interfaces.services import ServicesDep
 from ui.interfaces.templating import fragment, render
 
@@ -72,7 +72,7 @@ def _stream(request: Request, events: AsyncIterator[ChatEvent]) -> StreamingResp
     )
 
 
-def _encode(event: ChatEvent, request_id: str) -> str:
+def _encode(event: ChatEvent, request_id: RequestId) -> str:
     """SSE 한 덩어리. 화면에 붙일 조각은 서버가 그려 보낸다 — JS는 붙이기만 한다."""
     if event.kind == "tool":
         data = progress_label(event.text)

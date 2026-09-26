@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse
 
 from ui.application.dto import Direction, Period, TransactionFilter
 from ui.application.errors import TransactionNotFound
-from ui.application.values import CategoryId, TransactionId
+from ui.application.values import CategoryId, PageCursor, TransactionId
 from ui.interfaces.services import Services, ServicesDep
 from ui.interfaces.templating import render
 
@@ -65,12 +65,12 @@ async def transactions_results(
 async def transactions_more(
     request: Request, services: ServicesDep, criteria: FilterDep, cursor: str = "", last: str = ""
 ) -> HTMLResponse:
-    context = await _list_context(services, criteria, cursor or None)
+    context = await _list_context(services, criteria, PageCursor(cursor) if cursor else None)
     return render(request, "partials/transaction_rows.html", context | {"last_day": last})
 
 
 async def _list_context(
-    services: Services, criteria: TransactionFilter, cursor: str | None = None
+    services: Services, criteria: TransactionFilter, cursor: PageCursor | None = None
 ) -> dict[str, object]:
     page = await services.transactions.search(criteria, cursor)
     categories = await services.catalog.categories()

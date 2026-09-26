@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from ui.application.dto import Direction, TransactionDraft
-from ui.application.values import AccountId, CategoryId, Money
+from ui.application.values import AccountId, CategoryId, IdempotencyKey, Money
 from ui.infrastructure.memory import MemoryStore
 
 SEOUL = ZoneInfo("Asia/Seoul")
@@ -47,3 +47,7 @@ def draft(
         account_id=AccountId("card"),
         merchant=merchant,
     )
+
+
+def key(name: str) -> IdempotencyKey:
+    return IdempotencyKey(name)

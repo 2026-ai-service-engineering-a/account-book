@@ -3,7 +3,7 @@ from __future__ import annotations
 from ui.application.dto import BudgetStatus, Category, Direction, Period, TransactionFilter
 from ui.application.errors import LedgerValidationError
 from ui.application.ports import Clock
-from ui.application.values import CategoryId, Money
+from ui.application.values import CategoryId, IdempotencyKey, Money
 
 from . import pace_math
 from .memory_store import MemoryStore
@@ -27,7 +27,7 @@ class MemoryBudgetGateway:
         return self._status(self._expense_category(category_id), period)
 
     async def set_limit(
-        self, category_id: CategoryId, amount: Money | None, idempotency_key: str
+        self, category_id: CategoryId, amount: Money | None, idempotency_key: IdempotencyKey
     ) -> BudgetStatus:
         category = self._expense_category(category_id)
         if amount is None:

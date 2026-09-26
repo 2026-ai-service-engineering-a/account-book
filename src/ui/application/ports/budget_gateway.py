@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from ui.application.dto import BudgetStatus, Period
-from ui.application.values import CategoryId, Money
+from ui.application.values import CategoryId, IdempotencyKey, Money
 
 
 class BudgetGateway(Protocol):
@@ -16,7 +16,7 @@ class BudgetGateway(Protocol):
     async def status(self, category_id: CategoryId, period: Period) -> BudgetStatus: ...
 
     async def set_limit(
-        self, category_id: CategoryId, amount: Money | None, idempotency_key: str
+        self, category_id: CategoryId, amount: Money | None, idempotency_key: IdempotencyKey
     ) -> BudgetStatus:
         """`None`이면 예산을 지운다."""
         ...
