@@ -17,7 +17,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 ---
 
-## 1. AI가 들어갈 자리는 셋이다
+## 1. AI가 들어갈 자리는 넷이다
 
 사람이 손으로 하던 판단 한 가지씩을 대신하는 자리다. 셋 다 Protocol 하나와 각본 대역
 하나로 되어 있다. 대역은 키 없이 돌고, **스스로 대역이라고 말한다.**
@@ -27,6 +27,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | `ChatAgent` | 자연어 한 줄 → 거래 제안이나 답 | `ScriptedChatAgent` — 정해진 모양만 알아듣는다 | `agent`의 `POST /chat` SSE |
 | `CategorySuggester` | 가맹점명 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | api의 `POST /v1/categories/suggest` |
 | `ReportNarrator` | 리포트의 "눈에 띈 것" 문장 | `ScriptedReportNarrator` — 규칙 문구 | 아직 안 정했다([pages/reports.md 3.2](pages/reports.md#32-눈에-띈-것은-문장으로-낸다)) |
+| `CardMessageReader` | 카드 결제 문자 → 거래 칸 | `ScriptedCardMessageReader` — 승인 문자 한 모양 | `agent`. 엔드포인트는 아직 안 정했다([pages/transaction-form.md 4.4](pages/transaction-form.md#44-카드-문자를-붙여넣으면-채운다)) |
 
 포트는 `src/ui/application/ports/`, 대역은 `src/ui/infrastructure/scripted/`에 있다.
 
@@ -34,6 +35,8 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 - 기록 — 금액이 든 한 줄. `어제 점심 김밥천국 8500원 카드로`, `이마트 3만원 현금`
 - 질문 — `얼마`·`보여줘`·`?`가 든 한 줄. `이번 달 식비 얼마 썼어?`, `지난달 카페에 얼마 썼어?`
+- 카드 문자 — `신한카드(1234)승인 8,500원 09/16 12:31 김밥천국 누적…` 모양 하나. 누적·잔액
+  금액은 거르고, 승인 취소 문자와 금액이 없는 문자는 읽지 않는다고 답한다.
 - 그 밖 — 대역이라 못 알아듣는다고 답한다. **규칙을 늘려 LLM 흉내를 내지 않는다.**
   대역이 똑똑해질수록 진짜로 바꿀 때 무엇이 달라졌는지 가려진다.
 
