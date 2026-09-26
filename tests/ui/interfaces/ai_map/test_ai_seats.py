@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from ui.interfaces.ai_map import BY_KEY, SEATS
@@ -38,3 +40,9 @@ def test_every_listed_screen_shows_the_badge(client, key, path):
     # 목록이 말하는 화면에 실제로 AI 표시가 있어야 한다 — 목록과 화면이 어긋나지 않게
     page = client.get(path)
     assert f'href="/wiki#{key}"' in page.text
+
+
+@pytest.mark.parametrize("seat", SEATS, ids=lambda s: s.key)
+def test_cited_doc_exists(seat):
+    # 위키가 가리키는 정본이 옮겨지거나 지워지면 여기서 걸린다
+    assert Path(seat.doc.split()[0]).is_file()

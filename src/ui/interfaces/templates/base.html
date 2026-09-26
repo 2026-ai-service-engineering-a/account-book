@@ -33,9 +33,10 @@
       <a href="{{ href }}" {% if section == key %}aria-current="page"{% endif %}>{{ icon(glyph) }}<span class="label-text">{{ name }}</span></a>
       {% endfor %}
     </nav>
+    <a class="wiki-link" href="/wiki" {% if section == "wiki" %}aria-current="page"{% endif %}>{{ icon("book") }}<span class="label-text">AI 위키</span></a>
   </div>
 </header>
-<main class="container">
+<main class="container {% block main_class %}{% endblock %}">
 {% block main %}{% endblock %}
 </main>
 {% block scripts %}{% endblock %}
