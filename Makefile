@@ -13,9 +13,10 @@ RUN  :=
 endif
 
 MOCK_PORT ?= 8080
+UI_PORT ?= 8080
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up down shell mock review check lint format type test all
+.PHONY: help env build up down shell mock ui review check lint format type test all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -38,6 +39,10 @@ shell:  ## 컨테이너 안으로 들어간다
 mock:  ## 목 UI를 띄운다 — http://localhost:8080 (Ctrl+C로 멈춘다)
 	@echo "http://localhost:$(MOCK_PORT)"
 	$(RUN) python3 -m http.server $(MOCK_PORT) --directory mock_ui --bind 0.0.0.0
+
+ui:  ## 대역으로 도는 ui를 띄운다 — http://localhost:8080 (Ctrl+C로 멈춘다)
+	@echo "http://localhost:$(UI_PORT)"
+	$(RUN) uvicorn ui.main:create_app --factory --reload --app-dir src --host 0.0.0.0 --port $(UI_PORT)
 
 review:  ## finish 전 점검 — BASE 이후 바뀐 파일만 (기본 develop)
 	$(EXEC) python3 scripts/check_file_length.py --base $(BASE)

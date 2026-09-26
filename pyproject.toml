@@ -24,8 +24,9 @@ select = [
 python_version = "3.13"
 strict = true
 warn_unreachable = true
-# 검사 대상은 우리 코드뿐. src·tests가 생기면 여기에 더한다.
-files = ["scripts"]
+# 검사 대상은 우리 코드뿐.
+files = ["src", "tests", "scripts"]
+mypy_path = "src"
 plugins = ["pydantic.mypy"]
 
 # 외부 패키지: 따라 들어가되 그쪽 오류는 보고하지 않는다.
@@ -40,6 +41,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 markers = [
     "integration: 실제 DB 등 외부 의존이 필요한 테스트",
 ]
