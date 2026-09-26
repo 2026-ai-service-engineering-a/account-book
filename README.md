@@ -8,8 +8,9 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 도메인 서버(`api`)와 에이전트(`agent`)는 화면을 갖지 않는 **헤드리스**이고, 사람이 보는
 화면은 별도의 `ui` 서버가 맡는다. 전체는 docker compose 하나로 뜬다.
 
-> 이 문서는 **설계 문서**다. 아직 코드는 없고, 여기서 정한 형태대로 다음 단계에서
-> `docker-compose.yml` / `.env.sample` / 서비스 코드를 붙인다.
+> 이 문서는 **설계 문서**다. 코드는 아직 `ui` 하나뿐이고, 그것도 `api`·`agent` 자리에
+> 대역을 세워 돈다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)). 나머지는 여기서 정한
+> 형태대로 다음 단계에서 붙인다.
 >
 > 코드를 쓰기 전에 [docs/development-rules.md](docs/development-rules.md)를 읽는다 —
 > 파일·클래스 규칙, 계층 의존 규칙, 테스트 배치가 거기 있다.
@@ -185,6 +186,7 @@ account-book/
 │   └── release.md
 ├── ui_docs/             # 이 프로젝트에만 해당하는 화면 설계
 │   ├── ui-design.md     # 모든 화면에 걸리는 공통 규칙
+│   ├── stand-ins.md     # api·agent 없이 ui를 돌리는 대역과 AI 자리
 │   └── pages/           # 화면 하나에 문서 하나
 │       ├── chat.md
 │       ├── transactions.md
@@ -229,6 +231,10 @@ make shell    # 컨테이너 안으로
 
 화면 설계를 눈으로 보려면 `make mock` — 서버 없는 정적 목 UI가
 <http://localhost:8080>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
+
+화면을 실제로 만져 보려면 `make ui` — `api`·`agent` 자리에 대역을 세운 진짜 `ui`가
+같은 포트에 뜬다. 버튼이 전부 동작하고, AI가 들어갈 자리 셋은 각본 대역이 채운다
+([ui_docs/stand-ins.md](ui_docs/stand-ins.md)). 둘은 같은 포트를 쓰니 하나씩 띄운다.
 
 compose에는 지금 `dev` 컨테이너 하나뿐이다. `db`·`api`·`agent`·`ui`는 각 코드가
 생길 때 붙는다.

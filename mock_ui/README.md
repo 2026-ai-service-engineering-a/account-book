@@ -11,8 +11,8 @@ make mock      # http://localhost:8080
 
 ## 무엇이 아닌가
 
-- `src/ui`가 아니다. 진짜 `ui` 서버는 FastAPI + Jinja2 + HTMX로 따로 만든다
-  ([../README.md](../README.md) 3장).
+- `src/ui`가 아니다. 진짜 `ui` 서버는 FastAPI + Jinja2 + HTMX로 따로 있고
+  `make ui`로 뜬다([../ui_docs/stand-ins.md](../ui_docs/stand-ins.md)).
 - `api`·`agent`를 부르지 않는다. 네트워크 호출이 하나도 없다.
 - 개발 룰의 적용 대상이 아니다. 계층도 테스트도 없다. 버려질 수 있는 코드다.
 
