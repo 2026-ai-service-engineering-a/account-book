@@ -44,6 +44,10 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 4. **요약 (report)** — 주간/월간 리포트. 큰 변화가 있는 항목만 골라 설명.
 5. **경고 (watch)** — 예산 소진 속도, 평소와 다른 지출, 중복 결제 의심 건 지적.
 
+이 다섯을 실제로 어떻게 만드는지는 [docs/ai/](docs/ai/README.md)에 있다. 기능 하나에 문서
+하나이고, 공통으로 걸리는 원칙(숫자는 DB가 낸다, 근거가 없으면 답하지 않는다, AI를 끄면
+가계부는 그대로 돈다)은 그 폴더의 README에 모아 두었다.
+
 ## 3. 시스템 구성
 
 `api`와 `agent`는 헤드리스다. 화면을 갖지 않고 HTTP만 말한다. 사람이 보는 화면은
@@ -182,7 +186,12 @@ account-book/
 │   ├── development-rules.md
 │   ├── api-contract.md
 │   ├── git-flow-guide.md
-│   └── release.md
+│   ├── release.md
+│   └── ai/              # 이 프로젝트의 AI 기능 설계 — 기능 하나에 문서 하나
+│       ├── README.md    # 공통 원칙, 계약에 늘어날 줄
+│       ├── category-suggestion-rag.md
+│       ├── chat-analytics.md
+│       └── agentic-reports.md
 ├── ui_docs/             # 이 프로젝트에만 해당하는 화면 설계
 │   ├── ui-design.md     # 모든 화면에 걸리는 공통 규칙
 │   └── pages/           # 화면 하나에 문서 하나
