@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %} · account-book</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+{% if demo %}
+<div class="stand-in-banner">
+  <span>대역 모드 — api·agent 대신 메모리 저장소와 각본 대역이 답한다. 서버를 끄면 기록이 사라진다.</span>
+  <form method="post" action="/demo/reset">
+    <input type="hidden" name="back" value="{{ request.url.path }}">
+    <button name="filled" value="true">예시로 채우기</button>
+    <button name="filled" value="false">비우기</button>
+  </form>
+</div>
+{% endif %}
+<nav>
+  <a href="/" {% if section == "chat" %}class="on" aria-current="page"{% endif %}>채팅</a>
+  <a href="/transactions" {% if section == "transactions" %}class="on" aria-current="page"{% endif %}>거래</a>
+  <a href="/transactions/new" {% if section == "new" %}class="on" aria-current="page"{% endif %}>입력</a>
+  <a href="/reports" {% if section == "reports" %}class="on" aria-current="page"{% endif %}>리포트</a>
+  <a href="/budgets" {% if section == "budgets" %}class="on" aria-current="page"{% endif %}>예산</a>
+</nav>
+<main>
+{% block main %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

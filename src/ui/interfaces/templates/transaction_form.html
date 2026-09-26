@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ "거래 고치기" if existing else "거래 입력" }}{% endblock %}
+{% block main %}
+<h1>{{ "거래 고치기" if existing else "거래 입력" }}</h1>
+{% if existing and existing.source == "agent" %}<p class="sub">🤖 에이전트가 넣은 기록입니다. 고쳐도 출처는 그대로 남습니다.</p>{% endif %}
+<section>
+  {% include "partials/transaction_form.html" %}
+</section>
+{% if existing %}
+<section>
+  <h2>지우기</h2>
+  <a class="btn danger" href="/transactions/{{ existing.id }}/delete">이 거래 지우기</a>
+</section>
+{% endif %}
+{% endblock %}

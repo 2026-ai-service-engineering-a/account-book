@@ -1,0 +1,18 @@
+<section class="viz">
+  <h2>여섯 달</h2>
+  <div class="legend">
+    <span><i style="background:var(--s1)"></i>지출</span>
+    <span><i style="background:var(--s2)"></i>수입</span>
+  </div>
+  <svg viewBox="0 0 640 196" role="img" aria-label="월별 지출과 수입 막대 그래프">
+    {% for g in month_chart.grid %}
+    <line x1="54" y1="{{ g.y }}" x2="620" y2="{{ g.y }}" class="grid"/>
+    <text x="46" y="{{ g.y + 4 }}" text-anchor="end">{{ g.label }}</text>
+    {% endfor %}
+    {% for m in month_chart.groups %}
+    <path d="{{ m.expense_path }}" fill="var(--s1)"><title>{{ m.expense_title }}</title></path>
+    <path d="{{ m.income_path }}" fill="var(--s2)"><title>{{ m.income_title }}</title></path>
+    <text x="{{ m.center }}" y="190" text-anchor="middle">{{ m.label }}</text>
+    {% endfor %}
+  </svg>
+</section>

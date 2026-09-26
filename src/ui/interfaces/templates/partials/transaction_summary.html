@@ -1,0 +1,6 @@
+<section id="summary" {% if oob %}hx-swap-oob="true"{% endif %}>
+  <div class="totals">
+    <div>지출 합<strong class="amount out">{{ totals.expense | signed("expense") }}</strong></div>
+    <div>수입 합<strong class="amount in">{{ totals.income | signed("income") }}</strong></div>
+  </div>
+</section>

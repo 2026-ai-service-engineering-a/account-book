@@ -1,0 +1,8 @@
+<div id="category-select">
+  <label for="category_id">카테고리</label>
+  <select id="category_id" name="category_id" {% if errors.category_id %}aria-invalid="true"{% endif %}>
+    <option value="" {% if not form.category_id %}selected{% endif %}>고르세요</option>
+    {% for c in categories %}<option value="{{ c.id }}" {% if c.id == form.category_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+  </select>
+  {% if errors.category_id %}<div class="field-error">{{ errors.category_id }}</div>{% endif %}
+</div>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ status }}{% endblock %}
+{% block main %}
+<h1>{{ message }}</h1>
+<section>
+  <p style="margin:0 0 12px">문의할 때 아래 요청 id를 알려 주세요.</p>
+  <p class="sub" style="margin:0 0 16px">요청 id <code>{{ request_id }}</code></p>
+  <a class="btn" href="/">처음으로</a>
+</section>
+{% endblock %}
