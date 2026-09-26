@@ -221,23 +221,25 @@ src/api/
 ### 지금 되는 것 — 개발 기반
 
 ```bash
-make up       # .env를 만들고 도구 컨테이너를 띄운다
+make up       # .env를 만들고 dev·ui 컨테이너를 띄운다 — ui는 http://localhost:8080
 make all      # 규칙 검사 + 린트 + 타입 + 테스트
 make shell    # 컨테이너 안으로
 ```
+
+`requirements*.txt`가 바뀐 뒤에는 이미지를 다시 만든다 — `make build` 또는
+`docker compose up --build`. 옛 이미지로 뜨면 `ui`가 uvicorn을 찾지 못하고 죽는다.
 
 호스트에 필요한 건 `make`와 docker뿐이다. 파이썬도 ruff도 mypy도 설치하지 않는다.
 명령 목록은 그냥 `make`.
 
 화면 설계를 눈으로 보려면 `make mock` — 서버 없는 정적 목 UI가
-<http://localhost:8080>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
+<http://localhost:8081>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
 
-화면을 실제로 만져 보려면 `make ui` — `api`·`agent` 자리에 대역을 세운 진짜 `ui`가
-같은 포트에 뜬다. 버튼이 전부 동작하고, AI가 들어갈 자리 셋은 각본 대역이 채운다
-([ui_docs/stand-ins.md](ui_docs/stand-ins.md)). 둘은 같은 포트를 쓰니 하나씩 띄운다.
+화면을 실제로 만져 보려면 <http://localhost:8080> — `make up`(또는 `docker compose up`)이
+`api`·`agent` 자리에 대역을 세운 진짜 `ui`를 함께 띄운다. 버튼이 전부 동작하고, AI가
+들어갈 자리 셋은 각본 대역이 채운다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)).
 
-compose에는 지금 `dev` 컨테이너 하나뿐이다. `db`·`api`·`agent`·`ui`는 각 코드가
-생길 때 붙는다.
+compose에는 지금 `dev`와 `ui` 둘이다. `db`·`api`·`agent`는 각 코드가 생길 때 붙는다.
 
 ### GitHub Codespaces에서 열기
 

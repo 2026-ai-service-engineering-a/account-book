@@ -5,8 +5,12 @@
 진짜가 생기면 [../src/ui/main.py](../src/ui/main.py)에서 한 줄씩 바꾸고, 화면은 건드리지 않는다.
 
 ```bash
-make ui      # http://localhost:8080
+make up      # dev와 함께 ui 컨테이너가 뜬다 — http://localhost:8080
+make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직접 띄운다
 ```
+
+코드는 바인드 마운트라 `src/`를 고치면 서버가 알아서 다시 뜬다. 다시 뜨면 메모리
+저장소도 새로 채워진다.
 
 [../mock_ui/](../mock_ui/README.md)와 헷갈리지 않는다. 목은 정적 HTML이고 버튼이 아무것도
 하지 않는다. 여기는 버튼이 전부 동작한다 — 뒤에 있는 것이 가짜일 뿐이다.

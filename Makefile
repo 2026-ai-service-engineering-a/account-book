@@ -12,7 +12,7 @@ EXEC :=
 RUN  :=
 endif
 
-MOCK_PORT ?= 8080
+MOCK_PORT ?= 8081
 UI_PORT ?= 8080
 
 .DEFAULT_GOAL := help
@@ -27,7 +27,7 @@ env:  ## .env가 없으면 .env.sample에서 만든다
 build: env  ## 이미지를 빌드한다
 	$(COMPOSE) build
 
-up: env  ## 도구 컨테이너를 띄운다
+up: env  ## dev와 ui 컨테이너를 띄운다 — ui는 http://localhost:8080
 	$(COMPOSE) up -d
 
 down:  ## 컨테이너를 내린다
@@ -36,13 +36,20 @@ down:  ## 컨테이너를 내린다
 shell:  ## 컨테이너 안으로 들어간다
 	$(COMPOSE) exec dev bash
 
-mock:  ## 목 UI를 띄운다 — http://localhost:8080 (Ctrl+C로 멈춘다)
+mock:  ## 목 UI를 띄운다 — http://localhost:8081 (Ctrl+C로 멈춘다)
 	@echo "http://localhost:$(MOCK_PORT)"
 	$(RUN) python3 -m http.server $(MOCK_PORT) --directory mock_ui --bind 0.0.0.0
 
+# 호스트에서는 ui 컨테이너를 띄운다. devcontainer 안에서는 ui 컨테이너가 없으므로
+# (runServices) 이 컨테이너에서 직접 띄운다. 어느 쪽이든 8080이다.
+ifeq ($(wildcard /.dockerenv),)
+ui: env  ## 대역으로 도는 ui를 띄운다 — http://localhost:8080
+	$(COMPOSE) up -d ui
+	@echo "http://localhost:$(UI_PORT)  — 로그는 docker compose logs -f ui"
+else
 ui:  ## 대역으로 도는 ui를 띄운다 — http://localhost:8080 (Ctrl+C로 멈춘다)
-	@echo "http://localhost:$(UI_PORT)"
-	$(RUN) uvicorn ui.main:create_app --factory --reload --app-dir src --host 0.0.0.0 --port $(UI_PORT)
+	uvicorn ui.main:create_app --factory --reload --reload-dir src --app-dir src --host 0.0.0.0 --port 8080
+endif
 
 review:  ## finish 전 점검 — BASE 이후 바뀐 파일만 (기본 develop)
 	$(EXEC) python3 scripts/check_file_length.py --base $(BASE)

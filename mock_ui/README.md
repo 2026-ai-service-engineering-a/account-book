@@ -4,7 +4,7 @@
 데이터는 전부 손으로 써넣은 가짜이며, 버튼은 아무것도 하지 않는다.
 
 ```bash
-make mock      # http://localhost:8080
+make mock      # http://localhost:8081
 ```
 
 개발 컨테이너 안에서 `python3 -m http.server`로 뜬다. 새 의존성은 없다.

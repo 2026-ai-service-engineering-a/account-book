@@ -6,12 +6,14 @@
   "dockerComposeFile": "../docker-compose.yml",
   "service": "dev",
   "workspaceFolder": "/app",
+  // ui 컨테이너는 띄우지 않는다. 안에서 make ui로 직접 띄우고, 포트가 겹치지 않게 한다.
+  "runServices": ["dev"],
 
   // 컨테이너가 만들어진 뒤 .env를 준비한다. 키는 사람이 채운다.
   "postCreateCommand": "make env",
 
-  // 목 UI(make mock)를 브라우저로 내보낸다.
-  "forwardPorts": [8080],
+  // ui(make ui)와 목 UI(make mock)를 브라우저로 내보낸다.
+  "forwardPorts": [8080, 8081],
 
   "customizations": {
     "vscode": {
