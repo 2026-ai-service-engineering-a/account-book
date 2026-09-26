@@ -10,6 +10,7 @@ import random
 from datetime import date, datetime, time
 
 from ui.application.dto import Direction, Period, Source, Transaction
+from ui.application.values import AccountId, CategoryId, Money
 
 from .memory_store import MemoryStore
 
@@ -18,7 +19,11 @@ _DINNER = ("배달의민족", "교촌치킨", "이자카야", "고깃집")
 _CAFE = ("스타벅스", "메가커피", "투썸플레이스", "이디야")
 _LIVING = ("이마트", "쿠팡", "다이소", "올리브영")
 # 주거는 예산을 두지 않는다. 1일에 한 번 나가는 고정비라 일할 페이스가 뜻이 없다.
-_LIMITS = {"food": 300_000, "transport": 100_000, "living": 250_000}
+_LIMITS = {
+    CategoryId("food"): Money(300_000),
+    CategoryId("transport"): Money(100_000),
+    CategoryId("living"): Money(250_000),
+}
 
 
 def seed_demo(store: MemoryStore, now: datetime) -> None:
@@ -40,15 +45,15 @@ def _seed_day(store: MemoryStore, rng: random.Random, day: date, now: datetime) 
         when = datetime.combine(day, at, tzinfo=store.zone)
         if when > now:
             return
-        income = store.categories[category].direction == Direction.INCOME
+        income = store.categories[CategoryId(category)].direction == Direction.INCOME
         source = Source.AGENT if rng.random() < 0.35 else Source.MANUAL
         tx = Transaction(
             id=store.next_id(),
             direction=Direction.INCOME if income else Direction.EXPENSE,
-            amount=amount,
+            amount=Money(amount),
             occurred_at=when,
-            category_id=category,
-            account_id=account,
+            category_id=CategoryId(category),
+            account_id=AccountId(account),
             merchant=merchant,
             memo="",
             source=source,

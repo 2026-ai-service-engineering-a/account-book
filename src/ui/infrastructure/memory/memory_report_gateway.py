@@ -12,6 +12,7 @@ from ui.application.dto import (
     TransactionFilter,
 )
 from ui.application.ports import Clock
+from ui.application.values import CategoryId, Money
 
 from . import pace_math
 from .memory_store import MemoryStore
@@ -44,7 +45,7 @@ class MemoryReportGateway:
             through_day=today.day if Period.of(today) == period else None,
         )
 
-    async def pace(self, category_id: str, period: Period) -> PaceSeries | None:
+    async def pace(self, category_id: CategoryId, period: Period) -> PaceSeries | None:
         limit = self._store.limits.get(category_id)
         category = self._store.categories.get(category_id)
         through = pace_math.elapsed_days(period, self._clock.now().date())
@@ -54,7 +55,7 @@ class MemoryReportGateway:
         series = pace_math.cumulative(
             ((self._store.local_day(t).day, t.amount) for t in rows), through
         )
-        spent = series[-1] if series else 0
+        spent = series[-1] if series else Money(0)
         over_day = pace_math.crossing_day(series, limit, period.days)
         return PaceSeries(
             category=category,
@@ -78,10 +79,14 @@ class MemoryReportGateway:
                 continue
             now = _spent(this_rows, category.id)
             before = _spent(prev_rows, category.id) if prev_rows is not None else None
-            if now == 0 and not before:
+            if not now and not before:
                 continue
             delta = None if before is None else now - before
-            percent = round(abs(delta) * 100 / before) if delta is not None and before else None
+            percent = (
+                round(abs(delta.amount) * 100 / before.amount)
+                if delta is not None and before
+                else None
+            )
             changes.append(CategoryChange(category, now, before, delta, percent))
         return tuple(sorted(changes, key=lambda c: c.this_month, reverse=True))
 
@@ -99,10 +104,10 @@ class MemoryReportGateway:
     @staticmethod
     def _sum(rows: list[Transaction]) -> Totals:
         return Totals(
-            expense=sum(t.amount for t in rows if t.direction == Direction.EXPENSE),
-            income=sum(t.amount for t in rows if t.direction == Direction.INCOME),
+            expense=Money.total(t.amount for t in rows if t.direction == Direction.EXPENSE),
+            income=Money.total(t.amount for t in rows if t.direction == Direction.INCOME),
         )
 
 
-def _spent(rows: list[Transaction] | None, category_id: str) -> int:
-    return sum(t.amount for t in rows or () if t.category_id == category_id)
+def _spent(rows: list[Transaction] | None, category_id: CategoryId) -> Money:
+    return Money.total(t.amount for t in rows or () if t.category_id == category_id)

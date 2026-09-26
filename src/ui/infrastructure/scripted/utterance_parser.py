@@ -4,6 +4,7 @@ import re
 from datetime import time
 
 from ui.application.dto import Direction
+from ui.application.values import AccountId, Money
 
 from .parsed_utterance import ParsedUtterance
 
@@ -30,7 +31,7 @@ class UtteranceParser:
             amount=_amount(text),
             day_offset=next((v for k, v in _DAYS.items() if k in text), 0),
             at=next((v for k, v in _MEALS.items() if k in text), None),
-            account_id=next((v for k, v in _ACCOUNTS.items() if k in text), "card"),
+            account_id=AccountId(next((v for k, v in _ACCOUNTS.items() if k in text), "card")),
             direction=(
                 Direction.INCOME if any(w in text for w in _INCOME_WORDS) else Direction.EXPENSE
             ),
@@ -40,13 +41,13 @@ class UtteranceParser:
         )
 
 
-def _amount(text: str) -> int | None:
+def _amount(text: str) -> Money | None:
     match = _AMOUNT.search(text)
     if match:
         value = int(match.group(1).replace(",", ""))
-        return value * 10_000 if match.group(2) else value
+        return Money(value * 10_000 if match.group(2) else value)
     bare = _BARE_NUMBER.search(text)
-    return int(bare.group(1).replace(",", "")) if bare else None
+    return Money(int(bare.group(1).replace(",", ""))) if bare else None
 
 
 def _strip_particle(word: str) -> str:

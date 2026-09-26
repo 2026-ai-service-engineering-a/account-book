@@ -43,7 +43,7 @@ async def report_page(request: Request, services: ServicesDep, period_text: str)
         "ask_url": "/?q=" + quote(question),
         "ask_label": "왜 늘었는지 물어보기" if rose else "이번 달에 대해 물어보기",
         "category_chart": CategoryBarChart.build(
-            [(c.category.name, c.this_month) for c in report.by_category if c.this_month > 0]
+            [(c.category.name, c.this_month) for c in report.by_category if c.this_month]
         ),
         "pace_chart": PaceChart.build(pace) if pace else None,
         # 막대 하나뿐인 추이는 추이가 아니다 — 첫 달에는 통째로 감춘다
@@ -54,7 +54,7 @@ async def report_page(request: Request, services: ServicesDep, period_text: str)
 
 def _pace_target(budgets: tuple[BudgetStatus, ...]) -> BudgetStatus | None:
     """페이스 차트는 한 장. 넘는(넘은) 카테고리가 먼저, 없으면 가장 많이 쓴 비율."""
-    budgeted = [b for b in budgets if b.limit is not None and b.spent > 0]
+    budgeted = [b for b in budgets if b.limit is not None and b.spent]
     if not budgeted:
         return None
     return max(budgeted, key=lambda b: (b.over_on is not None, b.percent or 0))
@@ -62,8 +62,8 @@ def _pace_target(budgets: tuple[BudgetStatus, ...]) -> BudgetStatus | None:
 
 def _question(report: MonthlyReport) -> tuple[str, bool]:
     """리포트는 *무엇이*까지, *왜*는 대화가 답한다. 질문을 채운 채 채팅으로 넘긴다."""
-    rises = [c for c in report.by_category if c.delta and c.delta > 0]
+    rises = [c for c in report.by_category if c.delta and c.delta.amount > 0]
     if not rises:
         return f"{report.period.month}월 지출 어땠어?", False
-    top = max(rises, key=lambda c: c.delta or 0)
+    top = max(rises, key=lambda c: c.delta.amount if c.delta else 0)
     return f"{report.period.month}월에 {top.category.name} 지출이 왜 늘었어?", True

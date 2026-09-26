@@ -12,19 +12,24 @@ from ui.application.dto import (
     TransactionDraft,
     TransactionFilter,
 )
+from ui.application.values import AccountId, CategoryId, IdempotencyKey, Money, TransactionId
 
 _CATEGORIES = (
-    Category("food", "식비", Direction.EXPENSE),
-    Category("cafe", "카페", Direction.EXPENSE),
-    Category("transport", "교통", Direction.EXPENSE),
-    Category("living", "생활", Direction.EXPENSE),
-    Category("housing", "주거", Direction.EXPENSE),
-    Category("etc", "기타", Direction.EXPENSE),
-    Category("salary", "급여", Direction.INCOME),
-    Category("other_income", "기타수입", Direction.INCOME),
+    Category(CategoryId("food"), "식비", Direction.EXPENSE),
+    Category(CategoryId("cafe"), "카페", Direction.EXPENSE),
+    Category(CategoryId("transport"), "교통", Direction.EXPENSE),
+    Category(CategoryId("living"), "생활", Direction.EXPENSE),
+    Category(CategoryId("housing"), "주거", Direction.EXPENSE),
+    Category(CategoryId("etc"), "기타", Direction.EXPENSE),
+    Category(CategoryId("salary"), "급여", Direction.INCOME),
+    Category(CategoryId("other_income"), "기타수입", Direction.INCOME),
 )
-_ACCOUNTS = (Account("card", "카드"), Account("cash", "현금"), Account("bank", "계좌이체"))
-_MAX_AMOUNT = 10_000_000_000
+_ACCOUNTS = (
+    Account(AccountId("card"), "카드"),
+    Account(AccountId("cash"), "현금"),
+    Account(AccountId("bank"), "계좌이체"),
+)
+_MAX_AMOUNT = Money(10_000_000_000)
 
 
 @dataclass(slots=True)
@@ -36,11 +41,12 @@ class MemoryStore:
     """
 
     zone: ZoneInfo
-    categories: dict[str, Category]
-    accounts: dict[str, Account]
-    transactions: dict[str, Transaction] = field(default_factory=dict)
-    limits: dict[str, int] = field(default_factory=dict)  # category_id → 월 예산
-    replies: dict[str, str] = field(default_factory=dict)  # Idempotency-Key → transaction_id
+    categories: dict[CategoryId, Category]
+    accounts: dict[AccountId, Account]
+    transactions: dict[TransactionId, Transaction] = field(default_factory=dict)
+    limits: dict[CategoryId, Money] = field(default_factory=dict)  # 월 예산
+    # Idempotency-Key → 그 키로 처리한 대상의 id
+    replies: dict[IdempotencyKey, str] = field(default_factory=dict)
     sequence: int = 0
 
     @classmethod
@@ -51,9 +57,9 @@ class MemoryStore:
             accounts={a.id: a for a in _ACCOUNTS},
         )
 
-    def next_id(self) -> str:
+    def next_id(self) -> TransactionId:
         self.sequence += 1
-        return f"t{self.sequence:05d}"
+        return TransactionId(f"t{self.sequence:05d}")
 
     def clear(self) -> None:
         self.transactions.clear()
@@ -77,7 +83,7 @@ class MemoryStore:
     def validate(self, draft: TransactionDraft) -> dict[str, str]:
         """api의 validation_error details 자리. 필드 이름 → 사람이 읽을 문구."""
         errors: dict[str, str] = {}
-        if draft.amount <= 0:
+        if draft.amount <= Money(0):
             errors["amount"] = "금액은 0보다 커야 합니다."
         elif draft.amount > _MAX_AMOUNT:
             errors["amount"] = "금액이 너무 큽니다."

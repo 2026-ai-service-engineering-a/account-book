@@ -22,6 +22,7 @@ from ui.application.ports import (
     ReportGateway,
     TransactionGateway,
 )
+from ui.application.values import CategoryId, IdempotencyKey, Money, ProposalId, RunId
 
 from .parsed_utterance import ParsedUtterance
 from .utterance_parser import UtteranceParser
@@ -58,7 +59,7 @@ class ScriptedChatAgent:
         self._clock = clock
         self._delay = token_delay
         self._parser = UtteranceParser()
-        self._pending: dict[str, tuple[str, TransactionDraft]] = {}
+        self._pending: dict[ProposalId, tuple[RunId, TransactionDraft]] = {}
 
     async def run(self, utterance: str) -> AsyncIterator[ChatEvent]:
         parsed = self._parser.parse(utterance)
@@ -73,7 +74,7 @@ class ScriptedChatAgent:
                 yield event
         yield ChatEvent("done")
 
-    async def decide(self, proposal_id: str, accepted: bool) -> AsyncIterator[ChatEvent]:
+    async def decide(self, proposal_id: ProposalId, accepted: bool) -> AsyncIterator[ChatEvent]:
         pending = self._pending.pop(proposal_id, None)
         if pending is None:
             yield ChatEvent(
@@ -92,7 +93,7 @@ class ScriptedChatAgent:
             return
         yield ChatEvent("tool", "suggest_category")
         suggestion = await self._suggester.suggest(parsed.merchant, parsed.direction)
-        fallback = "etc" if parsed.direction == Direction.EXPENSE else "other_income"
+        fallback = CategoryId("etc" if parsed.direction == Direction.EXPENSE else "other_income")
         category_id = suggestion.category_id if suggestion else fallback
         draft = TransactionDraft(
             direction=parsed.direction,
@@ -103,15 +104,16 @@ class ScriptedChatAgent:
             merchant=parsed.merchant,
         )
         yield ChatEvent("tool", "create_transaction")
-        proposal_id = uuid.uuid4().hex
-        self._pending[proposal_id] = (uuid.uuid4().hex, draft)
+        proposal_id = ProposalId(uuid.uuid4().hex)
+        self._pending[proposal_id] = (RunId(uuid.uuid4().hex), draft)
         yield ChatEvent("proposal", proposal=await self._proposal(proposal_id, draft))
 
-    async def _record(self, run_id: str, draft: TransactionDraft) -> AsyncIterator[ChatEvent]:
+    async def _record(self, run_id: RunId, draft: TransactionDraft) -> AsyncIterator[ChatEvent]:
         yield ChatEvent("tool", "create_transaction")
         try:
             # 재시도해도 같은 키가 나온다 — {run_id}:{호출 순번}
-            saved = await self._transactions.create(draft, f"{run_id}:1", run_id=run_id)
+            key = IdempotencyKey(f"{run_id}:1")
+            saved = await self._transactions.create(draft, key, run_id=run_id)
         except LedgerValidationError as error:
             yield ChatEvent("error", " ".join(error.details.values()), code="validation_error")
             return
@@ -153,10 +155,10 @@ class ScriptedChatAgent:
             )
         else:
             change = next((c for c in report.by_category if c.category.id == named.id), None)
-            spent = change.this_month if change else 0
+            spent = change.this_month if change else Money(0)
             text = f"{when} {named.name}에 {spent:,}원 썼어요."
             if change and change.delta:
-                more = "많습니다" if change.delta > 0 else "적습니다"
+                more = "많습니다" if change.delta.amount > 0 else "적습니다"
                 text += f" 지난달보다 {abs(change.delta):,}원 {more}."
         async for event in self._say(text):
             yield event
@@ -174,7 +176,7 @@ class ScriptedChatAgent:
             return datetime.combine(day.date(), parsed.at, tzinfo=now.tzinfo)
         return day if parsed.day_offset == 0 else day.replace(hour=12, minute=0, second=0)
 
-    async def _proposal(self, proposal_id: str, draft: TransactionDraft) -> Proposal:
+    async def _proposal(self, proposal_id: ProposalId, draft: TransactionDraft) -> Proposal:
         categories = {c.id: c.name for c in await self._catalog.categories()}
         accounts = {a.id: a.name for a in await self._catalog.accounts()}
         return Proposal(

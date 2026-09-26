@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from ui.application.dto import Transaction, TransactionDraft, TransactionFilter, TransactionPage
+from ui.application.values import IdempotencyKey, PageCursor, RunId, TransactionId
 
 
 class TransactionGateway(Protocol):
@@ -11,19 +12,24 @@ class TransactionGateway(Protocol):
     async def exists_any(self) -> bool: ...
 
     async def search(
-        self, criteria: TransactionFilter, cursor: str | None = None, limit: int = 50
+        self, criteria: TransactionFilter, cursor: PageCursor | None = None, limit: int = 50
     ) -> TransactionPage: ...
 
-    async def get(self, transaction_id: str) -> Transaction: ...
+    async def get(self, transaction_id: TransactionId) -> Transaction: ...
 
     async def create(
-        self, draft: TransactionDraft, idempotency_key: str, run_id: str | None = None
+        self, draft: TransactionDraft, idempotency_key: IdempotencyKey, run_id: RunId | None = None
     ) -> Transaction:
         """`run_id`가 있으면 `X-Agent-Run-Id` — 기록의 출처가 agent가 된다."""
         ...
 
     async def update(
-        self, transaction_id: str, draft: TransactionDraft, idempotency_key: str
+        self,
+        transaction_id: TransactionId,
+        draft: TransactionDraft,
+        idempotency_key: IdempotencyKey,
     ) -> Transaction: ...
 
-    async def delete(self, transaction_id: str, idempotency_key: str) -> None: ...
+    async def delete(
+        self, transaction_id: TransactionId, idempotency_key: IdempotencyKey
+    ) -> None: ...

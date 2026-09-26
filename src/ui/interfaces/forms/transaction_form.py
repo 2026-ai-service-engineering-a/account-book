@@ -6,6 +6,7 @@ from dataclasses import dataclass, fields
 from datetime import datetime, tzinfo
 
 from ui.application.dto import Direction, MessageReading, Transaction, TransactionDraft
+from ui.application.values import AccountId, CategoryId, Money
 
 _LOCAL_FORMAT = "%Y-%m-%dT%H:%M"
 
@@ -72,10 +73,10 @@ class TransactionForm:
             return None, errors
         draft = TransactionDraft(
             direction=self.direction_value,
-            amount=int(digits),
+            amount=Money(int(digits)),
             occurred_at=occurred,
-            category_id=self.category_id,
-            account_id=self.account_id,
+            category_id=CategoryId(self.category_id),
+            account_id=AccountId(self.account_id),
             merchant=self.merchant,
             memo=self.memo,
         )

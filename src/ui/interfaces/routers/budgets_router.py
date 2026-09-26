@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 
 from ui.application.dto import BudgetStatus, Period
 from ui.application.errors import LedgerValidationError
+from ui.application.values import CategoryId, IdempotencyKey, Money
 from ui.interfaces.services import Services, ServicesDep
 from ui.interfaces.templating import render
 
@@ -31,13 +32,13 @@ async def budgets_page(request: Request, services: ServicesDep) -> HTMLResponse:
 @router.get("/budgets/{category_id}", response_class=HTMLResponse)
 async def budget_row(request: Request, services: ServicesDep, category_id: str) -> HTMLResponse:
     """취소 — 원래 값으로 되돌린다."""
-    status = await services.budgets.status(category_id, _period(services))
+    status = await services.budgets.status(CategoryId(category_id), _period(services))
     return _row(request, status)
 
 
 @router.get("/budgets/{category_id}/edit", response_class=HTMLResponse)
 async def budget_edit(request: Request, services: ServicesDep, category_id: str) -> HTMLResponse:
-    status = await services.budgets.status(category_id, _period(services))
+    status = await services.budgets.status(CategoryId(category_id), _period(services))
     value = f"{status.limit}" if status.limit is not None else ""
     return _edit_row(request, status, value, "")
 
@@ -52,12 +53,14 @@ async def budget_save(
 ) -> HTMLResponse:
     """줄 단위 저장이 곧 확인이다(budgets.md 4장). 실패하면 그 줄만 에러를 낸다."""
     digits = amount.replace(",", "").replace("원", "").strip()
-    status = await services.budgets.status(category_id, _period(services))
+    status = await services.budgets.status(CategoryId(category_id), _period(services))
     if digits and not digits.isdigit():
         return _edit_row(request, status, amount, "숫자로 넣어 주세요. 비우면 예산을 지웁니다.")
     try:
         saved = await services.budgets.set_limit(
-            category_id, int(digits) if digits else None, idempotency_key
+            CategoryId(category_id),
+            Money(int(digits)) if digits else None,
+            IdempotencyKey(idempotency_key),
         )
     except LedgerValidationError as error:
         return _edit_row(request, status, amount, " ".join(error.details.values()))

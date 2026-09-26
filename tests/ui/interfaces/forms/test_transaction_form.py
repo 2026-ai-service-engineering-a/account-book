@@ -4,6 +4,7 @@ from datetime import datetime
 
 from tests.ui.conftest import NOW, SEOUL
 from ui.application.dto import Direction, MessageReading
+from ui.application.values import Money
 from ui.interfaces.forms.transaction_form import TransactionForm
 
 
@@ -21,7 +22,7 @@ def test_parse_accepts_grouped_amount():
     form = TransactionForm(amount="8,500원", occurred_at="2026-09-16T12:30", category_id="food")
     draft, errors = form.parse(SEOUL)
     assert errors == {}
-    assert draft is not None and draft.amount == 8_500
+    assert draft is not None and draft.amount == Money(8_500)
     assert draft.occurred_at == datetime(2026, 9, 16, 12, 30, tzinfo=SEOUL)
 
 

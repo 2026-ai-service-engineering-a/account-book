@@ -18,8 +18,8 @@ class ScriptedReportNarrator:
     ) -> tuple[str, ...]:
         lines: list[str] = []
         rises = sorted(
-            (c for c in report.by_category if c.delta and c.delta > 0),
-            key=lambda c: c.delta or 0,
+            (c for c in report.by_category if c.delta and c.delta.amount > 0),
+            key=lambda c: c.delta.amount if c.delta else 0,
             reverse=True,
         )
         for change in rises[:2]:

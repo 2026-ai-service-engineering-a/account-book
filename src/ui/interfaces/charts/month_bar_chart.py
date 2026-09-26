@@ -34,7 +34,7 @@ class MonthBarChart:
 
     @classmethod
     def build(cls, months: Sequence[MonthTotal]) -> MonthBarChart:
-        peak = max((max(m.expense, m.income) for m in months), default=0)
+        peak = max((max(m.expense.amount, m.income.amount) for m in months), default=0)
         step = nice_step(peak)
         top = scale_top(peak, step)
 
@@ -50,8 +50,8 @@ class MonthBarChart:
                 _Group(
                     label=name,
                     center=round(center, 1),
-                    expense_path=_top_rounded(center - _BAR - 1, y(month.expense)),
-                    income_path=_top_rounded(center + 1, y(month.income)),
+                    expense_path=_top_rounded(center - _BAR - 1, y(month.expense.amount)),
+                    income_path=_top_rounded(center + 1, y(month.income.amount)),
                     expense_title=f"{name} 지출 {month.expense:,}원",
                     income_title=f"{name} 수입 {month.income:,}원",
                 )

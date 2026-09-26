@@ -12,28 +12,39 @@ from ui.application.dto import (
     Period,
     Totals,
 )
+from ui.application.values import CategoryId, Money
 from ui.infrastructure.scripted import ScriptedReportNarrator
 
-FOOD = Category("food", "식비", Direction.EXPENSE)
-LIVING = Category("living", "생활", Direction.EXPENSE)
-TRANSPORT = Category("transport", "교통", Direction.EXPENSE)
+FOOD = Category(CategoryId("food"), "식비", Direction.EXPENSE)
+LIVING = Category(CategoryId("living"), "생활", Direction.EXPENSE)
+TRANSPORT = Category(CategoryId("transport"), "교통", Direction.EXPENSE)
 
 
 def test_picks_rises_pace_and_calm_budget():
     report = MonthlyReport(
         period=Period(2026, 9),
-        totals=Totals(500_000, 0),
-        previous=Totals(400_000, 0),
+        totals=Totals(Money(500_000), Money(0)),
+        previous=Totals(Money(400_000), Money(0)),
         by_category=(
-            CategoryChange(FOOD, 182_300, 150_000, 32_300, 22),
-            CategoryChange(LIVING, 318_000, 301_000, 17_000, 6),
+            CategoryChange(FOOD, Money(182_300), Money(150_000), Money(32_300), 22),
+            CategoryChange(LIVING, Money(318_000), Money(301_000), Money(17_000), 6),
         ),
         months=(),
         through_day=17,
     )
     budgets = (
-        BudgetStatus(FOOD, 300_000, 182_300, 117_700, 60, 321_705, date(2026, 9, 28)),
-        BudgetStatus(TRANSPORT, 100_000, 40_000, 60_000, 40, 70_000, None),
+        BudgetStatus(
+            FOOD,
+            Money(300_000),
+            Money(182_300),
+            Money(117_700),
+            60,
+            Money(321_705),
+            date(2026, 9, 28),
+        ),
+        BudgetStatus(
+            TRANSPORT, Money(100_000), Money(40_000), Money(60_000), 40, Money(70_000), None
+        ),
     )
     lines = asyncio.run(ScriptedReportNarrator().narrate(report, budgets))
     assert lines == (

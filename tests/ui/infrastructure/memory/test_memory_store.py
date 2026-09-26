@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from tests.ui.conftest import draft
 from ui.application.dto import Direction, Period, Source, Transaction, TransactionFilter
+from ui.application.values import AccountId, CategoryId, Money
 
 
 def put(store, merchant, day, category="food", memo=""):
@@ -12,7 +13,7 @@ def put(store, merchant, day, category="food", memo=""):
         base.amount,
         base.occurred_at,
         base.category_id,
-        "card",
+        AccountId("card"),
         merchant,
         memo,
         Source.MANUAL,
@@ -29,7 +30,7 @@ def test_matching_combines_conditions(store):
     put(store, "스타벅스 강남", 3, "cafe")
     put(store, "김밥천국", 4, memo="스타 모임")
     put(store, "스타벅스", 5, "cafe")
-    criteria = TransactionFilter(Period(2026, 9), Direction.EXPENSE, "cafe", "스타")
+    criteria = TransactionFilter(Period(2026, 9), Direction.EXPENSE, CategoryId("cafe"), "스타")
     assert sorted(t.merchant for t in store.matching(criteria)) == ["스타벅스", "스타벅스 강남"]
     memo_hit = store.matching(TransactionFilter(Period(2026, 9), query="모임"))
     assert [t.merchant for t in memo_hit] == ["김밥천국"]
@@ -45,7 +46,7 @@ def test_validate_all_fields(store):
 
 def test_clear_keeps_catalog(store):
     put(store, "x", 1)
-    store.limits["food"] = 1
+    store.limits[CategoryId("food")] = Money(1)
     store.clear()
     assert (store.transactions, store.limits, store.replies) == ({}, {}, {})
-    assert "food" in store.categories
+    assert CategoryId("food") in store.categories
