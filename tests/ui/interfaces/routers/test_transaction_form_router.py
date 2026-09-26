@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from tests.ui.conftest import FixedClock
 from tests.ui.interfaces.conftest import extract
-from ui.interfaces.routers.transaction_form_router import SAMPLE_MESSAGE
+from ui.interfaces.routers.transaction_form_router import SAMPLE_CARD_MESSAGE, SAMPLE_SENTENCE
 from ui.main import create_app
 
 FORM = {
@@ -103,7 +103,7 @@ def test_category_select_follows_direction_and_suggests(empty_client):
     assert 'value="food" selected' in kept.text  # 사용자가 고른 것은 덮지 않는다
 
 
-# ── 카드 문자로 채우기(transaction-form.md 4.4) ──
+# ── 한 줄로 채우기(transaction-form.md 4.4) ──
 
 READ = "/partials/transaction-form/read"
 HX = {"HX-Request": "true"}
@@ -121,15 +121,15 @@ BLANK = {
 
 def test_new_form_offers_the_box_and_edit_form_does_not(empty_client):
     page = empty_client.get("/transactions/new")
-    assert "카드 문자로 채우기" in page.text and "예시 문자로 해보기" in page.text
+    assert "한 줄로 채우기" in page.text and "카드 문자</button>" in page.text
     empty_client.post("/transactions", data=BLANK | {"amount": "1000", "category_id": "food"})
     listing = empty_client.get("/transactions?period=2026-09").text
     transaction_id = listing.split('href="/transactions/t', 1)[1].split('"', 1)[0]
-    assert "카드 문자로 채우기" not in empty_client.get(f"/transactions/t{transaction_id}").text
+    assert "한 줄로 채우기" not in empty_client.get(f"/transactions/t{transaction_id}").text
 
 
 def test_sample_message_fills_and_marks_fields(empty_client):
-    page = empty_client.post(READ, data=BLANK | {"card_message": SAMPLE_MESSAGE}, headers=HX)
+    page = empty_client.post(READ, data=BLANK | {"capture_text": SAMPLE_CARD_MESSAGE}, headers=HX)
     assert page.status_code == 200 and 'id="site-header"' not in page.text
     for value in ('value="8,500"', 'value="2026-09-16T12:31"', 'value="김밥천국"'):
         assert value in page.text
@@ -142,14 +142,14 @@ def test_sample_message_fills_and_marks_fields(empty_client):
 
 
 def test_unread_fields_keep_user_values_and_are_listed(empty_client):
-    data = BLANK | {"merchant": "스벅", "card_message": "현대카드 승인 5,800원"}
+    data = BLANK | {"merchant": "스벅", "capture_text": "현대카드 승인 5,800원"}
     page = empty_client.post(READ, data=data, headers=HX)
     assert 'value="5,800"' in page.text and 'value="스벅"' in page.text
     assert "읽지 못한 칸: 날짜, 가맹점" in page.text
 
 
 def test_user_chosen_category_is_not_overwritten(empty_client):
-    data = BLANK | {"category_id": "etc", "card_message": SAMPLE_MESSAGE}
+    data = BLANK | {"category_id": "etc", "capture_text": SAMPLE_CARD_MESSAGE}
     page = empty_client.post(READ, data=data, headers=HX)
     assert 'value="etc" selected' in page.text
     assert page.text.count("AI가 채움") == 5
@@ -158,7 +158,7 @@ def test_user_chosen_category_is_not_overwritten(empty_client):
 def test_refusal_changes_nothing(empty_client):
     data = BLANK | {
         "amount": "1,000",
-        "card_message": "신한카드 승인취소 8,500원 09/16 12:31 김밥천국",
+        "capture_text": "신한카드 승인취소 8,500원 09/16 12:31 김밥천국",
     }
     page = empty_client.post(READ, data=data, headers=HX)
     assert 'value="1,000"' in page.text
@@ -167,12 +167,12 @@ def test_refusal_changes_nothing(empty_client):
 
 
 def test_blank_paste(empty_client):
-    page = empty_client.post(READ, data=BLANK | {"card_message": "  "}, headers=HX)
-    assert "붙여넣은 문자가 없어요." in page.text
+    page = empty_client.post(READ, data=BLANK | {"capture_text": "  "}, headers=HX)
+    assert "보낸 내용이 없어요." in page.text
 
 
 def test_filled_form_still_saves_through_the_normal_path(empty_client):
-    page = empty_client.post(READ, data=BLANK | {"card_message": SAMPLE_MESSAGE}, headers=HX)
+    page = empty_client.post(READ, data=BLANK | {"capture_text": SAMPLE_CARD_MESSAGE}, headers=HX)
     assert "AI가 채움" in page.text
     data = BLANK | {
         "amount": "8,500",
@@ -180,7 +180,7 @@ def test_filled_form_still_saves_through_the_normal_path(empty_client):
         "category_id": "food",
         "account_id": "card",
         "merchant": "김밥천국",
-        "card_message": SAMPLE_MESSAGE,
+        "capture_text": SAMPLE_CARD_MESSAGE,
     }
     saved = empty_client.post("/transactions", data=data, follow_redirects=False)
     assert saved.status_code == 303
@@ -189,14 +189,35 @@ def test_filled_form_still_saves_through_the_normal_path(empty_client):
 
 
 def test_without_ai_the_box_disappears_and_form_still_works():
-    app = create_app(clock=FixedClock(), seeded=False, token_delay=0, reader_delay=0)
-    app.state.services = dataclasses.replace(app.state.services, reader=None)
+    app = create_app(clock=FixedClock(), seeded=False, token_delay=0, capture_delay=0)
+    app.state.services = dataclasses.replace(app.state.services, capture=None)
     client = TestClient(app)
-    assert "카드 문자로 채우기" not in client.get("/transactions/new").text
-    assert client.post(READ, data=BLANK | {"card_message": SAMPLE_MESSAGE}).status_code == 404
+    assert "한 줄로 채우기" not in client.get("/transactions/new").text
+    assert client.post(READ, data=BLANK | {"capture_text": SAMPLE_CARD_MESSAGE}).status_code == 404
     saved = client.post(
         "/transactions",
         data=BLANK | {"amount": "1000", "category_id": "food"},
         follow_redirects=False,
     )
     assert saved.status_code == 303
+
+
+def test_sentence_fills_like_a_chat(empty_client):
+    page = empty_client.post(READ, data=BLANK | {"capture_text": SAMPLE_SENTENCE}, headers=HX)
+    for value in ('value="5,000"', 'value="2026-09-17T15:00"', 'value="카페"'):
+        assert value in page.text
+    assert 'value="cafe" selected' in page.text
+    assert 'value="cash" selected' in page.text  # 결제수단을 말하지 않았으니 그대로
+    assert '<div class="bubble me">오늘 오후 3시에 카페에서 5천원 썼어</div>' in page.text
+    assert "확인하고 저장하세요" in page.text
+    assert (
+        'name="capture_text"' in page.text and "5천원 썼어</textarea>" not in page.text
+    )  # 입력칸은 비운다
+
+
+def test_question_is_sent_to_chat(empty_client):
+    page = empty_client.post(
+        READ, data=BLANK | {"capture_text": "이번 달 식비 얼마 썼어?"}, headers=HX
+    )
+    assert "질문은 채팅에서 물어 주세요" in page.text
+    assert "AI가 채움" not in page.text

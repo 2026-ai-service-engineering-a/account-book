@@ -22,7 +22,7 @@ from ui.application.ports import (
     ReportGateway,
     TransactionGateway,
 )
-from ui.application.values import CategoryId, IdempotencyKey, Money, ProposalId, RunId
+from ui.application.values import AccountId, CategoryId, IdempotencyKey, Money, ProposalId, RunId
 
 from .parsed_utterance import ParsedUtterance
 from .utterance_parser import UtteranceParser
@@ -100,7 +100,7 @@ class ScriptedChatAgent:
             amount=parsed.amount,
             occurred_at=self._when(parsed),
             category_id=category_id,
-            account_id=parsed.account_id,
+            account_id=parsed.account_id or AccountId("card"),
             merchant=parsed.merchant,
         )
         yield ChatEvent("tool", "create_transaction")

@@ -11,12 +11,12 @@ from ui.main import create_app
 
 @pytest.fixture
 def empty_client() -> TestClient:
-    return TestClient(create_app(clock=FixedClock(), seeded=False, token_delay=0, reader_delay=0))
+    return TestClient(create_app(clock=FixedClock(), seeded=False, token_delay=0, capture_delay=0))
 
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(create_app(clock=FixedClock(), seeded=True, token_delay=0, reader_delay=0))
+    return TestClient(create_app(clock=FixedClock(), seeded=True, token_delay=0, capture_delay=0))
 
 
 def sse_events(text: str) -> list[tuple[str, str]]:

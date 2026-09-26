@@ -6,7 +6,7 @@ from datetime import datetime
 from tests.ui.conftest import NOW, SEOUL
 from ui.application.dto import Direction, MessageReading
 from ui.application.values import AccountId, Money
-from ui.infrastructure.scripted import ScriptedCardMessageReader
+from ui.infrastructure.scripted import ScriptedCaptureReader
 
 SHINHAN = (
     "[Web발신]\n신한카드(1234)승인\n홍*동\n8,500원 일시불\n09/16 12:31 김밥천국\n누적1,234,500원"
@@ -14,7 +14,7 @@ SHINHAN = (
 
 
 def read(message: str, now: datetime = NOW) -> MessageReading:
-    return asyncio.run(ScriptedCardMessageReader(delay=0).read(message, now))
+    return asyncio.run(ScriptedCaptureReader(delay=0).read(message, now))
 
 
 def test_reads_card_approval():
@@ -58,3 +58,37 @@ def test_refuses_cancellation_and_no_amount():
 
 def test_check_card_is_a_card():
     assert read("KB국민체크(5678)승인 12,000원 09/25 08:10 스타벅스").account_id == "card"
+
+
+# ── 말로 쓴 한 줄 ──
+
+
+def test_sentence_with_clock_and_place():
+    reading = read("오늘 오후 3시에 카페에서 5천원 썼어")
+    assert (reading.amount, reading.merchant, reading.direction) == (
+        Money(5_000),
+        "카페",
+        Direction.EXPENSE,
+    )
+    assert reading.occurred_at == datetime(2026, 9, 17, 15, 0, tzinfo=SEOUL)
+    assert reading.account_id is None  # 말하지 않은 결제수단은 채우지 않는다
+
+
+def test_sentence_without_day_leaves_date_alone():
+    reading = read("스타벅스 4,500원 현금")
+    assert (reading.amount, reading.occurred_at, reading.account_id) == (
+        Money(4_500),
+        None,
+        AccountId("cash"),
+    )
+
+
+def test_yesterday_without_time_is_noon():
+    reading = read("어제 이마트 3만원")
+    assert reading.occurred_at == datetime(2026, 9, 16, 12, 0, tzinfo=SEOUL)
+    assert reading.amount == Money(30_000)
+
+
+def test_sentence_income_and_question():
+    assert read("용돈 10만원 받았어").direction == Direction.INCOME
+    assert "채팅" in read("이번 달 식비 얼마 썼어?").refusal

@@ -274,14 +274,18 @@ a.badge:hover { background: var(--accent); }
 .composer .btn { height: 40px; }
 .examples { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
-/* ── 카드 문자로 채우기 (transaction-form.md 4.4) ── */
-.card-message { display: grid; gap: 10px; padding: 16px; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--muted); }
-.card-message .textarea { background: var(--background); }
-.card-message-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
-.card-message-actions .htmx-indicator { margin-right: auto; font-size: 13px; color: var(--muted-foreground); }
-.read-note { font-size: 13px; margin: 0; }
-.read-note.ok { color: var(--ai); }
-.read-note.warn { color: var(--warning); }
+/* ── 한 줄로 채우기 (transaction-form.md 4.4) — 채팅처럼 생긴 칸 ── */
+.capture { display: grid; gap: 12px; padding: 16px; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--muted); }
+.capture-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.capture-samples { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.capture-log { min-height: 0; gap: 8px; }
+.capture-log .bubble { font-size: 13px; }
+.capture-log .bubble.bot { background: var(--background); border: 1px solid var(--border); }
+.capture-log .bubble.bot.ok { color: var(--ai); }
+.capture-log .bubble.bot.warn { color: var(--warning); }
+.capture .composer .textarea { background: var(--background); }
+.capture .htmx-indicator.thinking { display: none; }
+.capture .htmx-indicator.thinking.htmx-request { display: flex; }
 .ai-tag {
   display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 4px;
   font-size: 11px; font-weight: 500; color: var(--ai); background: var(--ai-bg);
