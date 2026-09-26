@@ -51,3 +51,7 @@ def test_refuses_cancellation_and_no_amount():
     assert "취소" in read("신한카드 승인취소 8,500원 09/16 12:31 김밥천국").refusal
     refused = read("오늘 저녁 뭐 먹지")
     assert refused.refusal and refused.amount is None
+
+
+def test_check_card_is_a_card():
+    assert read("KB국민체크(5678)승인 12,000원 09/25 08:10 스타벅스").account_id == "card"

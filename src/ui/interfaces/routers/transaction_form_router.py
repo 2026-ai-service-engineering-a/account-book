@@ -3,10 +3,10 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Form, Request, Response
+from fastapi import APIRouter, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ui.application.dto import Direction, Period, Transaction
+from ui.application.dto import Category, Direction, MessageReading, Period, Transaction
 from ui.application.errors import LedgerValidationError
 from ui.interfaces.forms.transaction_form import TransactionForm
 from ui.interfaces.services import Services, ServicesDep
@@ -14,6 +14,11 @@ from ui.interfaces.templating import is_htmx, render
 
 router = APIRouter()
 _LAST_ACCOUNT = "last_account"
+_READ_FIELDS = {"amount": "금액", "occurred_at": "날짜", "merchant": "가맹점"}
+# 대역 모드에서 "예시 문자로 해보기"가 붙여넣는 문자. 이름과 카드 번호는 가렸다.
+SAMPLE_MESSAGE = (
+    "[Web발신]\n신한카드(1234)승인\n홍*동\n8,500원 일시불\n09/16 12:31 김밥천국\n누적1,234,500원"
+)
 
 
 @router.get("/transactions/new", response_class=HTMLResponse)
@@ -79,14 +84,53 @@ async def category_select(
     """방향을 바꾸거나 가맹점을 넣으면 카테고리 셀렉트 하나만 갈아끼운다."""
     form = TransactionForm(direction=direction, category_id=category_id, merchant=merchant)
     categories = await services.catalog.categories(form.direction_value)
+    await _suggest_category(services, form, categories)
+    context = {"form": form, "categories": categories, "errors": {}, "filled": frozenset()}
+    return render(request, "partials/category_select.html", context)
+
+
+@router.post("/partials/transaction-form/read", response_class=HTMLResponse)
+async def read_card_message(request: Request, services: ServicesDep) -> HTMLResponse:
+    """카드 문자를 붙여넣으면 폼 하나를 다시 그린다. 채우기까지만 — 저장은 사람이 누른다."""
+    if services.reader is None:
+        raise HTTPException(status_code=404)
+    data = await request.form()
+    form = TransactionForm.from_mapping(data)
+    raw = data.get("card_message")
+    message = raw.strip() if isinstance(raw, str) else ""
+    if not message:
+        return await _render_form(request, services, form, {}, None, note="붙여넣은 문자가 없어요.")
+    reading = await services.reader.read(message, services.clock.now())
+    filled = form.apply(reading, services.zone())
+    if filled:
+        categories = await services.catalog.categories(form.direction_value)
+        if await _suggest_category(services, form, categories):
+            filled |= {"category_id"}
+    note = _reading_note(reading, filled)
+    return await _render_form(
+        request, services, form, {}, None, filled=filled, note=note, message=message
+    )
+
+
+async def _suggest_category(
+    services: Services, form: TransactionForm, categories: tuple[Category, ...]
+) -> bool:
+    """제안은 비어 있을 때만 채운다. 사용자가 고른 것은 덮지 않는다(4.1). 채웠으면 True."""
     if form.category_id not in {c.id for c in categories}:
         form.category_id = ""
-    if not form.category_id and form.merchant:
-        # 제안은 비어 있을 때만 채운다. 사용자가 고른 것은 덮지 않는다(4.1).
-        suggestion = await services.suggester.suggest(form.merchant, form.direction_value)
-        form.category_id = suggestion.category_id if suggestion else ""
-    context = {"form": form, "categories": categories, "errors": {}}
-    return render(request, "partials/category_select.html", context)
+    if form.category_id or not form.merchant:
+        return False
+    suggestion = await services.suggester.suggest(form.merchant, form.direction_value)
+    form.category_id = suggestion.category_id if suggestion else ""
+    return suggestion is not None
+
+
+def _reading_note(reading: MessageReading, filled: frozenset[str]) -> str:
+    if not filled:
+        return reading.refusal or "읽을 수 있는 내용이 없어요."
+    missed = [name for key, name in _READ_FIELDS.items() if key not in filled]
+    note = "문자를 읽어 표시한 칸을 채웠어요. 확인하고 저장하세요."
+    return f"{note} 읽지 못한 칸: {', '.join(missed)}" if missed else note
 
 
 async def _save(request: Request, services: Services, existing: Transaction | None) -> Response:
@@ -123,9 +167,19 @@ async def _render_form(
     form: TransactionForm,
     errors: dict[str, str],
     existing: Transaction | None,
+    *,
+    filled: frozenset[str] = frozenset(),
+    note: str = "",
+    message: str = "",
 ) -> HTMLResponse:
     """검증에 걸리면 폼 조각만 다시 그린다. 이미 쓴 값은 그대로 들어 있다."""
     context = {
+        # 카드 문자 칸은 새로 넣을 때만. AI가 꺼져 있으면 칸이 없다(4.4).
+        "reader_on": services.reader is not None and existing is None,
+        "sample_message": SAMPLE_MESSAGE if services.demo is not None else "",
+        "filled": filled,
+        "reading_note": note,
+        "card_message": message,
         "section": "new" if existing is None else "transactions",
         "form": form,
         "errors": errors,

@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, fields
 from datetime import datetime, tzinfo
 
-from ui.application.dto import Direction, Transaction, TransactionDraft
+from ui.application.dto import Direction, MessageReading, Transaction, TransactionDraft
 
 _LOCAL_FORMAT = "%Y-%m-%dT%H:%M"
 
@@ -80,3 +80,27 @@ class TransactionForm:
             memo=self.memo,
         )
         return draft, {}
+
+    def apply(self, reading: MessageReading, zone: tzinfo) -> frozenset[str]:
+        """읽은 칸만 덮고, 덮은 칸 이름을 돌려준다. 화면이 그 칸에 표시를 단다.
+
+        붙여넣기는 사용자가 채우라고 시킨 것이라 기존 값을 덮는다(transaction-form.md 4.4).
+        금액을 못 읽었으면 아무 칸도 바꾸지 않는다.
+        """
+        if reading.refusal or reading.amount is None:
+            return frozenset()
+        filled = {"amount"}
+        self.amount = f"{reading.amount:,}"
+        if reading.direction is not None:
+            self.direction = reading.direction.value
+            filled.add("direction")
+        if reading.occurred_at is not None:
+            self.occurred_at = reading.occurred_at.astimezone(zone).strftime(_LOCAL_FORMAT)
+            filled.add("occurred_at")
+        if reading.account_id is not None:
+            self.account_id = reading.account_id
+            filled.add("account_id")
+        if reading.merchant is not None:
+            self.merchant = reading.merchant
+            filled.add("merchant")
+        return frozenset(filled)

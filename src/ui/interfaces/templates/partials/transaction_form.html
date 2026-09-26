@@ -1,11 +1,35 @@
 {% set action = "/transactions/" ~ existing.id if existing else "/transactions" %}
+{% set filled = filled or () %}
+{% macro mark(name) %}{% if name in filled %}<span class="ai-tag">AI가 채움</span>{% endif %}{% endmacro %}
 <form id="transaction-form" method="post" action="{{ action }}"
       hx-post="{{ action }}" hx-target="#transaction-form" hx-swap="outerHTML"
       hx-disabled-elt="find button[type=submit]">
   <input type="hidden" name="idempotency_key" value="{{ form.idempotency_key }}">
 
+  {% if reader_on %}
+  <div class="card-message">
+    <label for="card_message">카드 문자로 채우기 <span class="ai-tag">AI</span></label>
+    {# 붙여넣으면 바로 읽는다. paste는 값이 들어가기 전에 불리므로 한 박자 늦춘다 #}
+    <textarea id="card_message" name="card_message" rows="3" placeholder="카드 결제 문자를 여기에 붙여넣으세요"
+              hx-post="/partials/transaction-form/read" hx-trigger="paste delay:50ms"
+              hx-include="closest form" hx-target="#transaction-form" hx-swap="outerHTML"
+              hx-indicator="#read-indicator">{{ card_message }}</textarea>
+    <div class="card-message-actions">
+      <span id="read-indicator" class="htmx-indicator sub">AI가 읽는 중…</span>
+      {% if sample_message %}
+      <button type="button" hx-post="/partials/transaction-form/read" hx-include="closest form"
+              hx-vals='{{ {"card_message": sample_message} | tojson }}'
+              hx-target="#transaction-form" hx-swap="outerHTML" hx-indicator="#read-indicator">예시 문자로 해보기</button>
+      {% endif %}
+      <button type="button" hx-post="/partials/transaction-form/read" hx-include="closest form"
+              hx-target="#transaction-form" hx-swap="outerHTML" hx-indicator="#read-indicator">다시 읽기</button>
+    </div>
+    {% if reading_note %}<p class="read-note {{ 'ok' if filled else 'warn' }}" role="status">{{ reading_note }}</p>{% endif %}
+  </div>
+  {% endif %}
+
   <fieldset>
-    <legend>방향</legend>
+    <legend>방향 {{ mark("direction") }}</legend>
     <div class="radios">
       {% for d in directions %}
       <label>
@@ -18,26 +42,26 @@
     </div>
   </fieldset>
 
-  <label for="amount">금액</label>
-  <input id="amount" name="amount" inputmode="numeric" autocomplete="off" value="{{ form.amount }}"
+  <label for="amount">금액 {{ mark("amount") }}</label>
+  <input id="amount" {% if "amount" in filled %}class="ai-filled"{% endif %} name="amount" inputmode="numeric" autocomplete="off" value="{{ form.amount }}"
          {% if errors.amount %}aria-invalid="true" aria-describedby="amount-error"{% endif %}>
   {% if errors.amount %}<div class="field-error" id="amount-error">{{ errors.amount }}</div>{% endif %}
 
-  <label for="occurred_at">날짜·시각</label>
-  <input id="occurred_at" name="occurred_at" type="datetime-local" value="{{ form.occurred_at }}"
+  <label for="occurred_at">날짜·시각 {{ mark("occurred_at") }}</label>
+  <input id="occurred_at" {% if "occurred_at" in filled %}class="ai-filled"{% endif %} name="occurred_at" type="datetime-local" value="{{ form.occurred_at }}"
          {% if errors.occurred_at %}aria-invalid="true"{% endif %}>
   {% if errors.occurred_at %}<div class="field-error">{{ errors.occurred_at }}</div>{% endif %}
 
   {% include "partials/category_select.html" %}
 
-  <label for="account_id">결제수단</label>
-  <select id="account_id" name="account_id">
+  <label for="account_id">결제수단 {{ mark("account_id") }}</label>
+  <select id="account_id" {% if "account_id" in filled %}class="ai-filled"{% endif %} name="account_id">
     {% for a in accounts %}<option value="{{ a.id }}" {% if a.id == form.account_id %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
   </select>
   {% if errors.account_id %}<div class="field-error">{{ errors.account_id }}</div>{% endif %}
 
-  <label for="merchant">가맹점</label>
-  <input id="merchant" name="merchant" value="{{ form.merchant }}" placeholder="선택" autocomplete="off"
+  <label for="merchant">가맹점 {{ mark("merchant") }}</label>
+  <input id="merchant" {% if "merchant" in filled %}class="ai-filled"{% endif %} name="merchant" value="{{ form.merchant }}" placeholder="선택" autocomplete="off"
          hx-get="/partials/category-select" hx-trigger="change" hx-include="closest form"
          hx-target="#category-select" hx-swap="outerHTML">
 

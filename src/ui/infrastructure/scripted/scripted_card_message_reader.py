@@ -37,7 +37,7 @@ class ScriptedCardMessageReader:
             direction=_direction(message),
             amount=amount,
             occurred_at=_when(message, now),
-            account_id="card" if "카드" in message else ("bank" if "입금" in message else None),
+            account_id=_account(message),
             merchant=_merchant(message),
         )
 
@@ -49,6 +49,14 @@ def _amount(message: str) -> int | None:
         if not any(word in before for word in _RUNNING_TOTALS):
             return int(match.group(1).replace(",", ""))
     return None
+
+
+def _account(message: str) -> str | None:
+    if (
+        "카드" in message or "체크" in message
+    ):  # "KB국민체크(5678)승인" — 체크카드는 카드라고 안 쓴다
+        return "card"
+    return "bank" if "입금" in message else None
 
 
 def _direction(message: str) -> Direction | None:

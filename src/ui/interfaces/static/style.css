@@ -209,3 +209,22 @@ th.progress-col { width: 110px; }
   th.progress-col { width: 70px; }
   .inline-edit input { width: 110px; }
 }
+
+/* 카드 문자로 채우기 — AI가 채운 칸은 사람이 확인할 곳이다(transaction-form.md 4.4) */
+.card-message {
+  border: 1px dashed var(--line); border-radius: 8px; padding: 4px 14px 14px; margin-bottom: 6px;
+  background: var(--bg);
+}
+.card-message textarea { resize: vertical; font-size: 14px; }
+.card-message-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 8px; }
+.card-message-actions button { font-size: 13px; padding: 5px 12px; }
+.card-message-actions .htmx-indicator { margin: 0 auto 0 0; }
+.read-note { font-size: 13px; margin: 10px 0 0; }
+.read-note.ok { color: #1d4ed8; }
+.read-note.warn { color: var(--warn); }
+.ai-tag {
+  display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px;
+  font-size: 11px; line-height: 18px; color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe;
+  vertical-align: 1px;
+}
+.ai-filled { border-color: #93c5fd; background: #f8fbff; }

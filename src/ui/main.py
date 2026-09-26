@@ -22,6 +22,7 @@ from ui.infrastructure.memory import (
 )
 from ui.infrastructure.memory.demo_seed import seed_demo
 from ui.infrastructure.scripted import (
+    ScriptedCardMessageReader,
     ScriptedCategorySuggester,
     ScriptedChatAgent,
     ScriptedReportNarrator,
@@ -37,6 +38,7 @@ def create_app(
     clock: Clock | None = None,
     seeded: bool = True,
     token_delay: float = 0.03,
+    reader_delay: float = 0.4,
 ) -> FastAPI:
     settings = settings or Settings()
     zone = ZoneInfo(settings.user_timezone)
@@ -64,5 +66,6 @@ def create_app(
             narrator=ScriptedReportNarrator(),
             clock=clock,
             demo=MemoryDemoData(store, clock),
+            reader=ScriptedCardMessageReader(delay=reader_delay),
         )
     )
