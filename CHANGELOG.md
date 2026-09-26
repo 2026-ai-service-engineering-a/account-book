@@ -16,6 +16,9 @@
 - **카드 문자로 채우기** — 거래 폼에 카드 결제 문자를 붙여넣으면 금액·날짜·가맹점·
   결제수단·카테고리가 채워진다. 저장은 사람이 누른다. 지금은 각본 대역이 읽는다.
   ([ui_docs/pages/transaction-form.md](ui_docs/pages/transaction-form.md) 4.4)
+- **개발용 compose** — `docker-compose.dev.yml`을 기본 위에 겹쳐 쓴다. `make dev`로 띄우면
+  코드·템플릿·CSS는 저장하는 대로, 의존성은 Compose Watch가 이미지를 다시 만들어 반영한다.
+  기본 `docker-compose.yml`은 코드를 이미지에 구워 운영처럼 뜬다. ([README.md](README.md) 9장)
 
 ## 0.1.1 — 2026-09-17
 
