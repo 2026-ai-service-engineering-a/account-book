@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
 
 from fastapi import Request
 from fastapi.responses import HTMLResponse
@@ -14,7 +13,7 @@ from .request_id import request_id_of
 _TEMPLATES = Path(__file__).parent / "templates"
 
 
-def _page_context(request: Request) -> dict[str, Any]:
+def _page_context(request: Request) -> dict[str, object]:
     services = getattr(request.app.state, "services", None)
     return {
         "demo": getattr(services, "demo", None) is not None,
@@ -29,10 +28,10 @@ templates.env.filters.update(won=won, signed=signed_won, grouped=grouped, change
 def render(
     request: Request,
     name: str,
-    context: dict[str, Any] | None = None,
+    context: Mapping[str, object] | None = None,
     status_code: int = 200,
 ) -> HTMLResponse:
-    return templates.TemplateResponse(request, name, context or {}, status_code=status_code)
+    return templates.TemplateResponse(request, name, dict(context or {}), status_code=status_code)
 
 
 def fragment(name: str, context: Mapping[str, object]) -> str:

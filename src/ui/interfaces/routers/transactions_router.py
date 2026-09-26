@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request
@@ -70,7 +70,7 @@ async def transactions_more(
 
 async def _list_context(
     services: Services, criteria: TransactionFilter, cursor: str | None = None
-) -> dict[str, Any]:
+) -> dict[str, object]:
     page = await services.transactions.search(criteria, cursor)
     categories = await services.catalog.categories()
     query = {
