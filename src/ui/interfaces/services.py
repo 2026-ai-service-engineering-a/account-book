@@ -8,6 +8,7 @@ from fastapi import Depends, Request
 
 from ui.application.ports import (
     BudgetGateway,
+    CardMessageReader,
     CatalogGateway,
     CategorySuggester,
     ChatAgent,
@@ -32,6 +33,8 @@ class Services:
     narrator: ReportNarrator
     clock: Clock
     demo: DemoData | None = None
+    # AI를 끄면 None이다. 카드 문자 칸이 사라질 뿐 폼은 그대로 돈다.
+    reader: CardMessageReader | None = None
 
     def zone(self) -> tzinfo:
         """사용자 타임존. 시계가 aware를 내기로 했으니 없으면 조립이 잘못된 것이다."""

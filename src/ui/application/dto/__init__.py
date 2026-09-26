@@ -5,6 +5,7 @@ from .category_change import CategoryChange
 from .category_suggestion import CategorySuggestion
 from .chat_event import ChatEvent, ChatEventKind
 from .direction import Direction
+from .message_reading import MessageReading
 from .month_total import MonthTotal
 from .monthly_report import MonthlyReport
 from .pace_series import PaceSeries
@@ -26,6 +27,7 @@ __all__ = [
     "ChatEvent",
     "ChatEventKind",
     "Direction",
+    "MessageReading",
     "MonthTotal",
     "MonthlyReport",
     "PaceSeries",

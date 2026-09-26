@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+import dataclasses
+
+from fastapi.testclient import TestClient
+
+from tests.ui.conftest import FixedClock
 from tests.ui.interfaces.conftest import extract
+from ui.interfaces.routers.transaction_form_router import SAMPLE_MESSAGE
+from ui.main import create_app
 
 FORM = {
     "direction": "expense",
@@ -93,3 +100,102 @@ def test_category_select_follows_direction_and_suggests(empty_client):
         "/partials/category-select?direction=expense&merchant=스타벅스&category_id=food"
     )
     assert 'value="food" selected' in kept.text  # 사용자가 고른 것은 덮지 않는다
+
+
+# ── 카드 문자로 채우기(transaction-form.md 4.4) ──
+
+READ = "/partials/transaction-form/read"
+HX = {"HX-Request": "true"}
+BLANK = {
+    "direction": "expense",
+    "amount": "",
+    "occurred_at": "2026-09-17T18:00",
+    "category_id": "",
+    "account_id": "cash",
+    "merchant": "",
+    "memo": "회식",
+    "idempotency_key": "form-1",
+}
+
+
+def test_new_form_offers_the_box_and_edit_form_does_not(empty_client):
+    page = empty_client.get("/transactions/new")
+    assert "카드 문자로 채우기" in page.text and "예시 문자로 해보기" in page.text
+    empty_client.post("/transactions", data=BLANK | {"amount": "1000", "category_id": "food"})
+    listing = empty_client.get("/transactions?period=2026-09").text
+    transaction_id = listing.split('href="/transactions/t', 1)[1].split('"', 1)[0]
+    assert "카드 문자로 채우기" not in empty_client.get(f"/transactions/t{transaction_id}").text
+
+
+def test_sample_message_fills_and_marks_fields(empty_client):
+    page = empty_client.post(READ, data=BLANK | {"card_message": SAMPLE_MESSAGE}, headers=HX)
+    assert page.status_code == 200 and "<nav>" not in page.text
+    for value in ('value="8,500"', 'value="2026-09-16T12:31"', 'value="김밥천국"'):
+        assert value in page.text
+    assert 'value="food" selected' in page.text  # 카테고리는 제안이 이어서 채운다
+    assert 'value="card" selected' in page.text
+    assert page.text.count("AI가 채움") == 6
+    assert "확인하고 저장하세요" in page.text
+    assert 'value="form-1"' in page.text  # 멱등성 키는 화면을 열 때 것 그대로
+    assert 'value="회식"' in page.text  # 읽지 않은 칸은 그대로
+
+
+def test_unread_fields_keep_user_values_and_are_listed(empty_client):
+    data = BLANK | {"merchant": "스벅", "card_message": "현대카드 승인 5,800원"}
+    page = empty_client.post(READ, data=data, headers=HX)
+    assert 'value="5,800"' in page.text and 'value="스벅"' in page.text
+    assert "읽지 못한 칸: 날짜, 가맹점" in page.text
+
+
+def test_user_chosen_category_is_not_overwritten(empty_client):
+    data = BLANK | {"category_id": "etc", "card_message": SAMPLE_MESSAGE}
+    page = empty_client.post(READ, data=data, headers=HX)
+    assert 'value="etc" selected' in page.text
+    assert page.text.count("AI가 채움") == 5
+
+
+def test_refusal_changes_nothing(empty_client):
+    data = BLANK | {
+        "amount": "1,000",
+        "card_message": "신한카드 승인취소 8,500원 09/16 12:31 김밥천국",
+    }
+    page = empty_client.post(READ, data=data, headers=HX)
+    assert 'value="1,000"' in page.text
+    assert "승인 취소 문자는 아직 읽지 않아요" in page.text
+    assert "AI가 채움" not in page.text
+
+
+def test_blank_paste(empty_client):
+    page = empty_client.post(READ, data=BLANK | {"card_message": "  "}, headers=HX)
+    assert "붙여넣은 문자가 없어요." in page.text
+
+
+def test_filled_form_still_saves_through_the_normal_path(empty_client):
+    page = empty_client.post(READ, data=BLANK | {"card_message": SAMPLE_MESSAGE}, headers=HX)
+    assert "AI가 채움" in page.text
+    data = BLANK | {
+        "amount": "8,500",
+        "occurred_at": "2026-09-16T12:31",
+        "category_id": "food",
+        "account_id": "card",
+        "merchant": "김밥천국",
+        "card_message": SAMPLE_MESSAGE,
+    }
+    saved = empty_client.post("/transactions", data=data, follow_redirects=False)
+    assert saved.status_code == 303
+    listing = empty_client.get(saved.headers["location"]).text
+    assert "김밥천국" in listing and "누적" not in listing  # 원문은 어디에도 남지 않는다
+
+
+def test_without_ai_the_box_disappears_and_form_still_works():
+    app = create_app(clock=FixedClock(), seeded=False, token_delay=0, reader_delay=0)
+    app.state.services = dataclasses.replace(app.state.services, reader=None)
+    client = TestClient(app)
+    assert "카드 문자로 채우기" not in client.get("/transactions/new").text
+    assert client.post(READ, data=BLANK | {"card_message": SAMPLE_MESSAGE}).status_code == 404
+    saved = client.post(
+        "/transactions",
+        data=BLANK | {"amount": "1000", "category_id": "food"},
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303

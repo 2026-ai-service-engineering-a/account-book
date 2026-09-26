@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from tests.ui.conftest import NOW, SEOUL
-from ui.application.dto import Direction
+from ui.application.dto import Direction, MessageReading
 from ui.application.values import Money
 from ui.interfaces.forms.transaction_form import TransactionForm
 
@@ -38,3 +38,29 @@ def test_from_mapping_ignores_non_text_and_unknown():
     )
     assert form.direction_value == Direction.INCOME
     assert (form.amount, form.memo) == ("10", "")
+
+
+def test_applies_only_what_was_read():
+    form = TransactionForm(merchant="원래 가게", account_id="cash")
+    filled = form.apply(
+        MessageReading(
+            direction=Direction.INCOME,
+            amount=Money(3_200_000),
+            occurred_at=datetime(2026, 9, 10, 9, 0, tzinfo=SEOUL),
+        ),
+        SEOUL,
+    )
+    assert filled == {"amount", "direction", "occurred_at"}
+    assert (form.amount, form.direction, form.occurred_at) == (
+        "3,200,000",
+        "income",
+        "2026-09-10T09:00",
+    )
+    assert (form.merchant, form.account_id) == ("원래 가게", "cash")
+
+
+def test_refusal_or_missing_amount_changes_nothing():
+    form = TransactionForm(amount="1,000")
+    assert form.apply(MessageReading(refusal="못 읽음"), SEOUL) == frozenset()
+    assert form.apply(MessageReading(merchant="가게"), SEOUL) == frozenset()
+    assert (form.amount, form.merchant) == ("1,000", "")

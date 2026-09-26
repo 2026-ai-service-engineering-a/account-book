@@ -13,6 +13,9 @@
   `api`·`agent`는 아직 없어서 그 자리에 메모리 저장소와 각본 대역이 선다.
   AI가 들어갈 자리 셋(대화, 카테고리 제안, 리포트 문장)은 포트로 비워 두었다.
   ([ui_docs/stand-ins.md](ui_docs/stand-ins.md))
+- **카드 문자로 채우기** — 거래 폼에 카드 결제 문자를 붙여넣으면 금액·날짜·가맹점·
+  결제수단·카테고리가 채워진다. 저장은 사람이 누른다. 지금은 각본 대역이 읽는다.
+  ([ui_docs/pages/transaction-form.md](ui_docs/pages/transaction-form.md) 4.4)
 
 ## 0.1.1 — 2026-09-17
 
