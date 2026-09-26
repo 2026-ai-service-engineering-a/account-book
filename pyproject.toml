@@ -36,6 +36,13 @@ disallow_untyped_calls = false
 disallow_subclassing_any = false
 
 [[tool.mypy.overrides]]
+# ruff의 tests/* ANN 예외와 같은 뜻. 서명은 요구하지 않되 본문은 검사한다.
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
 module = ["litellm.*"]   # 스텁 없는 패키지가 나올 때마다 한 줄 추가한다
 ignore_missing_imports = true
 
