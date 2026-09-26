@@ -31,7 +31,7 @@
 | 문서 | 담는 것 |
 |---|---|
 | [tools.md](tools.md) | 도구 하나의 모양, 카탈로그, 오류 번역, 자리마다 도구를 좁히는 방법 |
-| `agent-loop.md` | 단발 · ReAct · plan-and-execute — 어느 기능에 어느 흐름을 쓰나 |
+| [agent-loop.md](agent-loop.md) | 단발 · ReAct · plan-and-execute — 어느 기능에 어느 흐름을 쓰나 |
 | `mcp.md` | 외부 AI 서비스가 이 가계부를 도구로 쓰는 통로 |
 
 ---
