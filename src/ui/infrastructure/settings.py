@@ -1,0 +1,12 @@
+from __future__ import annotations
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """ui가 환경변수를 읽는 유일한 자리(development-rules 6.3)."""
+
+    user_timezone: str = "Asia/Seoul"
+
+    # .env에는 다른 서비스의 변수도 있다. ui가 쓰지 않는 것은 모른 척한다.
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")

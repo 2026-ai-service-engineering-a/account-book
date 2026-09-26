@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}채팅{% endblock %}
+{% block main %}
+<h1>채팅</h1>
+<a class="top-line" href="/reports/{{ period }}">
+  <span class="sub">{{ period.month }}월 지출</span>
+  <span class="amount out">{{ totals.expense | signed("expense") }}</span>
+</a>
+
+<section>
+  <div id="chat-log" class="chat" aria-live="polite">
+    <div id="chat-empty" class="empty">
+      <p>이렇게 말해보세요</p>
+      <div class="examples">
+        {% for example in examples %}
+        <button type="button" class="btn" data-example="{{ example }}">{{ example }}</button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <form id="chat-form" class="composer" action="/chat" method="post">
+    <textarea id="chat-input" name="text" rows="1" placeholder="어제 점심 8,000원" aria-label="메시지">{{ prefill }}</textarea>
+    <button class="primary" type="submit">보내기</button>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/chat.js" defer></script>{% endblock %}

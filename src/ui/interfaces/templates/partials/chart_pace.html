@@ -1,0 +1,27 @@
+{% set c = pace_chart %}
+<section class="viz">
+  <h2>{{ c.title }}</h2>
+  <div class="legend">
+    <span><i class="line"></i>실제 누적</span>
+    {% if c.projection %}<span><i class="dash"></i>지금 페이스</span>{% endif %}
+    <span><i class="budget"></i>예산</span>
+  </div>
+  <svg viewBox="0 0 640 200" role="img" aria-label="누적 지출과 예산 선">
+    {% for g in c.grid %}
+    <line x1="54" y1="{{ g.y }}" x2="600" y2="{{ g.y }}" class="grid"/>
+    <text x="46" y="{{ g.y + 4 }}" text-anchor="end">{{ g.label }}</text>
+    {% endfor %}
+    <line x1="54" y1="{{ c.budget_y }}" x2="600" y2="{{ c.budget_y }}" class="budget-line"/>
+    <text class="lab" x="58" y="{{ c.budget_y - 6 }}">{{ c.budget_label }}</text>
+    <polyline points="{{ c.actual }}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    {% if c.projection %}
+    <polyline points="{{ c.projection }}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round" opacity=".75"/>
+    {% endif %}
+    <circle cx="{{ c.today_x }}" cy="{{ c.today_y }}" r="4.5" fill="var(--s1)"><title>누적 {{ c.today_value }}원</title></circle>
+    <text class="val" x="{{ c.today_x }}" y="{{ c.today_y - 10 }}" text-anchor="middle">{{ c.today_value }}</text>
+    {% if c.over_x is not none %}
+    <circle cx="{{ c.over_x }}" cy="{{ c.budget_y }}" r="4.5" fill="var(--card)" stroke="var(--s2)" stroke-width="2"><title>{{ c.over_title }}</title></circle>
+    {% endif %}
+    {% for t in c.ticks %}<text x="{{ t.x }}" y="194" text-anchor="middle">{{ t.label }}</text>{% endfor %}
+  </svg>
+</section>

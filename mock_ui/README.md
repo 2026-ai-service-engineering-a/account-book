@@ -4,15 +4,15 @@
 데이터는 전부 손으로 써넣은 가짜이며, 버튼은 아무것도 하지 않는다.
 
 ```bash
-make mock      # http://localhost:8080
+make mock      # http://localhost:8081
 ```
 
 개발 컨테이너 안에서 `python3 -m http.server`로 뜬다. 새 의존성은 없다.
 
 ## 무엇이 아닌가
 
-- `src/ui`가 아니다. 진짜 `ui` 서버는 FastAPI + Jinja2 + HTMX로 따로 만든다
-  ([../README.md](../README.md) 3장).
+- `src/ui`가 아니다. 진짜 `ui` 서버는 FastAPI + Jinja2 + HTMX로 따로 있고
+  `make ui`로 뜬다([../ui_docs/stand-ins.md](../ui_docs/stand-ins.md)).
 - `api`·`agent`를 부르지 않는다. 네트워크 호출이 하나도 없다.
 - 개발 룰의 적용 대상이 아니다. 계층도 테스트도 없다. 버려질 수 있는 코드다.
 

@@ -1,0 +1,51 @@
+{% set action = "/transactions/" ~ existing.id if existing else "/transactions" %}
+<form id="transaction-form" method="post" action="{{ action }}"
+      hx-post="{{ action }}" hx-target="#transaction-form" hx-swap="outerHTML"
+      hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="idempotency_key" value="{{ form.idempotency_key }}">
+
+  <fieldset>
+    <legend>방향</legend>
+    <div class="radios">
+      {% for d in directions %}
+      <label>
+        <input type="radio" name="direction" value="{{ d.value }}" {% if form.direction_value == d %}checked{% endif %}
+               hx-get="/partials/category-select" hx-include="closest form"
+               hx-target="#category-select" hx-swap="outerHTML">
+        <span>{{ "지출" if d == "expense" else "수입" }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <label for="amount">금액</label>
+  <input id="amount" name="amount" inputmode="numeric" autocomplete="off" value="{{ form.amount }}"
+         {% if errors.amount %}aria-invalid="true" aria-describedby="amount-error"{% endif %}>
+  {% if errors.amount %}<div class="field-error" id="amount-error">{{ errors.amount }}</div>{% endif %}
+
+  <label for="occurred_at">날짜·시각</label>
+  <input id="occurred_at" name="occurred_at" type="datetime-local" value="{{ form.occurred_at }}"
+         {% if errors.occurred_at %}aria-invalid="true"{% endif %}>
+  {% if errors.occurred_at %}<div class="field-error">{{ errors.occurred_at }}</div>{% endif %}
+
+  {% include "partials/category_select.html" %}
+
+  <label for="account_id">결제수단</label>
+  <select id="account_id" name="account_id">
+    {% for a in accounts %}<option value="{{ a.id }}" {% if a.id == form.account_id %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
+  </select>
+  {% if errors.account_id %}<div class="field-error">{{ errors.account_id }}</div>{% endif %}
+
+  <label for="merchant">가맹점</label>
+  <input id="merchant" name="merchant" value="{{ form.merchant }}" placeholder="선택" autocomplete="off"
+         hx-get="/partials/category-select" hx-trigger="change" hx-include="closest form"
+         hx-target="#category-select" hx-swap="outerHTML">
+
+  <label for="memo">메모</label>
+  <input id="memo" name="memo" value="{{ form.memo }}" placeholder="선택">
+
+  <div class="form-actions">
+    <a class="btn" href="/transactions">취소</a>
+    <button type="submit" class="primary">저장</button>
+  </div>
+</form>

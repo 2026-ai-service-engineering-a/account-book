@@ -1,0 +1,83 @@
+from __future__ import annotations
+
+import uuid
+from collections.abc import Mapping
+from dataclasses import dataclass, fields
+from datetime import datetime, tzinfo
+
+from ui.application.dto import Direction, Transaction, TransactionDraft
+from ui.application.values import AccountId, CategoryId, Money
+
+_LOCAL_FORMAT = "%Y-%m-%dT%H:%M"
+
+
+@dataclass(slots=True)
+class TransactionForm:
+    """거래 폼의 날것 그대로의 값. 새로 넣기와 고치기가 같은 폼을 쓴다.
+
+    여기서 하는 검사는 화면 편의다. 진짜 검증은 api가 한다(transaction-form.md 5장).
+    """
+
+    direction: str = Direction.EXPENSE.value
+    amount: str = ""
+    occurred_at: str = ""
+    category_id: str = ""
+    account_id: str = "card"
+    merchant: str = ""
+    memo: str = ""
+    # 화면을 열 때 만든다. 제출할 때 만들면 새로고침 재제출이 새 키를 받는다.
+    idempotency_key: str = ""
+
+    @classmethod
+    def blank(cls, now: datetime, account_id: str) -> TransactionForm:
+        return cls(
+            occurred_at=now.strftime(_LOCAL_FORMAT),
+            account_id=account_id,
+            idempotency_key=uuid.uuid4().hex,
+        )
+
+    @classmethod
+    def of(cls, transaction: Transaction, zone: tzinfo) -> TransactionForm:
+        return cls(
+            direction=transaction.direction.value,
+            amount=f"{transaction.amount:,}",
+            occurred_at=transaction.occurred_at.astimezone(zone).strftime(_LOCAL_FORMAT),
+            category_id=transaction.category_id,
+            account_id=transaction.account_id,
+            merchant=transaction.merchant,
+            memo=transaction.memo,
+            idempotency_key=uuid.uuid4().hex,
+        )
+
+    @classmethod
+    def from_mapping(cls, data: Mapping[str, object]) -> TransactionForm:
+        values = {f.name: data.get(f.name) for f in fields(cls)}
+        return cls(**{k: v.strip() for k, v in values.items() if isinstance(v, str)})
+
+    @property
+    def direction_value(self) -> Direction:
+        return Direction.INCOME if self.direction == Direction.INCOME.value else Direction.EXPENSE
+
+    def parse(self, zone: tzinfo) -> tuple[TransactionDraft | None, dict[str, str]]:
+        errors: dict[str, str] = {}
+        digits = self.amount.replace(",", "").replace("원", "").strip()
+        if not digits.isdigit():
+            errors["amount"] = "금액을 숫자로 넣어 주세요."
+        try:
+            occurred = datetime.strptime(self.occurred_at, _LOCAL_FORMAT).replace(tzinfo=zone)
+        except ValueError:
+            errors["occurred_at"] = "날짜와 시각을 넣어 주세요."
+        if not self.category_id:
+            errors["category_id"] = "카테고리를 골라 주세요."
+        if errors:
+            return None, errors
+        draft = TransactionDraft(
+            direction=self.direction_value,
+            amount=Money(int(digits)),
+            occurred_at=occurred,
+            category_id=CategoryId(self.category_id),
+            account_id=AccountId(self.account_id),
+            merchant=self.merchant,
+            memo=self.memo,
+        )
+        return draft, {}

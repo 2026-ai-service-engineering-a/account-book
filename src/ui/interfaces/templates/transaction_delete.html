@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}거래 지우기{% endblock %}
+{% block main %}
+<h1>거래 지우기</h1>
+<section>
+  <div class="note">
+    <strong>{{ transaction.occurred_at.astimezone(zone).strftime("%Y-%m-%d") }} · {{ category_name }} ·
+      {{ transaction.amount | signed(transaction.direction) }}{% if transaction.merchant %} · {{ transaction.merchant }}{% endif %}</strong><br>
+    이 거래를 지울까요? 되돌릴 수 없습니다.
+  </div>
+  <form method="post" action="/transactions/{{ transaction.id }}/delete" class="form-actions">
+    <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+    <a class="btn" href="/transactions/{{ transaction.id }}">그만두기</a>
+    <button type="submit" class="danger">지우기</button>
+  </form>
+</section>
+{% endblock %}
