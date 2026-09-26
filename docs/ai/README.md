@@ -17,7 +17,7 @@
 | # | 기능 | 사람이 하던 판단 | 도는 곳 | 문서 |
 |---|---|---|---|---|
 | 1 | 카테고리 고르기 | 드롭다운에서 카테고리 선택 | `api` 검색 + `agent` 판단 | [category-suggestion-rag.md](category-suggestion-rag.md) |
-| 2 | 대화로 묻는 통계 | 화면·필터를 옮겨 다니며 세기 | `agent` 대화 루프 | `chat-analytics.md` |
+| 2 | 대화로 묻는 통계 | 화면·필터를 옮겨 다니며 세기 | `agent` 대화 루프 | [chat-analytics.md](chat-analytics.md) |
 | 3 | 상황에 맞는 통계 | 고정 차트를 눈으로 훑기 | `agent` 계획 루프 | `agentic-reports.md` |
 
 셋은 난이도 순이 아니라 **자유도 순**이다. 1번은 답이 카테고리 목록 안에 있고, 2번은 답이
