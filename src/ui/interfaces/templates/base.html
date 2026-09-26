@@ -1,0 +1,44 @@
+{% from "icons.html" import icon %}
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %} · account-book</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+{% if demo %}
+<div class="stand-in">
+  <span>대역 모드 — api·agent 대신 메모리 저장소와 각본 대역이 답한다. 서버를 끄면 기록이 사라진다.</span>
+  <form method="post" action="/demo/reset">
+    <input type="hidden" name="back" value="{{ request.url.path }}">
+    <button class="btn btn-outline btn-xs" name="filled" value="true">예시로 채우기</button>
+    <button class="btn btn-outline btn-xs" name="filled" value="false">비우기</button>
+  </form>
+</div>
+{% endif %}
+<header class="site-header" id="site-header">
+  <div class="container">
+    <a class="brand" href="/">{{ icon("wallet") }}<span>account-book</span></a>
+    <nav class="main-nav" aria-label="주 메뉴">
+      {% for key, href, name, glyph in [
+        ("chat", "/", "채팅", "message"),
+        ("transactions", "/transactions", "거래", "list"),
+        ("new", "/transactions/new", "입력", "plus"),
+        ("reports", "/reports", "리포트", "chart"),
+        ("budgets", "/budgets", "예산", "wallet"),
+      ] %}
+      <a href="{{ href }}" {% if section == key %}aria-current="page"{% endif %}>{{ icon(glyph) }}<span class="label-text">{{ name }}</span></a>
+      {% endfor %}
+    </nav>
+    <a class="wiki-link" href="/wiki" {% if section == "wiki" %}aria-current="page"{% endif %}>{{ icon("book") }}<span class="label-text">AI 위키</span></a>
+  </div>
+</header>
+<main class="container {% block main_class %}{% endblock %}">
+{% block main %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

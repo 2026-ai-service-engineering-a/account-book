@@ -1,0 +1,23 @@
+{% from "icons.html" import icon %}
+{% set ns = namespace(last=last_day) %}
+{% for t in page.items %}
+{% set day = t.occurred_at.astimezone(zone).strftime("%m-%d") %}
+<tr>
+  <td class="date">{{ day if day != ns.last else "" }}</td>
+  <td>
+    <a class="row-title" href="/transactions/{{ t.id }}">{{ t.title }}</a>
+    {% if t.source == "agent" %}<span class="badge badge-ai" title="에이전트가 넣은 기록">{{ icon("bot") }}<span class="sr-only">에이전트가 넣은 기록</span>AI</span>{% endif %}
+  </td>
+  <td><a class="badge" href="/transactions?{{ period_query }}&amp;category={{ t.category_id }}">{{ category_names.get(t.category_id, t.category_id) }}</a></td>
+  <td class="num amount {{ 'in' if t.direction == 'income' else 'out' }}">{{ t.amount | signed(t.direction) }}</td>
+</tr>
+{% set ns.last = day %}
+{% endfor %}
+{% if page.next_cursor %}
+<tr id="more-row">
+  <td colspan="4" class="more">
+    <button class="btn btn-outline btn-sm" hx-get="/partials/transactions/more?{{ filter_query }}&amp;cursor={{ page.next_cursor }}&amp;last={{ ns.last }}"
+            hx-target="#more-row" hx-swap="outerHTML">더 보기</button>
+  </td>
+</tr>
+{% endif %}

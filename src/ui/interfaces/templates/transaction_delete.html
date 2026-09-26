@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}거래 지우기{% endblock %}
+{% block main %}
+<div class="page-header"><div><h1 class="page-title">거래 지우기</h1></div></div>
+<div class="card">
+  <div class="card-content">
+    <div class="alert alert-destructive">
+      {{ icon("alert") }}
+      <div class="alert-title">{{ transaction.occurred_at.astimezone(zone).strftime("%Y-%m-%d") }} · {{ category_name }} ·
+        {{ transaction.amount | signed(transaction.direction) }}{% if transaction.merchant %} · {{ transaction.merchant }}{% endif %}</div>
+      <div class="alert-description">이 거래를 지울까요? 되돌릴 수 없습니다.</div>
+    </div>
+  </div>
+  <form method="post" action="/transactions/{{ transaction.id }}/delete" class="card-footer end">
+    <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+    <a class="btn btn-outline" href="/transactions/{{ transaction.id }}">그만두기</a>
+    <button type="submit" class="btn btn-destructive">{{ icon("trash") }}지우기</button>
+  </form>
+</div>
+{% endblock %}

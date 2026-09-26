@@ -23,6 +23,7 @@ DB도 LLM도 모른다. 하나라도 하기 시작하면 같은 규칙이 두 �
 | `/transactions/{id}` | 상세·수정 | `api` | [pages/transaction-form.md](pages/transaction-form.md) |
 | `/reports/{period}` | 월간 리포트 | `api` | [pages/reports.md](pages/reports.md) |
 | `/budgets` | 예산 | `api` | [pages/budgets.md](pages/budgets.md) |
+| `/wiki` | AI 위키 — AI가 들어간 자리와 에이전트 | 없다 | [pages/wiki.md](pages/wiki.md) |
 
 **대화는 `agent`, 그 밖의 모든 것은 `api`다.** 목록을 보거나 거래를 직접 고치는 데
 에이전트를 거칠 이유가 없다. 느리고, 비싸고, 틀릴 수 있다.
@@ -133,7 +134,25 @@ DB도 LLM도 모른다. 하나라도 하기 시작하면 같은 규칙이 두 �
 
 ---
 
-## 7. 지금 하지 않는 것
+## 7. 모양 — shadcn/ui를 옮겨 쓴다
+
+화면의 모양은 [shadcn/ui](https://ui.shadcn.com)(new-york, neutral)를 따른다. 색 토큰
+(`--background` · `--primary` · `--muted` · `--border` …), 반경, 그림자, 그리고 버튼·입력·카드·
+배지·표·알림·진행 막대의 생김새다. 아이콘은 shadcn이 쓰는 [lucide](https://lucide.dev)다.
+
+**컴포넌트는 가져오지 않고 모양만 옮긴다.** shadcn은 React + Tailwind 컴포넌트다. 이 화면은
+Jinja2 + HTMX이고 노드 툴체인을 두지 않기로 했다([../README.md](../README.md) 3장). 그래서
+토큰과 클래스를 같은 이름·같은 뜻으로 `static/style.css` 한 파일에 옮겼다 — `btn` · `btn-outline` ·
+`card` · `card-header` · `input` · `select` · `badge` · `table` · `alert` · `progress`.
+빌드 단계가 없고, 새 컴포넌트가 필요하면 shadcn의 Tailwind 클래스를 읽고 이 파일에 옮긴다.
+
+- 색만으로 뜻을 전하지 않는다는 2.1은 그대로다. 금액 부호는 글자다.
+- 차트 색은 shadcn의 차트 팔레트가 아니라 검증한 두 색이다([pages/reports.md 3.1](pages/reports.md#31-차트-규칙)).
+- shadcn에 없는 토큰은 셋을 더했다 — 수입(`--income`), 경고(`--warning`), AI가 채운 칸(`--ai`).
+
+---
+
+## 8. 지금 하지 않는 것
 
 - 다크 모드, 다국어. 한국어 단일 사용자로 시작한다.
 - 오프라인 저장, PWA.

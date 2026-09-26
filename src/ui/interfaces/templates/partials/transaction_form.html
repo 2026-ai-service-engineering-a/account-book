@@ -1,0 +1,111 @@
+{% from "ai.html" import ai_badge %}
+{% from "icons.html" import icon %}
+{% set action = "/transactions/" ~ existing.id if existing else "/transactions" %}
+{% set filled = filled or () %}
+{% macro mark(name) %}{% if name in filled %}<span class="ai-tag">AI가 채움</span>{% endif %}{% endmacro %}
+{% macro ai(name) %}{% if name in filled %} ai-filled{% endif %}{% endmacro %}
+<form id="transaction-form" class="card" method="post" action="{{ action }}"
+      hx-post="{{ action }}" hx-target="#transaction-form" hx-swap="outerHTML"
+      hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="idempotency_key" value="{{ form.idempotency_key }}">
+
+  <div class="card-content form-grid">
+    {% if capture_on %}
+    <div class="capture" id="capture">
+      <div class="capture-head">
+        <span class="label">{{ icon("message") }}한 줄로 채우기 {{ ai_badge("capture") }}</span>
+        {% if samples %}
+        <div class="capture-samples">
+          <span class="muted">예시</span>
+          {% for label, text in samples %}
+          <button type="button" class="btn btn-ghost btn-xs" hx-post="/partials/transaction-form/read" hx-include="closest form"
+                  hx-vals='{{ {"capture_text": text} | tojson }}'
+                  hx-target="#transaction-form" hx-swap="outerHTML" hx-indicator="#read-indicator">{{ icon("sparkles") }}{{ label }}</button>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      {% if sent or reading_note %}
+      <div class="chat capture-log" aria-live="polite">
+        {% if sent %}<div class="bubble me">{{ sent }}</div>{% endif %}
+        {% if reading_note %}<div class="bubble bot {{ 'ok' if filled else 'warn' }}" role="status">{{ reading_note }}</div>{% endif %}
+      </div>
+      {% endif %}
+      <div id="read-indicator" class="htmx-indicator thinking">AI가 읽는 중…</div>
+
+      {# 카드 문자는 붙여넣는 순간, 말은 Enter로 보낸다. paste는 값이 들어가기 전에 불리므로 한 박자 늦춘다.
+         한글 조합 중의 Enter는 글자를 확정하는 키라서 보내지 않는다. #}
+      <div class="composer">
+        <textarea id="capture_text" class="textarea" name="capture_text" rows="1"
+                  placeholder="카드 문자를 붙여넣거나 '오늘 오후 3시에 카페에서 5천원 썼어'처럼 적어 보세요"
+                  aria-label="한 줄로 채우기"
+                  hx-post="/partials/transaction-form/read"
+                  hx-trigger="paste delay:50ms, keydown[key=='Enter'&&!shiftKey&&!isComposing]"
+                  hx-include="closest form" hx-target="#transaction-form" hx-swap="outerHTML"
+                  hx-indicator="#read-indicator"></textarea>
+        <button type="button" class="btn btn-secondary" hx-post="/partials/transaction-form/read" hx-include="closest form"
+                hx-target="#transaction-form" hx-swap="outerHTML" hx-indicator="#read-indicator">{{ icon("send") }}채우기</button>
+      </div>
+    </div>
+    {% endif %}
+
+    <fieldset class="field">
+      <legend class="label">방향 {{ mark("direction") }}</legend>
+      <div class="segmented">
+        {% for d in directions %}
+        <label>
+          <input type="radio" name="direction" value="{{ d.value }}" {% if form.direction_value == d %}checked{% endif %}
+                 hx-get="/partials/category-select" hx-include="closest form"
+                 hx-target="#category-select" hx-swap="outerHTML">
+          <span>{{ "지출" if d == "expense" else "수입" }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <div class="two">
+      <div class="field">
+        <label class="label" for="amount">금액 {{ mark("amount") }}</label>
+        <input id="amount" class="input{{ ai('amount') }}" name="amount" inputmode="numeric" autocomplete="off" value="{{ form.amount }}" placeholder="0"
+               {% if errors.amount %}aria-invalid="true" aria-describedby="amount-error"{% endif %}>
+        {% if errors.amount %}<p class="field-error" id="amount-error">{{ errors.amount }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label class="label" for="occurred_at">날짜·시각 {{ mark("occurred_at") }}</label>
+        <input id="occurred_at" class="input{{ ai('occurred_at') }}" name="occurred_at" type="datetime-local" value="{{ form.occurred_at }}"
+               {% if errors.occurred_at %}aria-invalid="true"{% endif %}>
+        {% if errors.occurred_at %}<p class="field-error">{{ errors.occurred_at }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="two">
+      {% include "partials/category_select.html" %}
+      <div class="field">
+        <label class="label" for="account_id">결제수단 {{ mark("account_id") }}</label>
+        <select id="account_id" class="select{{ ai('account_id') }}" name="account_id">
+          {% for a in accounts %}<option value="{{ a.id }}" {% if a.id == form.account_id %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
+        </select>
+        {% if errors.account_id %}<p class="field-error">{{ errors.account_id }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="merchant">가맹점 {{ mark("merchant") }}</label>
+      <input id="merchant" class="input{{ ai('merchant') }}" name="merchant" value="{{ form.merchant }}" placeholder="선택" autocomplete="off"
+             hx-get="/partials/category-select" hx-trigger="change" hx-include="closest form"
+             hx-target="#category-select" hx-swap="outerHTML">
+      <p class="field-description">넣으면 카테고리가 비어 있을 때 채워 줍니다.</p>
+    </div>
+
+    <div class="field">
+      <label class="label" for="memo">메모</label>
+      <input id="memo" class="input" name="memo" value="{{ form.memo }}" placeholder="선택">
+    </div>
+  </div>
+
+  <div class="card-footer end">
+    <a class="btn btn-outline" href="/transactions">취소</a>
+    <button type="submit" class="btn">저장</button>
+  </div>
+</form>

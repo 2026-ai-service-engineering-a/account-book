@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}{{ status }}{% endblock %}
+{% block main %}
+<div class="card">
+  <div class="empty" style="border:0">
+    <div class="empty-icon">{{ icon("alert") }}</div>
+    <p class="empty-title">{{ message }}</p>
+    <p class="empty-description">문의할 때 아래 요청 id를 알려 주세요.<br>요청 id <code>{{ request_id }}</code></p>
+    <div class="empty-actions"><a class="btn btn-outline" href="/">처음으로</a></div>
+  </div>
+</div>
+{% endblock %}

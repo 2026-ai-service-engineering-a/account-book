@@ -1,17 +1,19 @@
 // GitHub Codespaces와 VS Code Dev Containers에서 이 저장소를 여는 설정.
-// 로컬에서 쓰는 docker-compose.yml의 dev 서비스를 그대로 쓴다.
+// 로컬에서 쓰는 개발용 구성(docker-compose.yml + docker-compose.dev.yml)의 dev 서비스를 그대로 쓴다.
 // 개발 환경을 두 벌 관리하지 않으려는 것이다.
 {
   "name": "account-book",
-  "dockerComposeFile": "../docker-compose.yml",
+  "dockerComposeFile": ["../docker-compose.yml", "../docker-compose.dev.yml"],
   "service": "dev",
   "workspaceFolder": "/app",
+  // ui 컨테이너는 띄우지 않는다. 안에서 make ui로 직접 띄우고, 포트가 겹치지 않게 한다.
+  "runServices": ["dev"],
 
   // 컨테이너가 만들어진 뒤 .env를 준비한다. 키는 사람이 채운다.
   "postCreateCommand": "make env",
 
-  // 목 UI(make mock)를 브라우저로 내보낸다.
-  "forwardPorts": [8080],
+  // ui(make ui)와 목 UI(make mock)를 브라우저로 내보낸다.
+  "forwardPorts": [8080, 8081],
 
   "customizations": {
     "vscode": {

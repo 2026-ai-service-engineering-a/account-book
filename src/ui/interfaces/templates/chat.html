@@ -1,0 +1,40 @@
+{% from "ai.html" import ai_badge %}
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}채팅{% endblock %}
+{% block main %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">채팅</h1>
+    <p class="page-description">한 줄로 기록하고, 한 줄로 묻는다.</p>
+    <div class="ai-row">{{ ai_badge("capture", "기록") }}{{ ai_badge("query", "질문") }}</div>
+  </div>
+  <a class="btn btn-outline btn-sm" href="/reports/{{ period }}">
+    {{ period.month }}월 지출 <span class="amount out">{{ totals.expense | signed("expense") }}</span>{{ icon("chevron-right") }}
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-content">
+    <div id="chat-log" class="chat" aria-live="polite">
+      <div id="chat-empty" class="empty">
+        <div class="empty-icon">{{ icon("message") }}</div>
+        <p class="empty-title">이렇게 말해보세요</p>
+        <p class="empty-description">누르면 바로 보냅니다.</p>
+        <div class="examples">
+          {% for example in examples %}
+          <button type="button" class="btn btn-outline btn-sm" data-example="{{ example }}">{{ example }}</button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer">
+    <form id="chat-form" class="composer" action="/chat" method="post" style="flex:1">
+      <textarea id="chat-input" class="textarea" name="text" rows="1" placeholder="어제 점심 8,000원" aria-label="메시지">{{ prefill }}</textarea>
+      <button class="btn" type="submit">{{ icon("send") }}보내기</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/chat.js" defer></script>{% endblock %}

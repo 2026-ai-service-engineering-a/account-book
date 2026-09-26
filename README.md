@@ -8,8 +8,9 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 도메인 서버(`api`)와 에이전트(`agent`)는 화면을 갖지 않는 **헤드리스**이고, 사람이 보는
 화면은 별도의 `ui` 서버가 맡는다. 전체는 docker compose 하나로 뜬다.
 
-> 이 문서는 **설계 문서**다. 아직 코드는 없고, 여기서 정한 형태대로 다음 단계에서
-> `docker-compose.yml` / `.env.sample` / 서비스 코드를 붙인다.
+> 이 문서는 **설계 문서**다. 코드는 아직 `ui` 하나뿐이고, 그것도 `api`·`agent` 자리에
+> 대역을 세워 돈다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)). 나머지는 여기서 정한
+> 형태대로 다음 단계에서 붙인다.
 >
 > 코드를 쓰기 전에 [docs/development-rules.md](docs/development-rules.md)를 읽는다 —
 > 파일·클래스 규칙, 계층 의존 규칙, 테스트 배치가 거기 있다.
@@ -43,6 +44,10 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 3. **질의 (ask)** — "이번 달 카페에 얼마?" → 집계 도구 호출 → 숫자 + 한 줄 해석.
 4. **요약 (report)** — 주간/월간 리포트. 큰 변화가 있는 항목만 골라 설명.
 5. **경고 (watch)** — 예산 소진 속도, 평소와 다른 지출, 중복 결제 의심 건 지적.
+
+이 다섯을 실제로 어떻게 만드는지는 [docs/ai/](docs/ai/README.md)에 있다. 기능 하나에 문서
+하나이고, 공통으로 걸리는 원칙(숫자는 DB가 낸다, 근거가 없으면 답하지 않는다, AI를 끄면
+가계부는 그대로 돈다)은 그 폴더의 README에 모아 두었다.
 
 ## 3. 시스템 구성
 
@@ -182,9 +187,18 @@ account-book/
 │   ├── development-rules.md
 │   ├── api-contract.md
 │   ├── git-flow-guide.md
-│   └── release.md
+│   ├── release.md
+│   └── ai/              # 이 프로젝트의 AI 설계
+│       ├── README.md    # 공통 원칙, 계약에 늘어날 줄
+│       ├── category-suggestion-rag.md   # 기능 — 카테고리 고르기(RAG)
+│       ├── chat-analytics.md            # 기능 — 대화로 묻는 통계
+│       ├── agentic-reports.md           # 기능 — 상황에 맞는 통계
+│       ├── tools.md                     # 가로지름 — 도구 규칙·카탈로그
+│       ├── agent-loop.md                # 가로지름 — 단발·ReAct·plan-and-execute
+│       └── mcp.md                       # 가로지름 — 외부 AI 서비스 통로
 ├── ui_docs/             # 이 프로젝트에만 해당하는 화면 설계
 │   ├── ui-design.md     # 모든 화면에 걸리는 공통 규칙
+│   ├── stand-ins.md     # api·agent 없이 ui를 돌리는 대역과 AI 자리
 │   └── pages/           # 화면 하나에 문서 하나
 │       ├── chat.md
 │       ├── transactions.md
@@ -196,7 +210,8 @@ account-book/
 ├── .devcontainer/         # Codespaces·Dev Containers — dev 서비스를 그대로 쓴다
 ├── Makefile               # 모든 명령은 컨테이너 안에서 돈다
 ├── Dockerfile
-├── docker-compose.yml
+├── docker-compose.yml     # 기본 — 운영처럼 뜬다
+├── docker-compose.dev.yml # 개발용 — 기본 위에 겹쳐 라이브 업데이트
 ├── pyproject.toml         # ruff · mypy · pytest 설정
 ├── requirements.txt       # 런타임 의존성
 ├── requirements-dev.txt   # 개발 도구
@@ -219,24 +234,41 @@ src/api/
 ### 지금 되는 것 — 개발 기반
 
 ```bash
-make up       # .env를 만들고 도구 컨테이너를 띄운다
+make dev      # 개발용으로 띄우고 라이브 업데이트 — ui는 http://localhost:8080 (Ctrl+C로 멈춘다)
+make up       # 같은 것을 뒤에서 띄운다
 make all      # 규칙 검사 + 린트 + 타입 + 테스트
 make shell    # 컨테이너 안으로
 ```
+
+compose 파일은 둘이다.
+
+| 파일 | 쓰임 | ui는 |
+|---|---|---|
+| `docker-compose.yml` | 기본. 운영처럼 뜬다 — `docker compose up`, `make prod` | 코드를 이미지에 굽는다. 고쳐도 다시 뜨지 않는다 |
+| `docker-compose.dev.yml` | 개발용. 기본 위에 겹쳐 쓴다 — `make dev`, `make up` | 저장소를 마운트하고 고치면 바로 반영된다 |
+
+개발용의 라이브 업데이트는 두 겹이다. 코드·템플릿·CSS는 바인드 마운트와 `uvicorn --reload`가
+맡고, 브라우저를 새로고침하면 보인다. `requirements*.txt`와 `Dockerfile`이 바뀌면 Compose
+Watch가 이미지를 다시 만들어 띄운다 — 이 겹은 `make dev`(`up --watch`)로 띄웠을 때만 돈다.
+`make up`으로 띄웠다면 의존성이 바뀐 뒤 `make build`를 한 번 친다.
 
 호스트에 필요한 건 `make`와 docker뿐이다. 파이썬도 ruff도 mypy도 설치하지 않는다.
 명령 목록은 그냥 `make`.
 
 화면 설계를 눈으로 보려면 `make mock` — 서버 없는 정적 목 UI가
-<http://localhost:8080>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
+<http://localhost:8081>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
 
-compose에는 지금 `dev` 컨테이너 하나뿐이다. `db`·`api`·`agent`·`ui`는 각 코드가
-생길 때 붙는다.
+화면을 실제로 만져 보려면 <http://localhost:8080> — `api`·`agent` 자리에 대역을 세운 진짜
+`ui`가 뜬다. 버튼이 전부 동작하고, AI가 들어갈 자리는 각본 대역이
+채운다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)).
+
+compose에는 지금 `ui` 하나, 개발용에는 도구 컨테이너 `dev`가 더 붙는다.
+`db`·`api`·`agent`는 각 코드가 생길 때 붙는다.
 
 ### GitHub Codespaces에서 열기
 
 저장소를 Codespaces나 VS Code Dev Containers로 열면 **같은 컨테이너가 그대로 뜬다.**
-`.devcontainer/devcontainer.json`이 `docker-compose.yml`의 `dev` 서비스를 재사용하기
+`.devcontainer/devcontainer.json`이 개발용 구성의 `dev` 서비스를 재사용하기
 때문이다 — 개발 환경을 두 벌 관리하지 않는다.
 
 열리면 `.env`가 자동으로 만들어지고, 터미널에서 바로 `make check`를 칠 수 있다.

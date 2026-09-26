@@ -1,0 +1,109 @@
+{% from "ai.html" import ai_badge %}
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}리포트 {{ report.period }}{% endblock %}
+{% block main %}
+{% set prev = report.period.previous() %}
+{% set next = report.period.next() %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ report.period.label }}</h1>
+    <p class="page-description">{% if report.through_day %}{{ report.period.month }}월 {{ report.through_day }}일까지 · {% endif %}집계는 전부 서버가 냅니다.</p>
+  </div>
+  <div class="filters">
+    <a class="btn btn-outline btn-sm" href="/reports/{{ prev }}">{{ icon("chevron-left") }}{{ prev.month }}월</a>
+    {% if report.period < current %}
+    <a class="btn btn-outline btn-sm" href="/reports/{{ next }}">{{ next.month }}월{{ icon("chevron-right") }}</a>
+    {% else %}
+    <span class="btn btn-outline btn-sm" aria-disabled="true">{{ next.month }}월{{ icon("chevron-right") }}</span>
+    {% endif %}
+  </div>
+</div>
+
+{% if report.is_empty %}
+<div class="card">
+  <div class="empty" style="border:0">
+    <div class="empty-icon">{{ icon("chart") }}</div>
+    <p class="empty-title">{{ "이번 달" if report.period == current else report.period.label }} 기록이 아직 없어요.</p>
+    <div class="empty-actions">
+      <a class="btn" href="/">{{ icon("message") }}대화로 넣기</a>
+      <a class="btn btn-outline" href="/transactions/new">{{ icon("plus") }}직접 넣기</a>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="stack">
+  <div class="stats">
+    <div class="card" style="padding:20px 0"><div class="card-content stat">
+      <span class="stat-label">지출</span><span class="stat-value amount out">{{ report.totals.expense | signed("expense") }}</span>
+      {% if report.previous %}<span class="stat-hint">지난달 {{ report.previous.expense | won }}</span>{% endif %}
+    </div></div>
+    <div class="card" style="padding:20px 0"><div class="card-content stat">
+      <span class="stat-label">수입</span><span class="stat-value amount in">{{ report.totals.income | signed("income") }}</span>
+      {% if report.previous %}<span class="stat-hint">지난달 {{ report.previous.income | won }}</span>{% endif %}
+    </div></div>
+  </div>
+
+  {% if category_chart.bars %}{% include "partials/chart_categories.html" %}{% endif %}
+  {% if pace_chart %}{% include "partials/chart_pace.html" %}{% endif %}
+  {% if month_chart %}{% include "partials/chart_months.html" %}{% endif %}
+
+  {% if report.by_category %}
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">카테고리별</h2><p class="card-description">늘어난 것만 굵게 표시합니다. 누르면 그 거래들로 갑니다.</p></div>
+    <div class="card-content flush">
+      <table class="table">
+        <thead><tr><th>카테고리</th><th class="num">이번 달</th>
+          {% if report.previous %}<th class="num">지난 달</th><th class="num">증감</th>{% endif %}</tr></thead>
+        <tbody>
+          {% for c in report.by_category %}
+          <tr>
+            <td><a class="row-title" href="/transactions?period={{ report.period }}&amp;category={{ c.category.id }}">{{ c.category.name }}</a></td>
+            <td class="num amount out">{{ c.this_month | signed("expense") }}</td>
+            {% if report.previous %}
+            <td class="num amount out muted">{{ c.last_month | signed("expense") }}</td>
+            {# 늘어난 것만 강조한다. 이 화면을 여는 사람은 "왜 이렇게 많이 썼지"를 알고 싶다 #}
+            <td class="num">{% if c.delta and c.delta.amount > 0 %}<strong>{{ c.delta | change(c.percent) }}</strong>{% else %}<span class="muted">{{ c.delta | change(c.percent) }}</span>{% endif %}</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">예산</h2></div>
+    {% if budgets %}
+    <div class="card-content flush">
+      <table class="table">
+        <thead><tr><th>카테고리</th><th class="num">예산</th><th class="num">쓴 돈</th><th class="progress-col">진행</th></tr></thead>
+        <tbody>
+          {% for b in budgets %}
+          <tr>
+            <td>{{ b.category.name }}</td>
+            <td class="num">{{ b.limit | grouped }}</td>
+            <td class="num">{{ b.spent | grouped }}</td>
+            <td><div class="progress-row"><div class="progress"><i {% if b.percent > 100 %}class="over"{% endif %} style="width:{{ [b.percent, 100] | min }}%"></i></div><span>{{ b.percent }}%</span></div></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-content"><p class="muted" style="margin:0">아직 정한 예산이 없어요. <a class="btn-link btn" href="/budgets">예산 정하기</a></p></div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="label-row"><h2 class="card-title">눈에 띈 것</h2>{{ ai_badge("insight") }}</div><p class="card-description">무엇이 달라졌는지까지. 왜는 대화가 답합니다.</p></div>
+    <div class="card-content">
+      {% if insights %}<ul class="insights">{% for line in insights %}<li>{{ line }}</li>{% endfor %}</ul>
+      {% else %}<p class="muted" style="margin:0">크게 달라진 것이 없어요.</p>{% endif %}
+    </div>
+    <div class="card-footer"><a class="btn btn-outline btn-sm" href="{{ ask_url }}">{{ icon("message") }}{{ ask_label }}</a></div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

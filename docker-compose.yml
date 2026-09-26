@@ -1,21 +1,20 @@
-# 개발 기반. 지금은 도구 컨테이너 하나뿐이다.
-# db·api·agent·ui는 각 코드가 생길 때 여기에 붙인다(README 3장).
+# 기본 구성 — 운영처럼 뜬다. 코드를 이미지에 굽고, 고쳐도 다시 뜨지 않는다.
+# db·api·agent는 각 코드가 생길 때 여기에 붙인다(README 3장).
 #
-#   make up        # .env를 만들고 컨테이너를 띄운다
-#   make check     # 저장소 규칙 검사
-#   make shell     # 컨테이너 안으로
+#   docker compose up -d --build   # http://localhost:8080
+#
+# 개발할 때는 docker-compose.dev.yml을 겹쳐 쓴다 — make up / make dev.
 services:
-  dev:
-    build: .
-    # .env가 없어도 뜬다. Codespaces에서 처음 열릴 때 아직 없기 때문이다.
+  ui:
+    build:
+      context: .
+      target: runtime
+    image: account-book-ui
+    # .env가 없어도 뜬다. 값은 전부 기본값이 있다.
     env_file:
       - path: .env
         required: false
-    volumes:
-      - .:/app
-    working_dir: /app
     ports:
-      # 목 UI(make mock). 진짜 ui 서비스가 생기면 그쪽이 이 포트를 가져간다.
-      - "8080:8080"
-    # 명령을 exec로 하나씩 실행하는 방식이라 컨테이너는 떠 있기만 하면 된다.
-    command: sleep infinity
+      # 호스트로 여는 건 ui 하나뿐이다(README 3장). 지금은 api·agent 자리에 대역이 선다.
+      - "${UI_PORT:-8080}:8080"
+    restart: unless-stopped
