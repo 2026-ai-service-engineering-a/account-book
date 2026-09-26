@@ -187,11 +187,14 @@ account-book/
 │   ├── api-contract.md
 │   ├── git-flow-guide.md
 │   ├── release.md
-│   └── ai/              # 이 프로젝트의 AI 기능 설계 — 기능 하나에 문서 하나
+│   └── ai/              # 이 프로젝트의 AI 설계
 │       ├── README.md    # 공통 원칙, 계약에 늘어날 줄
-│       ├── category-suggestion-rag.md
-│       ├── chat-analytics.md
-│       └── agentic-reports.md
+│       ├── category-suggestion-rag.md   # 기능 — 카테고리 고르기(RAG)
+│       ├── chat-analytics.md            # 기능 — 대화로 묻는 통계
+│       ├── agentic-reports.md           # 기능 — 상황에 맞는 통계
+│       ├── tools.md                     # 가로지름 — 도구 규칙·카탈로그
+│       ├── agent-loop.md                # 가로지름 — 단발·ReAct·plan-and-execute
+│       └── mcp.md                       # 가로지름 — 외부 AI 서비스 통로
 ├── ui_docs/             # 이 프로젝트에만 해당하는 화면 설계
 │   ├── ui-design.md     # 모든 화면에 걸리는 공통 규칙
 │   └── pages/           # 화면 하나에 문서 하나

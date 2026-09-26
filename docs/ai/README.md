@@ -32,7 +32,7 @@
 |---|---|
 | [tools.md](tools.md) | 도구 하나의 모양, 카탈로그, 오류 번역, 자리마다 도구를 좁히는 방법 |
 | [agent-loop.md](agent-loop.md) | 단발 · ReAct · plan-and-execute — 어느 기능에 어느 흐름을 쓰나 |
-| `mcp.md` | 외부 AI 서비스가 이 가계부를 도구로 쓰는 통로 |
+| [mcp.md](mcp.md) | 외부 AI 서비스가 이 가계부를 도구로 쓰는 통로 |
 
 ---
 
@@ -92,6 +92,9 @@ graph LR
 ```
 
 선 하나하나가 [../../README.md](../../README.md) 3장의 경계 둘을 그대로 따른다.
+외부 AI 서비스가 들어오는 길은 이 그림 밖에 따로
+있다([mcp.md 2장](mcp.md#2-어디에-두나--서비스-하나를-더-세운다)) — 그 통로에는 LLM이 없고,
+기본값은 꺼진 상태다.
 
 | 규칙 | AI 기능에서 뜻하는 것 |
 |---|---|
@@ -213,6 +216,10 @@ AI 기능은 도구·엔드포인트·테이블·환경변수를 늘린다. **�
 `agent`가 새로 노출하는 것은 `POST /classify`(기능 1)와 `POST /insights`(기능 3)다.
 `agent`의 표면은 계약 문서에 없다 — `ui`만 부르고, 화면 문서가 정본이다.
 
+`mcp`는 같은 도구를 프로토콜만 바꿔 내놓으므로 계약에 줄이 늘지 않는다. 대신 **서비스가
+하나 는다** — README 3장의 compose 표에 줄이 하나
+생긴다([mcp.md 2장](mcp.md#2-어디에-두나--서비스-하나를-더-세운다)).
+
 ### 7.3 테이블 (README 7장)
 
 | 테이블 | 핵심 컬럼 | 기능 |
@@ -228,6 +235,11 @@ RAG_TOP_K=8                 # 이웃 몇 건을 근거로 쓰나
 CLASSIFY_MIN_CONFIDENCE=0.7 # 이 아래면 LLM에게 넘긴다
 CLASSIFY_ABSTAIN_BELOW=0.4  # 이 아래면 사람에게 넘긴다
 INSIGHT_MAX_TOOL_CALLS=6    # 리포트 한 번에 허용하는 집계 호출 수
+
+MCP_ENABLED=false           # 외부 AI 서비스 통로. 기본은 닫혀 있다
+MCP_TRANSPORT=stdio         # stdio는 노출 표면이 0이다
+MCP_TOKEN=                  # 시크릿. 비면 mcp가 뜨지 않는다
+MCP_ALLOWED_TOOLS=summarize_spending,compare_periods,count_frequency,get_budget_status
 ```
 
 **`EMBEDDING_MODEL`이 비어 있어도 뜬다.** 시크릿이 아니라 기능 스위치라서 기본값을 준다.
