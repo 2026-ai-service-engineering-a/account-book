@@ -27,7 +27,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | `ChatAgent` | 자연어 한 줄 → 거래 제안이나 답 | `ScriptedChatAgent` — 정해진 모양만 알아듣는다 | `agent`의 `POST /chat` SSE |
 | `CategorySuggester` | 가맹점명 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | api의 `POST /v1/categories/suggest` |
 | `ReportNarrator` | 리포트의 "눈에 띈 것" 문장 | `ScriptedReportNarrator` — 규칙 문구 | 아직 안 정했다([pages/reports.md 3.2](pages/reports.md#32-눈에-띈-것은-문장으로-낸다)) |
-| `CardMessageReader` | 카드 결제 문자 → 거래 칸 | `ScriptedCardMessageReader` — 승인 문자 한 모양 | `agent`. 엔드포인트는 아직 안 정했다([pages/transaction-form.md 4.4](pages/transaction-form.md#44-카드-문자를-붙여넣으면-채운다)) |
+| `CardMessageReader` | 카드 결제 문자 → 거래 칸 | `ScriptedCardMessageReader` — 승인 문자 한 모양 | `agent`. 엔드포인트는 아직 안 정했다([pages/transaction-form.md 4.4](pages/transaction-form.md#44-한-줄로-채운다--카드-문자든-말이든)) |
 
 포트는 `src/ui/application/ports/`, 대역은 `src/ui/infrastructure/scripted/`에 있다.
 

@@ -23,6 +23,7 @@ DB도 LLM도 모른다. 하나라도 하기 시작하면 같은 규칙이 두 �
 | `/transactions/{id}` | 상세·수정 | `api` | [pages/transaction-form.md](pages/transaction-form.md) |
 | `/reports/{period}` | 월간 리포트 | `api` | [pages/reports.md](pages/reports.md) |
 | `/budgets` | 예산 | `api` | [pages/budgets.md](pages/budgets.md) |
+| `/wiki` | AI 위키 — AI가 들어간 자리와 에이전트 | 없다 | [pages/wiki.md](pages/wiki.md) |
 
 **대화는 `agent`, 그 밖의 모든 것은 `api`다.** 목록을 보거나 거래를 직접 고치는 데
 에이전트를 거칠 이유가 없다. 느리고, 비싸고, 틀릴 수 있다.
