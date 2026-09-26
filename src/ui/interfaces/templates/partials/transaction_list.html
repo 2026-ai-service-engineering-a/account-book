@@ -7,7 +7,7 @@
       <tbody>{% include "partials/transaction_rows.html" %}</tbody>
     </table>
   </div>
-  <div class="card-footer"><p class="field-description"><span class="badge badge-ai">{{ icon("bot") }}AI</span> 표시는 에이전트가 넣은 기록입니다.</p></div>
+  <div class="card-footer"><p class="field-description"><span class="badge badge-ai">{{ icon("bot") }}AI</span> 표시는 에이전트가 넣은 기록입니다. <a class="btn btn-link" href="/wiki#capture">어떻게 넣나</a></p></div>
 {% elif not has_any %}
   <div class="empty">
     <div class="empty-icon">{{ icon("inbox") }}</div>

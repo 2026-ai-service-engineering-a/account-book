@@ -17,6 +17,7 @@ from .routers import (
     reports_router,
     transaction_form_router,
     transactions_router,
+    wiki_router,
 )
 from .services import Services
 from .templating import render
@@ -36,6 +37,7 @@ def build_web_app(services: Services) -> FastAPI:
         reports_router,
         budgets_router,
         demo_router,
+        wiki_router,
     ):
         app.include_router(module.router)
     app.add_exception_handler(TransactionNotFound, _not_found)

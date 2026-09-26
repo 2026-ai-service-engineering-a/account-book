@@ -13,8 +13,9 @@
   `api`·`agent`는 아직 없어서 그 자리에 메모리 저장소와 각본 대역이 선다.
   AI가 들어갈 자리 셋(대화, 카테고리 제안, 리포트 문장)은 포트로 비워 두었다.
   ([ui_docs/stand-ins.md](ui_docs/stand-ins.md))
-- **카드 문자로 채우기** — 거래 폼에 카드 결제 문자를 붙여넣으면 금액·날짜·가맹점·
-  결제수단·카테고리가 채워진다. 저장은 사람이 누른다. 지금은 각본 대역이 읽는다.
+- **한 줄로 채우기** — 거래 폼에 카드 결제 문자를 붙여넣거나 "오늘 오후 3시에 카페에서
+  5천원 썼어"처럼 적으면 금액·날짜·가맹점·결제수단·카테고리가 채워진다. 채팅처럼 생긴 칸이다.
+  저장은 사람이 누른다. 지금은 각본 대역이 읽는다.
   ([ui_docs/pages/transaction-form.md](ui_docs/pages/transaction-form.md) 4.4)
 - **개발용 compose** — `docker-compose.dev.yml`을 기본 위에 겹쳐 쓴다. `make dev`로 띄우면
   코드·템플릿·CSS는 저장하는 대로, 의존성은 Compose Watch가 이미지를 다시 만들어 반영한다.
@@ -22,6 +23,10 @@
 - **shadcn/ui 모양** — 화면 전체에 shadcn/ui(new-york, neutral)의 토큰과 컴포넌트 모양을
   입혔다. React·Tailwind는 설치하지 않고 CSS 한 파일로 옮겼다 — 빌드 단계가 없다.
   ([ui_docs/ui-design.md](ui_docs/ui-design.md) 7장)
+- **AI 표시와 AI 위키** — AI가 들어가는 자리 넷(기록, 카테고리 고르기, 대화로 묻는 통계,
+  상황에 맞는 통계)에 `AI · 흐름` 표시를 달고, 상단 바 오른쪽 끝의 AI 위키(`/wiki`)에 어떤
+  에이전트 흐름이 어디서 도는지를 정리했다. AI는 아직 붙지 않았고 모두 각본 대역이다.
+  ([ui_docs/pages/wiki.md](ui_docs/pages/wiki.md))
 
 ## 0.1.1 — 2026-09-17
 

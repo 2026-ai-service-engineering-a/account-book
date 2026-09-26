@@ -1,0 +1,6 @@
+{%- from "icons.html" import icon -%}
+{#- 화면의 AI 표시. 누르면 위키의 그 자리로 간다. 자리 목록은 interfaces/ai_map 한 곳에 있다. -#}
+{% macro ai_badge(key, label="") -%}
+{%- set seat = AI_SEATS[key] -%}
+<a class="ai-badge" href="/wiki#{{ seat.key }}" title="{{ seat.name }} — {{ seat.flow_detail }}. 지금은 각본 대역이 선다">{{ icon("sparkles") }}AI{% if label %} · {{ label }}{% endif %} · {{ seat.flow }}</a>
+{%- endmacro %}

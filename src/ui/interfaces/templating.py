@@ -7,6 +7,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
+from .ai_map import BY_KEY
 from .presenters.money_format import change, grouped, signed_won, won
 from .request_id import request_id_of
 
@@ -23,6 +24,8 @@ def _page_context(request: Request) -> dict[str, object]:
 
 templates = Jinja2Templates(directory=_TEMPLATES, context_processors=[_page_context])
 templates.env.filters.update(won=won, signed=signed_won, grouped=grouped, change=change)
+# 화면의 AI 표시가 읽는 자리 목록. 위키도 같은 것을 읽는다.
+templates.env.globals["AI_SEATS"] = BY_KEY
 
 
 def render(

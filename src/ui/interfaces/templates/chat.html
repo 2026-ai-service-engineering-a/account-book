@@ -1,3 +1,4 @@
+{% from "ai.html" import ai_badge %}
 {% extends "base.html" %}
 {% from "icons.html" import icon %}
 {% block title %}채팅{% endblock %}
@@ -6,6 +7,7 @@
   <div>
     <h1 class="page-title">채팅</h1>
     <p class="page-description">한 줄로 기록하고, 한 줄로 묻는다.</p>
+    <div class="ai-row">{{ ai_badge("capture", "기록") }}{{ ai_badge("query", "질문") }}</div>
   </div>
   <a class="btn btn-outline btn-sm" href="/reports/{{ period }}">
     {{ period.month }}월 지출 <span class="amount out">{{ totals.expense | signed("expense") }}</span>{{ icon("chevron-right") }}

@@ -1,3 +1,4 @@
+{% from "ai.html" import ai_badge %}
 {% extends "base.html" %}
 {% from "icons.html" import icon %}
 {% block title %}리포트 {{ report.period }}{% endblock %}
@@ -96,7 +97,7 @@
   </div>
 
   <div class="card">
-    <div class="card-header"><h2 class="card-title">눈에 띈 것</h2><p class="card-description">무엇이 달라졌는지까지. 왜는 대화가 답합니다.</p></div>
+    <div class="card-header"><div class="label-row"><h2 class="card-title">눈에 띈 것</h2>{{ ai_badge("insight") }}</div><p class="card-description">무엇이 달라졌는지까지. 왜는 대화가 답합니다.</p></div>
     <div class="card-content">
       {% if insights %}<ul class="insights">{% for line in insights %}<li>{{ line }}</li>{% endfor %}</ul>
       {% else %}<p class="muted" style="margin:0">크게 달라진 것이 없어요.</p>{% endif %}
