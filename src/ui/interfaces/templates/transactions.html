@@ -1,30 +1,46 @@
 {% extends "base.html" %}
+{% from "icons.html" import icon %}
 {% block title %}거래{% endblock %}
 {% block main %}
-<h1>거래</h1>
-{% if notice %}<div class="notice {{ notice.kind }}" role="status">{{ notice.text }}</div>{% endif %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">거래</h1>
+    <p class="page-description">찾고, 확인하고, 고친다.</p>
+  </div>
+  <a class="btn btn-sm" href="/transactions/new">{{ icon("plus") }}새 거래</a>
+</div>
 
-<section>
+<div class="stack">
+  {% if notice %}
+  <div class="alert {{ 'alert-warning' if notice.kind == 'warn' else 'alert-success' }}" role="status">
+    {{ icon("alert" if notice.kind == "warn" else "check") }}
+    <div class="alert-title">{{ notice.text }}</div>
+  </div>
+  {% endif %}
+
   <form id="filters" class="filters" action="/transactions" method="get"
         hx-get="/partials/transactions" hx-target="#transaction-list" hx-swap="outerHTML"
         hx-trigger="change, keyup changed delay:300ms from:#filter-q, submit">
-    <select name="period" aria-label="기간">
+    <select class="select" name="period" aria-label="기간">
       {% for p in periods %}<option value="{{ p }}" {% if p == criteria.period %}selected{% endif %}>{{ p }}</option>{% endfor %}
       {% if criteria.period not in periods %}<option value="{{ criteria.period }}" selected>{{ criteria.period }}</option>{% endif %}
     </select>
-    <select name="direction" aria-label="방향">
+    <select class="select" name="direction" aria-label="방향">
       <option value="">전체</option>
       <option value="expense" {% if criteria.direction == "expense" %}selected{% endif %}>지출</option>
       <option value="income" {% if criteria.direction == "income" %}selected{% endif %}>수입</option>
     </select>
-    <select name="category" aria-label="카테고리">
+    <select class="select" name="category" aria-label="카테고리">
       <option value="">모든 카테고리</option>
       {% for c in categories %}<option value="{{ c.id }}" {% if c.id == criteria.category_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
     </select>
-    <input id="filter-q" name="q" value="{{ criteria.query }}" placeholder="가맹점 검색" aria-label="가맹점 검색" autocomplete="off">
+    <div class="search">
+      {{ icon("search") }}
+      <input id="filter-q" class="input" name="q" value="{{ criteria.query }}" placeholder="가맹점 검색" aria-label="가맹점 검색" autocomplete="off">
+    </div>
   </form>
-</section>
 
-{% include "partials/transaction_summary.html" %}
-{% include "partials/transaction_list.html" %}
+  {% include "partials/transaction_summary.html" %}
+  {% include "partials/transaction_list.html" %}
+</div>
 {% endblock %}

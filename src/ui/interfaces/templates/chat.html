@@ -1,27 +1,38 @@
 {% extends "base.html" %}
+{% from "icons.html" import icon %}
 {% block title %}채팅{% endblock %}
 {% block main %}
-<h1>채팅</h1>
-<a class="top-line" href="/reports/{{ period }}">
-  <span class="sub">{{ period.month }}월 지출</span>
-  <span class="amount out">{{ totals.expense | signed("expense") }}</span>
-</a>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">채팅</h1>
+    <p class="page-description">한 줄로 기록하고, 한 줄로 묻는다.</p>
+  </div>
+  <a class="btn btn-outline btn-sm" href="/reports/{{ period }}">
+    {{ period.month }}월 지출 <span class="amount out">{{ totals.expense | signed("expense") }}</span>{{ icon("chevron-right") }}
+  </a>
+</div>
 
-<section>
-  <div id="chat-log" class="chat" aria-live="polite">
-    <div id="chat-empty" class="empty">
-      <p>이렇게 말해보세요</p>
-      <div class="examples">
-        {% for example in examples %}
-        <button type="button" class="btn" data-example="{{ example }}">{{ example }}</button>
-        {% endfor %}
+<div class="card">
+  <div class="card-content">
+    <div id="chat-log" class="chat" aria-live="polite">
+      <div id="chat-empty" class="empty">
+        <div class="empty-icon">{{ icon("message") }}</div>
+        <p class="empty-title">이렇게 말해보세요</p>
+        <p class="empty-description">누르면 바로 보냅니다.</p>
+        <div class="examples">
+          {% for example in examples %}
+          <button type="button" class="btn btn-outline btn-sm" data-example="{{ example }}">{{ example }}</button>
+          {% endfor %}
+        </div>
       </div>
     </div>
   </div>
-  <form id="chat-form" class="composer" action="/chat" method="post">
-    <textarea id="chat-input" name="text" rows="1" placeholder="어제 점심 8,000원" aria-label="메시지">{{ prefill }}</textarea>
-    <button class="primary" type="submit">보내기</button>
-  </form>
-</section>
+  <div class="card-footer">
+    <form id="chat-form" class="composer" action="/chat" method="post" style="flex:1">
+      <textarea id="chat-input" class="textarea" name="text" rows="1" placeholder="어제 점심 8,000원" aria-label="메시지">{{ prefill }}</textarea>
+      <button class="btn" type="submit">{{ icon("send") }}보내기</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
 {% block scripts %}<script src="/static/chat.js" defer></script>{% endblock %}

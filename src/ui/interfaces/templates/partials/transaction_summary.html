@@ -1,6 +1,8 @@
-<section id="summary" {% if oob %}hx-swap-oob="true"{% endif %}>
-  <div class="totals">
-    <div>지출 합<strong class="amount out">{{ totals.expense | signed("expense") }}</strong></div>
-    <div>수입 합<strong class="amount in">{{ totals.income | signed("income") }}</strong></div>
-  </div>
+<section id="summary" {% if oob %}hx-swap-oob="true"{% endif %} class="stats">
+  <div class="card" style="padding:20px 0"><div class="card-content stat">
+    <span class="stat-label">지출 합</span><span class="stat-value amount out">{{ totals.expense | signed("expense") }}</span>
+  </div></div>
+  <div class="card" style="padding:20px 0"><div class="card-content stat">
+    <span class="stat-label">수입 합</span><span class="stat-value amount in">{{ totals.income | signed("income") }}</span>
+  </div></div>
 </section>

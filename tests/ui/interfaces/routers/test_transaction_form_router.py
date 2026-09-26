@@ -24,6 +24,7 @@ FORM = {
 def test_new_form_defaults(empty_client):
     page = empty_client.get("/transactions/new")
     assert 'value="2026-09-17T18:00"' in page.text
+    assert 'id="site-header"' in page.text  # 페이지는 머리까지, 조각은 머리 없이
     assert len(extract(r'name="idempotency_key" value="(\w+)"', page.text)) == 32
 
 
@@ -55,7 +56,7 @@ def test_validation_error_stays_next_to_field(empty_client):
     assert page.status_code == 200
     assert "금액을 숫자로 넣어 주세요." in page.text
     assert 'value="김밥천국"' in page.text  # 이미 쓴 값은 그대로
-    assert "<nav>" not in page.text  # 폼 조각만
+    assert 'id="site-header"' not in page.text  # 폼 조각만
 
 
 def test_api_validation_details_reach_fields(empty_client):
@@ -129,7 +130,7 @@ def test_new_form_offers_the_box_and_edit_form_does_not(empty_client):
 
 def test_sample_message_fills_and_marks_fields(empty_client):
     page = empty_client.post(READ, data=BLANK | {"card_message": SAMPLE_MESSAGE}, headers=HX)
-    assert page.status_code == 200 and "<nav>" not in page.text
+    assert page.status_code == 200 and 'id="site-header"' not in page.text
     for value in ('value="8,500"', 'value="2026-09-16T12:31"', 'value="김밥천국"'):
         assert value in page.text
     assert 'value="food" selected' in page.text  # 카테고리는 제안이 이어서 채운다
