@@ -1,3 +1,4 @@
+{% from "ai.html" import ai_badge %}
 {% from "icons.html" import icon %}
 {% set action = "/transactions/" ~ existing.id if existing else "/transactions" %}
 {% set filled = filled or () %}
@@ -12,7 +13,7 @@
     {% if capture_on %}
     <div class="capture" id="capture">
       <div class="capture-head">
-        <span class="label">{{ icon("message") }}한 줄로 채우기 <span class="ai-tag">AI</span></span>
+        <span class="label">{{ icon("message") }}한 줄로 채우기 {{ ai_badge("capture") }}</span>
         {% if samples %}
         <div class="capture-samples">
           <span class="muted">예시</span>

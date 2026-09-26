@@ -290,6 +290,18 @@ a.badge:hover { background: var(--accent); }
   display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 4px;
   font-size: 11px; font-weight: 500; color: var(--ai); background: var(--ai-bg);
 }
+/* AI 표시 — 누르면 위키의 그 자리로. "AI · 흐름" 모양이다(ui_docs/pages/wiki.md 4장) */
+.ai-badge {
+  display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px;
+  border-radius: 999px; font-size: 11px; font-weight: 500; line-height: 1; white-space: nowrap;
+  color: var(--ai); background: var(--ai-bg); border: 1px solid color-mix(in oklch, var(--ai) 20%, transparent);
+  text-decoration: none; vertical-align: middle;
+}
+.ai-badge:hover { border-color: color-mix(in oklch, var(--ai) 50%, transparent); }
+.ai-badge .icon { width: 11px; height: 11px; }
+.ai-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card-confirm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ai-filled { border-color: color-mix(in oklch, var(--ai) 45%, transparent) !important; background-color: color-mix(in oklch, var(--ai-bg) 60%, transparent); }
 
 /* ── 차트 — 인라인 SVG. 색은 검증한 값만(reports.md 3.1) ── */
