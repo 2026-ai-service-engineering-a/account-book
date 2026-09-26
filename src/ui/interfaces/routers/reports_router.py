@@ -32,6 +32,7 @@ async def report_page(request: Request, services: ServicesDep, period_text: str)
     budgets = await services.budgets.statuses(period)
     target = _pace_target(budgets)
     pace = await services.reports.pace(target.category.id, period) if target else None
+    question, rose = _question(report)
     context = {
         "section": "reports",
         "report": report,
@@ -39,7 +40,8 @@ async def report_page(request: Request, services: ServicesDep, period_text: str)
         "budgets": [b for b in budgets if b.limit is not None],
         "has_any": not report.is_empty or await services.transactions.exists_any(),
         "insights": await services.narrator.narrate(report, budgets) if not report.is_empty else (),
-        "ask_url": "/?q=" + quote(_question(report)),
+        "ask_url": "/?q=" + quote(question),
+        "ask_label": "왜 늘었는지 물어보기" if rose else "이번 달에 대해 물어보기",
         "category_chart": CategoryBarChart.build(
             [(c.category.name, c.this_month) for c in report.by_category if c.this_month > 0]
         ),
@@ -58,10 +60,10 @@ def _pace_target(budgets: tuple[BudgetStatus, ...]) -> BudgetStatus | None:
     return max(budgeted, key=lambda b: (b.over_on is not None, b.percent or 0))
 
 
-def _question(report: MonthlyReport) -> str:
+def _question(report: MonthlyReport) -> tuple[str, bool]:
     """리포트는 *무엇이*까지, *왜*는 대화가 답한다. 질문을 채운 채 채팅으로 넘긴다."""
     rises = [c for c in report.by_category if c.delta and c.delta > 0]
     if not rises:
-        return f"{report.period.month}월 지출 어땠어?"
+        return f"{report.period.month}월 지출 어땠어?", False
     top = max(rises, key=lambda c: c.delta or 0)
-    return f"{report.period.month}월에 {top.category.name}가 왜 늘었어?"
+    return f"{report.period.month}월에 {top.category.name} 지출이 왜 늘었어?", True

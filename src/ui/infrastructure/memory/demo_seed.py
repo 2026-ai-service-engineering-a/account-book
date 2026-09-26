@@ -17,7 +17,8 @@ _LUNCH = ("김밥천국", "한솥도시락", "본죽", "맥도날드", "서브�
 _DINNER = ("배달의민족", "교촌치킨", "이자카야", "고깃집")
 _CAFE = ("스타벅스", "메가커피", "투썸플레이스", "이디야")
 _LIVING = ("이마트", "쿠팡", "다이소", "올리브영")
-_LIMITS = {"food": 300_000, "transport": 100_000, "living": 250_000, "housing": 450_000}
+# 주거는 예산을 두지 않는다. 1일에 한 번 나가는 고정비라 일할 페이스가 뜻이 없다.
+_LIMITS = {"food": 300_000, "transport": 100_000, "living": 250_000}
 
 
 def seed_demo(store: MemoryStore, now: datetime) -> None:

@@ -87,7 +87,7 @@
 <section>
   <h2>눈에 띈 것</h2>
   {% for line in insights %}<p class="insight">{{ line }}</p>{% else %}<p class="insight sub">크게 달라진 것이 없어요.</p>{% endfor %}
-  <div style="margin-top:14px"><a class="btn" href="{{ ask_url }}">왜 늘었는지 물어보기</a></div>
+  <div style="margin-top:14px"><a class="btn" href="{{ ask_url }}">{{ ask_label }}</a></div>
 </section>
 {% endif %}
 {% endblock %}
