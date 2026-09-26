@@ -45,7 +45,7 @@ def test_applies_only_what_was_read():
     filled = form.apply(
         MessageReading(
             direction=Direction.INCOME,
-            amount=3_200_000,
+            amount=Money(3_200_000),
             occurred_at=datetime(2026, 9, 10, 9, 0, tzinfo=SEOUL),
         ),
         SEOUL,

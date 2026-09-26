@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 
 from ui.application.dto import Direction, MessageReading
+from ui.application.values import AccountId, Money
 
 # 흔한 카드사 승인 문자 한 모양만 읽는다. 진짜 AI가 오면 이 파일이 통째로 빠진다 —
 # 여기 규칙을 늘려 LLM 흉내를 내지 않는다(ui_docs/stand-ins.md 1장).
@@ -42,21 +43,21 @@ class ScriptedCardMessageReader:
         )
 
 
-def _amount(message: str) -> int | None:
+def _amount(message: str) -> Money | None:
     for match in _AMOUNT.finditer(message):
         # "누적1,234,500원"·"잔액 ..."은 이 거래의 금액이 아니다
         before = message[max(0, match.start() - 3) : match.start()]
         if not any(word in before for word in _RUNNING_TOTALS):
-            return int(match.group(1).replace(",", ""))
+            return Money(int(match.group(1).replace(",", "")))
     return None
 
 
-def _account(message: str) -> str | None:
+def _account(message: str) -> AccountId | None:
     if (
         "카드" in message or "체크" in message
     ):  # "KB국민체크(5678)승인" — 체크카드는 카드라고 안 쓴다
-        return "card"
-    return "bank" if "입금" in message else None
+        return AccountId("card")
+    return AccountId("bank") if "입금" in message else None
 
 
 def _direction(message: str) -> Direction | None:

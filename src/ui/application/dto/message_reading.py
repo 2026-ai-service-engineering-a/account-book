@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from ui.application.values import AccountId, Money
+
 from .direction import Direction
 
 
@@ -14,8 +16,8 @@ class MessageReading:
     """
 
     direction: Direction | None = None
-    amount: int | None = None
+    amount: Money | None = None
     occurred_at: datetime | None = None  # aware
-    account_id: str | None = None
+    account_id: AccountId | None = None
     merchant: str | None = None
     refusal: str = ""
