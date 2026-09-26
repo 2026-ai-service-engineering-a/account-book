@@ -67,11 +67,12 @@ class Step:
     args: Mapping[str, object]
     observation: ToolResult | None
 
+
 @dataclass
 class LoopState:
     run_id: RunId
     steps: list[Step]
-    budget: Budget          # 스텝 · 비용 · 벽시계
+    budget: Budget  # 스텝 · 비용 · 벽시계
 ```
 
 - 관찰은 [tools.md 3.1](tools.md#31-결과-봉투)의 봉투 그대로 넣는다. 요약해서 넣지 않는다 —

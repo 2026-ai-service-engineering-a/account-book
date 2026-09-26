@@ -22,9 +22,10 @@
 ```python
 # src/agent/domain/tools/count_frequency.py
 class CountFrequencyInput(BaseModel):
-    period: PeriodName                      # 이름만. 날짜 계산은 코드가 한다
+    period: PeriodName  # 이름만. 날짜 계산은 코드가 한다
     category_id: CategoryId | None = None
     merchant: str | None = None
+
 
 class CountFrequencyOutput(BaseModel):
     count: int
