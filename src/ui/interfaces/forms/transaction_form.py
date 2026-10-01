@@ -5,7 +5,14 @@ from collections.abc import Mapping
 from dataclasses import dataclass, fields
 from datetime import datetime, tzinfo
 
-from ui.application.dto import Direction, MessageReading, Transaction, TransactionDraft
+from ui.application.dto import (
+    Category,
+    CategorySuggestion,
+    Direction,
+    MessageReading,
+    Transaction,
+    TransactionDraft,
+)
 from ui.application.values import AccountId, CategoryId, Money
 
 _LOCAL_FORMAT = "%Y-%m-%dT%H:%M"
@@ -105,3 +112,28 @@ class TransactionForm:
             self.merchant = reading.merchant
             filled.add("merchant")
         return frozenset(filled)
+
+    def drop_category_outside(self, categories: tuple[Category, ...]) -> None:
+        """방향이 바뀌어 목록에 없는 카테고리는 비운다. 지출 목록에 "급여"가 남지 않게(3장)."""
+        if self.category_id not in {c.id for c in categories}:
+            self.category_id = ""
+
+    def apply_suggestion(
+        self,
+        suggestion: CategorySuggestion,
+        categories: tuple[Category, ...],
+        *,
+        overwrite: bool,
+    ) -> frozenset[str]:
+        """고른 카테고리를 넣고, 채웠으면 그 칸 이름을 돌려준다 — 화면이 표시를 단다.
+
+        `overwrite`가 아니면 사용자가 고른 것을 덮지 않는다(transaction-form.md 4.1).
+        AI 버튼은 누른 것이 동의라서 덮는다. 목록에 없는 값은 넣지 않는다.
+        """
+        chosen = suggestion.category_id
+        if chosen is None or chosen not in {c.id for c in categories}:
+            return frozenset()
+        if self.category_id and not overwrite:
+            return frozenset()
+        self.category_id = chosen
+        return frozenset({"category_id"})

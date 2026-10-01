@@ -14,11 +14,22 @@
   대역이 알아듣지 못하던 모양도 읽는다. 날짜는 LLM이 아니라 코드가 계산하고, 글에 없는
   가맹점명은 버린다. 저장은 여전히 사람이 누른다.
   ([ui_docs/pages/transaction-form.md](ui_docs/pages/transaction-form.md) 4.5)
+- **카테고리 AI로 고르기(RAG)** — 거래 폼의 카테고리 옆 버튼을 누르면 `agent`가 내 지난
+  기록에서 비슷한 거래를 찾아 고르고, 셀렉트 아래에 근거 한 줄을 보여 준다("같은 가맹점 최근
+  5건 중 5건: 식비", "비슷한 기록: 메가커피 · 스타벅스 → 카페"). 자주 가는 곳은 LLM 없이
+  기록만으로 정하고, 처음 보는 곳이 애매할 때만 LLM이 근거를 보고 고른다. 한 줄로 채우기도
+  카테고리를 같은 방법으로 채운다. 평가는 `make eval`.
+  ([docs/ai/category-suggestion-rag.md](docs/ai/category-suggestion-rag.md))
 - **`agent` 서비스** — compose에 붙었다. 포트를 열지 않고 `ui`만 부른다. LLM 키를 가진
   유일한 서비스다. ([README.md](README.md) 3장)
 
 ### 변경
 
+- **가맹점을 넣어도 카테고리가 저절로 채워지지 않는다.** AI로 고르기를 눌러야 고른다 —
+  누르기 전에는 AI를 부르지 않는다. 한 줄로 채우기는 지금처럼 카테고리까지 채운다.
+- `.env.sample`에 카테고리 고르기의 변수 여섯(`EMBEDDING_MODEL` 등)이 생겼다. 기본 임베딩은
+  `gemini/gemini-embedding-001`이라 `GEMINI_API_KEY`가 있어야 한다. 비우면 벡터 검색 없이
+  돈다.
 - **`make dev`가 `agent`도 띄운다.** `.env`에 `AGENT_MODEL` 제공자의 키(기본은
   `GEMINI_API_KEY`)가 있어야 뜬다. 키 없이 화면만 보려면 `AGENT_BASE_URL`을 비운다 —
   지금까지처럼 각본 대역이 선다.

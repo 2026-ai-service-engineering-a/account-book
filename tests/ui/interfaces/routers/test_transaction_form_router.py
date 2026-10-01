@@ -5,7 +5,9 @@ import dataclasses
 from fastapi.testclient import TestClient
 
 from tests.ui.conftest import FixedClock
-from tests.ui.interfaces.conftest import extract
+from tests.ui.interfaces.conftest import FixedReader, FixedSuggester, extract
+from ui.application.dto import CategorySuggestion, Direction, MessageReading
+from ui.application.values import CategoryId, Money
 from ui.interfaces.routers.transaction_form_router import SAMPLE_CARD_MESSAGE, SAMPLE_SENTENCE
 from ui.main import create_app
 
@@ -92,15 +94,21 @@ def test_missing_transaction_page(empty_client):
     assert "요청 id" in page.text
 
 
-def test_category_select_follows_direction_and_suggests(empty_client):
-    income = empty_client.get("/partials/category-select?direction=income&category_id=food")
-    assert "급여" in income.text and "식비" not in income.text
-    suggested = empty_client.get("/partials/category-select?direction=expense&merchant=스타벅스")
-    assert 'value="cafe" selected' in suggested.text
-    kept = empty_client.get(
-        "/partials/category-select?direction=expense&merchant=스타벅스&category_id=food"
+def test_capture_uses_the_category_the_reader_chose():
+    reading = MessageReading(
+        direction=Direction.EXPENSE,
+        amount=Money(5000),
+        merchant="카페",
+        category=CategorySuggestion(CategoryId("cafe"), "비슷한 기록: 메가커피 → 카페"),
     )
-    assert 'value="food" selected' in kept.text  # 사용자가 고른 것은 덮지 않는다
+    app = create_app(clock=FixedClock(), seeded=False, token_delay=0, capture_delay=0)
+    suggester = FixedSuggester(CategorySuggestion(CategoryId("food"), "부르면 안 된다"))
+    app.state.services = dataclasses.replace(
+        app.state.services, capture=FixedReader(reading), suggester=suggester
+    )
+    page = TestClient(app).post(READ, data=BLANK | {"capture_text": "카페 5천원"}, headers=HX).text
+    assert 'value="cafe" selected' in page and "비슷한 기록: 메가커피 → 카페" in page
+    assert suggester.calls == 0  # 읽은 쪽이 이미 골랐다 — 다시 부르지 않는다
 
 
 # ── 한 줄로 채우기(transaction-form.md 4.4) ──

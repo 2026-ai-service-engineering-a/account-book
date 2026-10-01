@@ -9,7 +9,7 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 화면은 별도의 `ui` 서버가 맡는다. 전체는 docker compose 하나로 뜬다.
 
 > 이 문서는 **설계 문서**다. 코드는 아직 `ui`와 `agent` 둘이다. `agent`는 기록(한 줄로
-> 채우기) 하나만 하고, `api` 자리와 나머지 AI 자리에는 대역이 선다
+> 채우기)과 카테고리 고르기(RAG)를 하고, `api` 자리와 나머지 AI 자리에는 대역이 선다
 > ([ui_docs/stand-ins.md](ui_docs/stand-ins.md)). 나머지는 여기서 정한 형태대로 다음 단계에서 붙인다.
 >
 > 코드를 쓰기 전에 [docs/development-rules.md](docs/development-rules.md)를 읽는다 —
@@ -110,7 +110,7 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 | `search_transactions` | 기간·카테고리·가맹점으로 거래 조회 | 읽기 — 자동 |
 | `summarize_spending` | 기간별/카테고리별 합계·비교 | 읽기 — 자동 |
 | `get_budget_status` | 예산 대비 소진율, 잔여일 기준 페이스 | 읽기 — 자동 |
-| `suggest_category` | 가맹점명 → 카테고리 후보 + 신뢰도 | 읽기 — 자동 |
+| `suggest_category` | 가맹점·메모 → 카테고리 후보 + 신뢰도 + 근거 거래 | 읽기 — 자동 |
 | `create_transaction` | 거래 1건 기록 | 쓰기 — **확인 필요** |
 | `update_transaction` | 금액·카테고리·메모 수정 | 쓰기 — **확인 필요** |
 | `delete_transaction` | 거래 삭제 | 쓰기 — **항상 확인** |
@@ -164,7 +164,11 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 | `agent_runs` | id, utterance, model, steps, tokens, cost_usd, status |
 | `tool_calls` | id, run_id, tool, args, result, confirmed_at |
 | `idempotency_keys` | key, request_hash, response, status_code, created_at |
+| `text_embeddings` | model, text_hash, vector, updated_at |
+| `category_rules` | id, merchant_pattern, category_id, source(seed/user), hit_count |
 
+`text_embeddings`는 거래가 아니라 색인 텍스트(가맹점 + 메모)에 벡터를 붙인다. 같은 가게 백 건이
+벡터 하나를 나눠 쓴다([docs/ai/category-suggestion-rag.md 4.2](docs/ai/category-suggestion-rag.md#42-어디에-두나)).
 금액은 정수 최소단위(원)로 저장한다. 부동소수점은 쓰지 않는다.
 시간은 전부 `TIMESTAMPTZ`에 UTC로 저장하고, "이번 달" 같은 경계는 사용자 타임존으로 계산한다.
 `idempotency_keys`가 필요한 이유는 [docs/api-contract.md 3장](docs/api-contract.md#3-멱등성--같은-거래가-두-번-들어가지-않게)에 있다.
@@ -260,8 +264,8 @@ Watch가 이미지를 다시 만들어 띄운다 — 이 겹은 `make dev`(`up -
 <http://localhost:8081>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
 
 화면을 실제로 만져 보려면 <http://localhost:8080> — `api` 자리에 메모리 대역을 세운 진짜
-`ui`가 뜬다. 버튼이 전부 동작한다. 거래 폼의 한 줄로 채우기는 `agent`가 LLM으로 읽고,
-나머지 AI 자리는 각본 대역이 채운다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)).
+`ui`가 뜬다. 버튼이 전부 동작한다. 거래 폼의 한 줄로 채우기와 카테고리의 AI로 고르기는
+`agent`가 LLM으로 하고, 나머지 AI 자리는 각본 대역이 채운다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)).
 
 `agent`는 `.env`의 `AGENT_MODEL` 제공자 키가 있어야 뜬다. 키 없이 화면만 보려면
 `AGENT_BASE_URL`을 비운다 — 한 줄로 채우기에도 각본 대역이 선다.
@@ -317,6 +321,14 @@ AGENT_MAX_STEPS=
 AGENT_MAX_COST_USD=
 AGENT_CONFIRM_THRESHOLD=
 AGENT_TIMEOUT_SECONDS=
+
+# 카테고리 고르기(RAG)
+EMBEDDING_MODEL=
+EMBEDDING_DIMENSIONS=
+RAG_TOP_K=
+RAG_VOTE_TEMPERATURE=
+CLASSIFY_MIN_CONFIDENCE=
+CLASSIFY_ABSTAIN_BELOW=
 
 # 서비스 주소 — compose 내부 네트워크 기준
 API_BASE_URL=

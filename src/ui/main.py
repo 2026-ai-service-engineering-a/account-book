@@ -12,11 +12,12 @@ from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI
 
-from ui.application.ports import CaptureReader, Clock
-from ui.infrastructure.agent import AgentCaptureReader
+from ui.application.ports import CaptureReader, CategorySuggester, Clock
+from ui.infrastructure.agent import AgentCaptureReader, AgentCategorySuggester
 from ui.infrastructure.memory import (
     MemoryBudgetGateway,
     MemoryCatalogGateway,
+    MemoryCategoryIndex,
     MemoryDemoData,
     MemoryReportGateway,
     MemoryStore,
@@ -33,6 +34,9 @@ from ui.infrastructure.settings import Settings
 from ui.infrastructure.system_clock import SystemClock
 from ui.interfaces.services import Services
 from ui.interfaces.web_app import build_web_app
+
+# agent가 붙으면 진짜가 서는 자리(ai_map의 key)
+_LIVE = frozenset({"capture", "classify"})
 
 
 def create_app(
@@ -53,9 +57,15 @@ def create_app(
     reports = MemoryReportGateway(store, clock)
     budgets = MemoryBudgetGateway(store, clock)
     catalog = MemoryCatalogGateway(store)
-    suggester = ScriptedCategorySuggester()
+    # 채팅은 아직 각본 대역이라 각본 대역끼리 짝을 짓는다. 폼의 AI 버튼만 진짜 agent를 부른다.
     chat = ScriptedChatAgent(
-        transactions, reports, budgets, catalog, suggester, clock, token_delay=token_delay
+        transactions,
+        reports,
+        budgets,
+        catalog,
+        ScriptedCategorySuggester(),
+        clock,
+        token_delay=token_delay,
     )
     return build_web_app(
         Services(
@@ -63,13 +73,14 @@ def create_app(
             reports=reports,
             budgets=budgets,
             catalog=catalog,
-            suggester=suggester,
+            suggester=_category_suggester(settings),
             chat=chat,
             narrator=ScriptedReportNarrator(),
             clock=clock,
             demo=MemoryDemoData(store, clock),
             capture=_capture_reader(settings, capture_delay),
-            live_seats=frozenset({"capture"}) if settings.agent_base_url else frozenset(),
+            index=MemoryCategoryIndex(store, settings.rag_top_k, settings.rag_vote_temperature),
+            live_seats=_LIVE if settings.agent_base_url else frozenset(),
         )
     )
 
@@ -77,6 +88,14 @@ def create_app(
 def _capture_reader(settings: Settings, delay: float) -> CaptureReader:
     if not settings.agent_base_url:
         return ScriptedCaptureReader(delay=delay)
-    # agent는 스키마를 못 맞추면 LLM을 한 번 더 부른다. 그 두 번을 기다리고 조금 더 기다린다.
-    timeout = settings.agent_timeout_seconds * 2 + 2
+    # 값 뽑기와 카테고리 고르기가 LLM을 각각 한 번씩, 스키마를 못 맞추면 한 번씩 더 부른다.
+    timeout = settings.agent_timeout_seconds * 4 + 2
     return AgentCaptureReader(settings.agent_base_url, settings.user_timezone, timeout)
+
+
+def _category_suggester(settings: Settings) -> CategorySuggester:
+    if not settings.agent_base_url:
+        return ScriptedCategorySuggester()
+    # 검색 → (애매하면) LLM 한 번. 스키마를 못 맞추면 한 번 더 부르는 것까지 기다린다.
+    timeout = settings.agent_timeout_seconds * 2 + 2
+    return AgentCategorySuggester(settings.agent_base_url, timeout)

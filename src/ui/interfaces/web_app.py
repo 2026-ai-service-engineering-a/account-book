@@ -12,9 +12,11 @@ from ui.application.errors import TransactionNotFound
 from .request_id import assign_request_id
 from .routers import (
     budgets_router,
+    category_select_router,
     chat_router,
     demo_router,
     reports_router,
+    stand_in_api_router,
     transaction_form_router,
     transactions_router,
     wiki_router,
@@ -34,12 +36,15 @@ def build_web_app(services: Services) -> FastAPI:
         chat_router,
         transactions_router,
         transaction_form_router,
+        category_select_router,
         reports_router,
         budgets_router,
         demo_router,
         wiki_router,
     ):
         app.include_router(module.router)
+    if services.index is not None:
+        app.include_router(stand_in_api_router.router)
     app.add_exception_handler(TransactionNotFound, _not_found)
     app.add_exception_handler(StarletteHTTPException, _http_error)
     app.add_exception_handler(Exception, _internal_error)

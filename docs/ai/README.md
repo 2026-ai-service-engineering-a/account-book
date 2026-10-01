@@ -6,8 +6,8 @@
 `docs/`의 다른 문서들이 "다른 프로젝트에도 통하는 규칙"이라면 이 폴더는 **이 가계부의 AI
 설계**다. 화면 설계를 `ui_docs/pages/`에 화면 하나씩 둔 것과 같은 방식이다.
 
-> 코드는 아직 일부다. `src/agent`는 기록(`POST /capture`) 하나를 하고, 나머지 자리에서
-> `ui`는 포트 뒤에 각본 대역을 세워 돈다.
+> 코드는 아직 일부다. `src/agent`는 기록(`POST /capture`)과 기능 1(`POST /classify`)을 하고,
+> 나머지 자리에서 `ui`는 포트 뒤에 각본 대역을 세워 돈다.
 > 이 폴더는 그 대역 자리에 무엇이 들어오는지를 미리 정해 둔 글이다. 코드가 붙는 feature는
 > 여기 적힌 것을 구현하고, 구현하다 달라진 것은 여기를 고친다.
 
@@ -113,7 +113,7 @@ graph LR
 | `domain` | 도구 스키마, 분류 결과·기간·신뢰도 값 객체, 루프 상태 |
 | `application` | 루프, 하네스 정책, 근거 검증, 프롬프트 조립 |
 | `infrastructure` | litellm 어댑터, 임베딩 클라이언트, `api` HTTP 클라이언트 |
-| `interfaces` | `POST /capture`, `POST /chat`(SSE), `POST /classify`, `POST /insights` |
+| `interfaces` | `POST /capture`, `POST /classify`, `POST /chat`(SSE), `POST /insights` |
 
 **프롬프트 문자열은 `application`에 둔다.** 모델 제공자를 바꿔도 안 바뀌는 것이라서
 `infrastructure`에 두면 어댑터마다 복사본이 생긴다.
@@ -202,21 +202,22 @@ AI 기능은 도구·엔드포인트·테이블·환경변수를 늘린다. **�
 | `detect_outliers` | 평소와 다른 지출 골라내기 | 읽기 — 자동 | 3 |
 
 `suggest_category`는 이미 있다. 기능 1은 도구를 늘리지 않고 그 도구가 돌려주는 것을
-늘린다 — 후보 하나에서 후보 + 근거로.
+늘렸다 — 후보 하나에서 후보 + 근거로. 반영했다(README 4장).
 
 ### 7.2 엔드포인트 (api-contract 6장)
 
 | 메서드 | 경로 | 대응 도구 | 기능 |
 |---|---|---|---|
-| `GET` | `/v1/embeddings/pending` | — (색인 워커) | 1 |
-| `PUT` | `/v1/transactions/{id}/embedding` | — (색인 워커) | 1 |
 | `GET` | `/v1/stats/frequency` | `count_frequency` | 2 |
 | `GET` | `/v1/stats/compare` | `compare_periods` | 2 · 3 |
 | `GET` | `/v1/stats/outliers` | `detect_outliers` | 3 |
 
-`agent`가 새로 노출하는 것은 `POST /classify`(기능 1)와 `POST /insights`(기능 3)다.
-기록의 `POST /capture`는 이미 붙었다 — 정본은
-[../../ui_docs/pages/transaction-form.md 4.5](../../ui_docs/pages/transaction-form.md#45-agent와-주고받는-것--post-capture).
+기능 1의 색인 엔드포인트 둘은 계약에 옮겼다(api-contract 6장).
+
+`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)다. 기록의 `POST /capture`와 기능 1의
+`POST /classify`는 이미 붙었다 — 정본은
+[../../ui_docs/pages/transaction-form.md 4.5](../../ui_docs/pages/transaction-form.md#45-agent와-주고받는-것--post-capture)와
+[4.1](../../ui_docs/pages/transaction-form.md#41-카테고리는-ai로-고르기를-누를-때만-고른다).
 `agent`의 표면은 계약 문서에 없다 — `ui`만 부르고, 화면 문서가 정본이다.
 
 `mcp`는 같은 도구를 프로토콜만 바꿔 내놓으므로 계약에 줄이 늘지 않는다. 대신 **서비스가
@@ -225,18 +226,16 @@ AI 기능은 도구·엔드포인트·테이블·환경변수를 늘린다. **�
 
 ### 7.3 테이블 (README 7장)
 
-| 테이블 | 핵심 컬럼 | 기능 |
-|---|---|---|
-| `transaction_embeddings` | transaction_id, model, text_hash, vector, updated_at | 1 |
-| `category_rules` | id, merchant_pattern, category_id, source, hit_count | 1 |
+기능 1의 `text_embeddings`·`category_rules`는 README 7장에 옮겼다. 남은 것이 없다.
 
 ### 7.4 환경변수 (.env.sample)
 
+기능 1의 변수(`EMBEDDING_MODEL`·`EMBEDDING_DIMENSIONS`·`RAG_TOP_K`·`RAG_VOTE_TEMPERATURE`·
+`CLASSIFY_MIN_CONFIDENCE`·`CLASSIFY_ABSTAIN_BELOW`)는 `.env.sample`에 옮겼다.
+`EMBEDDING_MODEL`은 비어 있어도 뜬다 — 시크릿이 아니라 기능 스위치라서, 비면 벡터 단계를
+건너뛰고 규칙·이력으로만 고른다.
+
 ```
-EMBEDDING_MODEL=            # litellm 표기. 비면 벡터 검색을 끈다 — 기능은 규칙·이력으로 돈다
-RAG_TOP_K=8                 # 이웃 몇 건을 근거로 쓰나
-CLASSIFY_MIN_CONFIDENCE=0.7 # 이 아래면 LLM에게 넘긴다
-CLASSIFY_ABSTAIN_BELOW=0.4  # 이 아래면 사람에게 넘긴다
 INSIGHT_MAX_TOOL_CALLS=6    # 리포트 한 번에 허용하는 집계 호출 수
 
 MCP_ENABLED=false           # 외부 AI 서비스 통로. 기본은 닫혀 있다
@@ -245,9 +244,7 @@ MCP_TOKEN=                  # 시크릿. 비면 mcp가 뜨지 않는다
 MCP_ALLOWED_TOOLS=summarize_spending,compare_periods,count_frequency,get_budget_status
 ```
 
-**`EMBEDDING_MODEL`이 비어 있어도 뜬다.** 시크릿이 아니라 기능 스위치라서 기본값을 준다.
-없으면 없다고 로그에 한 줄 남기고 검색 단계를 건너뛴다. 설정을 읽는 자리는 한
-곳이다([../development-rules.md 6.3](../development-rules.md#63-설정은-한-곳에서만-읽는다)).
+설정을 읽는 자리는 서비스마다 한 곳이다([../development-rules.md 6.3](../development-rules.md#63-설정은-한-곳에서만-읽는다)).
 
 ---
 

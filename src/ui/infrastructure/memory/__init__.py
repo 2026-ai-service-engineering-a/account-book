@@ -2,6 +2,7 @@
 
 from .memory_budget_gateway import MemoryBudgetGateway
 from .memory_catalog_gateway import MemoryCatalogGateway
+from .memory_category_index import MemoryCategoryIndex
 from .memory_demo_data import MemoryDemoData
 from .memory_report_gateway import MemoryReportGateway
 from .memory_store import MemoryStore
@@ -10,6 +11,7 @@ from .memory_transaction_gateway import MemoryTransactionGateway
 __all__ = [
     "MemoryBudgetGateway",
     "MemoryCatalogGateway",
+    "MemoryCategoryIndex",
     "MemoryDemoData",
     "MemoryReportGateway",
     "MemoryStore",

@@ -38,13 +38,16 @@ _KEYWORDS: tuple[tuple[str, str, Direction], ...] = (
 )
 
 
-class ScriptedCategorySuggester:
-    """키 없이 도는 대역. 가맹점명에 든 낱말 하나로 고른다."""
+_MISS = "각본 대역이 아는 낱말이 없어요. 직접 골라 주세요."
 
-    async def suggest(self, merchant: str, direction: Direction) -> CategorySuggestion | None:
-        text = merchant.strip()
+
+class ScriptedCategorySuggester:
+    """키 없이 도는 대역. 가맹점명·메모에 든 낱말 하나로 고른다."""
+
+    async def suggest(self, merchant: str, memo: str, direction: Direction) -> CategorySuggestion:
+        text = f"{merchant} {memo}".strip().lower()
         for keyword, category_id, kind in _KEYWORDS:
-            if kind == direction and keyword.lower() in text.lower():
-                reason = f"각본 대역이 낸 값입니다 — '{keyword}'"
+            if kind == direction and keyword.lower() in text:
+                reason = f"각본 대역: '{keyword}' 낱말"
                 return CategorySuggestion(CategoryId(category_id), reason)
-        return None
+        return CategorySuggestion(None, _MISS)

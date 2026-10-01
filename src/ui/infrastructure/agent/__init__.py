@@ -2,5 +2,12 @@
 
 from .agent_capture_reader import AgentCaptureReader
 from .agent_capture_reply import AgentCaptureReply
+from .agent_category_reply import AgentCategoryReply
+from .agent_category_suggester import AgentCategorySuggester
 
-__all__ = ["AgentCaptureReader", "AgentCaptureReply"]
+__all__ = [
+    "AgentCaptureReader",
+    "AgentCaptureReply",
+    "AgentCategoryReply",
+    "AgentCategorySuggester",
+]

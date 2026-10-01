@@ -5,11 +5,25 @@ from datetime import datetime
 
 import pytest
 
-from agent.application.errors import MalformedOutput, ModelUnavailable
-from agent.application.use_cases import ReadCapture
-from agent.application.use_cases.read_capture import CANCELLED, NO_AMOUNT, QUESTION, UNREADABLE
-from agent.domain.values import CaptureReading, Direction, Money, PaymentMethod
-from tests.agent.conftest import NOW, SENTENCE, SEOUL, FakeModel, extraction
+from agent.application.dto import ClassifyThresholds
+from agent.application.errors import LedgerUnavailable, MalformedOutput, ModelUnavailable
+from agent.application.use_cases import ClassifyCategory, ReadCapture
+from agent.application.use_cases.read_capture import (
+    CANCELLED,
+    NO_AMOUNT,
+    NO_CATEGORY,
+    QUESTION,
+    UNREADABLE,
+)
+from agent.domain.values import (
+    CaptureReading,
+    CategoryChoice,
+    ChoiceStrategy,
+    Direction,
+    Money,
+    PaymentMethod,
+)
+from tests.agent.conftest import NOW, SENTENCE, SEOUL, FakeLedger, FakeModel, extraction, search
 
 CARD = "[Web발신]\n신한카드(1234)승인\n홍*동\n8,500원 일시불\n09/16 12:31 김밥천국\n누적1,234,500원"
 
@@ -88,3 +102,34 @@ def test_unavailable_is_not_retried():
 def test_needs_an_aware_now():
     with pytest.raises(ValueError):
         asyncio.run(ReadCapture(FakeModel())(SENTENCE, datetime(2026, 10, 1)))
+
+
+def read_with_category(model: FakeModel, ledger: FakeLedger) -> CaptureReading:
+    classify = ClassifyCategory(ledger, model, ClassifyThresholds(0.7, 0.25))
+    return asyncio.run(ReadCapture(model, classify)(SENTENCE, NOW))
+
+
+def test_reading_a_merchant_goes_on_to_pick_a_category():
+    ledger = FakeLedger(search(candidates=(("cafe", 0.9),)))
+    reading = read_with_category(FakeModel(extraction()), ledger)
+    assert reading.category is not None and reading.category.category_id == "cafe"
+    assert reading.category.strategy is ChoiceStrategy.VECTOR
+    assert ledger.queries[0].merchant == "카페" and ledger.queries[0].direction is Direction.EXPENSE
+
+
+def test_no_merchant_no_category():
+    ledger = FakeLedger()
+    reading = read_with_category(FakeModel(extraction(merchant="")), ledger)
+    assert reading.category is None and ledger.queries == []
+
+
+def test_unknown_direction_is_classified_as_expense():
+    ledger = FakeLedger(search())
+    read_with_category(FakeModel(extraction(direction="unknown")), ledger)
+    assert ledger.queries[0].direction is Direction.EXPENSE
+
+
+def test_category_failure_keeps_the_values():
+    reading = read_with_category(FakeModel(extraction()), FakeLedger(LedgerUnavailable("x")))
+    assert reading.amount == Money(5000)
+    assert reading.category == CategoryChoice.abstain(NO_CATEGORY)

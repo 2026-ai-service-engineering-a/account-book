@@ -13,5 +13,11 @@ class Settings(BaseSettings):
     # ui는 그보다 오래 기다린다.
     agent_timeout_seconds: float = 10.0
 
+    # api 대역(메모리)의 카테고리 검색. 진짜 api가 서면 그쪽 설정으로 옮겨 간다.
+    # 이웃 몇 건으로 투표하나, 그리고 투표를 얼마나 가장 비슷한 이웃 쪽으로 기울이나
+    # (docs/ai/category-suggestion-rag.md 5장).
+    rag_top_k: int = 8
+    rag_vote_temperature: float = 0.03
+
     # .env에는 다른 서비스의 변수도 있다. ui가 쓰지 않는 것은 모른 척한다.
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

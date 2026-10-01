@@ -1,6 +1,6 @@
 # 대역으로 도는 ui
 
-`api`가 아직 없고, `agent`는 기록(한 줄로 채우기) 하나만 한다. 그래도 화면은 끝까지 돌아야
+`api`가 아직 없고, `agent`는 기록(한 줄로 채우기)과 카테고리 고르기만 한다. 그래도 화면은 끝까지 돌아야
 설계를 손으로 만져 볼 수 있다. 그래서 `src/ui`는 **포트 뒤에 대역을 세워** 돈다. 화면 코드는
 대역을 모르고 포트만 안다. 진짜가 생기면 [../src/ui/main.py](../src/ui/main.py)에서 한 줄씩
 바꾸고, 화면은 건드리지 않는다.
@@ -29,7 +29,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | 포트 | 대신하는 판단 | 지금 서 있는 대역 | 진짜가 올 곳 |
 |---|---|---|---|
 | `ChatAgent` | 자연어 한 줄 → 거래 제안이나 답 | `ScriptedChatAgent` — 정해진 모양만 알아듣는다 | `agent`의 `POST /chat` SSE |
-| `CategorySuggester` | 가맹점명 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | api의 `POST /v1/categories/suggest` |
+| `CategorySuggester` | 가맹점·메모 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | **붙었다.** `AgentCategorySuggester` → `agent`의 `POST /classify`([pages/transaction-form.md 4.1](pages/transaction-form.md#41-카테고리는-ai로-고르기를-누를-때만-고른다)) |
 | `ReportNarrator` | 리포트의 "눈에 띈 것" 문장 | `ScriptedReportNarrator` — 규칙 문구 | 아직 안 정했다([pages/reports.md 3.2](pages/reports.md#32-눈에-띈-것은-문장으로-낸다)) |
 | `CaptureReader` | 카드 문자나 말로 쓴 한 줄 → 거래 칸 (기록) | `ScriptedCaptureReader` — 승인 문자 한 모양과 채팅 대역의 귀 | **붙었다.** `AgentCaptureReader` → `agent`의 `POST /capture`([pages/transaction-form.md 4.5](pages/transaction-form.md#45-agent와-주고받는-것--post-capture)) |
 
@@ -62,14 +62,31 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | `ReportGateway` | `MemoryReportGateway` |
 | `BudgetGateway` | `MemoryBudgetGateway` |
 | `CatalogGateway` | `MemoryCatalogGateway` |
+| `CategoryIndex` | `MemoryCategoryIndex` — 카테고리 검색(규칙 → 이력 → 벡터 이웃)과 색인 |
 
-`src/ui/infrastructure/memory/`에 있다. 합계·페이스·검증·멱등성을 **여기서만** 계산한다.
+`src/ui/infrastructure/memory/`에 있다. 합계·페이스·검증·멱등성·카테고리 검색을 **여기서만** 계산한다.
 이 패키지가 api의 대역이기 때문이다. 화면 쪽(`interfaces`)에는 나눗셈 하나 없다.
 
 - 서버를 끄면 기록이 사라진다.
 - 처음 뜰 때 오늘을 기준으로 여섯 달치 예시를 채운다. 상단 띠의 버튼으로 비우거나
   다시 채운다 — 빈 화면 두 종류를 보려는 것이다. 이 버튼은 `DemoData` 포트가 있을
   때만 보이고, 진짜 api가 붙으면 사라진다.
+
+### 2.1 agent가 부르는 api 대역 — `/v1`
+
+카테고리 고르기는 검색이 `api`, 판단이 `agent`다. `agent`는 `api`를 HTTP로 부르는데 `api`가
+없으니, `ui`가 `CategoryIndex`를 계약 그대로 `/v1`으로 연다
+([../docs/api-contract.md 6장](../docs/api-contract.md#6-엔드포인트-초안)).
+
+| 메서드 | 경로 | 하는 일 |
+|---|---|---|
+| `POST` | `/v1/categories/suggest` | 후보 + 근거 + 그 방향의 카테고리 사전 |
+| `GET` | `/v1/embeddings/pending` | 그 모델의 벡터가 없는 색인 텍스트 |
+| `PUT` | `/v1/embeddings/{text_hash}` | 벡터 저장. `Idempotency-Key`가 없으면 400 |
+
+compose는 `agent`의 `API_BASE_URL`을 `http://ui:8080`으로 덮는다. `api`가 서면 그 한 줄을
+지우고 이 라우터는 빠진다. 벡터는 메모리에 있어서 `ui`를 다시 띄우면 비고, 다음 분류 요청 때
+`agent`가 다시 채운다(시드의 고유 텍스트 30여 개, 1초 남짓).
 
 ## 3. 대역이라 아직 안 하는 것
 
@@ -81,3 +98,8 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 - **대화 기록** — 새로고침하면 사라진다. 기록은 `agent_runs`의 몫이다.
 - **예산은 카테고리당 하나** — 달마다 따로 두지 않는다. `budgets.period`는 api가 생길 때.
 - **`confirmation_required`** — 임계값 확인은 api가 판단한다. 대역은 늘 확인 카드를 띄운다.
+- **`/v1`이 ui의 공개 포트에 열린다** — 2.1의 api 대역은 `agent`만 부르라고 연 것인데, `ui`의
+  8080에 같이 열려 있어서 브라우저도 부를 수 있다. 읽는 것은 카테고리 검색과 색인 텍스트(가맹점·
+  메모)뿐이고 단일 사용자 전제지만, 진짜 `api`는 compose 내부에만 연다(README 3장).
+- **규칙 표를 만드는 화면** — `category_rules`(0단계)는 자리만 있고 비어 있다. "김밥천국은
+  항상 식비로 할까요?" 승격 배너는 아직 없다([../docs/ai/category-suggestion-rag.md 8.2](../docs/ai/category-suggestion-rag.md#82-고친-것이-다음-답이-된다)).
