@@ -17,6 +17,9 @@ services:
       USER_TIMEZONE: ${USER_TIMEZONE:-Asia/Seoul}
       AGENT_BASE_URL: ${AGENT_BASE_URL:-}
       AGENT_TIMEOUT_SECONDS: ${AGENT_TIMEOUT_SECONDS:-10}
+      # ui 안의 api 대역이 카테고리 검색을 한다. 진짜 api가 서면 그쪽으로 옮겨 간다.
+      RAG_TOP_K: ${RAG_TOP_K:-8}
+      RAG_VOTE_TEMPERATURE: ${RAG_VOTE_TEMPERATURE:-0.03}
     ports:
       # 호스트로 여는 건 ui 하나뿐이다(README 3장). 지금은 api 자리에 대역이 선다.
       - "${UI_PORT:-8080}:8080"
@@ -33,6 +36,10 @@ services:
     env_file:
       - path: .env
         required: false
+    environment:
+      # api가 아직 없어서 ui가 api 대역의 /v1을 연다. api가 서면 이 줄을 지운다 — .env의
+      # API_BASE_URL(http://api:8000)이 그대로 쓰인다.
+      API_BASE_URL: http://ui:8080
     expose:
       - "8001"
     restart: unless-stopped

@@ -62,7 +62,7 @@ ui:  ## 대역으로 도는 ui를 띄운다 — http://localhost:8080 (Ctrl+C로
 	AGENT_BASE_URL=http://localhost:8001 uvicorn ui.main:create_app --factory --reload --reload-dir src/ui --app-dir src --host 0.0.0.0 --port 8080
 
 agent:  ## agent를 띄운다 — http://localhost:8001 (Ctrl+C로 멈춘다. ui와 다른 터미널에서)
-	uvicorn agent.main:create_app --factory --reload --reload-dir src/agent --app-dir src --host 0.0.0.0 --port 8001
+	API_BASE_URL=http://localhost:8080 uvicorn agent.main:create_app --factory --reload --reload-dir src/agent --app-dir src --host 0.0.0.0 --port 8001
 endif
 
 review:  ## finish 전 점검 — BASE 이후 바뀐 파일만 (기본 develop)
