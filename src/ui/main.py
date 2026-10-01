@@ -17,6 +17,7 @@ from ui.infrastructure.agent import AgentCaptureReader
 from ui.infrastructure.memory import (
     MemoryBudgetGateway,
     MemoryCatalogGateway,
+    MemoryCategoryIndex,
     MemoryDemoData,
     MemoryReportGateway,
     MemoryStore,
@@ -69,6 +70,7 @@ def create_app(
             clock=clock,
             demo=MemoryDemoData(store, clock),
             capture=_capture_reader(settings, capture_delay),
+            index=MemoryCategoryIndex(store, settings.rag_top_k, settings.rag_vote_temperature),
             live_seats=frozenset({"capture"}) if settings.agent_base_url else frozenset(),
         )
     )

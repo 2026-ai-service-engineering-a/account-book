@@ -1,6 +1,7 @@
 from .budget_gateway import BudgetGateway
 from .capture_reader import CaptureReader
 from .catalog_gateway import CatalogGateway
+from .category_index import CategoryIndex
 from .category_suggester import CategorySuggester
 from .chat_agent import ChatAgent
 from .clock import Clock
@@ -13,6 +14,7 @@ __all__ = [
     "BudgetGateway",
     "CaptureReader",
     "CatalogGateway",
+    "CategoryIndex",
     "CategorySuggester",
     "ChatAgent",
     "Clock",

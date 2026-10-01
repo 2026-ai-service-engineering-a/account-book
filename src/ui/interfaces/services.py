@@ -10,6 +10,7 @@ from ui.application.ports import (
     BudgetGateway,
     CaptureReader,
     CatalogGateway,
+    CategoryIndex,
     CategorySuggester,
     ChatAgent,
     Clock,
@@ -35,6 +36,8 @@ class Services:
     demo: DemoData | None = None
     # AI를 끄면 None이다. 한 줄로 채우기 칸이 사라질 뿐 폼은 그대로 돈다.
     capture: CaptureReader | None = None
+    # api 대역의 카테고리 검색. 있으면 agent가 부를 수 있게 /v1으로 연다
+    index: CategoryIndex | None = None
     # 각본 대역이 아니라 진짜 agent가 선 AI 자리(ai_map의 key). 위키가 "지금"을 말할 때 쓴다.
     live_seats: frozenset[str] = frozenset()
 
