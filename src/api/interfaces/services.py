@@ -6,13 +6,29 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from api.application.ports import DatabaseProbe
+from api.application.use_cases import (
+    CreateTransaction,
+    DeleteTransaction,
+    GetTransaction,
+    IdempotentWrite,
+    ListCatalog,
+    SearchTransactions,
+    UpdateTransaction,
+)
 
 
 @dataclass(frozen=True, slots=True)
 class Services:
-    """라우터가 쓰는 포트 묶음. 무엇이 채우는지는 main.py만 안다."""
+    """라우터가 쓰는 유스케이스 묶음. 무엇으로 조립했는지는 main.py만 안다."""
 
     database: DatabaseProbe
+    write: IdempotentWrite
+    create: CreateTransaction
+    update: UpdateTransaction
+    delete: DeleteTransaction
+    get: GetTransaction
+    search: SearchTransactions
+    catalog: ListCatalog
 
 
 def get_services(request: Request) -> Services:

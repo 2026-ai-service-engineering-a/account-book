@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from api.interfaces.schemas import ErrorResponse
 from api.interfaces.services import ServicesDep
 
 router = APIRouter(prefix="/v1")
@@ -16,5 +17,4 @@ def healthz(services: ServicesDep) -> JSONResponse:
     """
     if services.database.ping():
         return JSONResponse({"status": "ok"})
-    error = {"code": "db_unavailable", "message": "DB에 닿지 못했습니다."}
-    return JSONResponse({"error": error}, status_code=503)
+    return ErrorResponse.reply(503, "db_unavailable", "DB에 닿지 못했습니다.")
