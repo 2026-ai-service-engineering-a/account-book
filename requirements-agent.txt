@@ -1,0 +1,7 @@
+# agent의 런타임 의존성. 공통 위에 LLM 라이브러리를 얹는다.
+# 따로 둔 이유: ui 이미지에 litellm이 들어가면 크기가 두 배 반이 되고, "ui는 LLM을 모른다"는
+# 경계(README 3장)가 패키지 단위에서 흐려진다.
+-r requirements.txt
+
+# LLM 제공자를 litellm 하나로 감싼다. Gemini · OpenAI · Anthropic이 같은 길을 지난다.
+litellm>=1.70,<2

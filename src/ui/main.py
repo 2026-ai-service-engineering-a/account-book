@@ -1,6 +1,7 @@
 """조립 지점. 어느 구현이 어느 포트를 채우는지는 여기서만 정한다.
 
-지금은 api·agent가 없어서 전부 대역이다. 진짜가 생기면 이 파일에서 한 줄씩 바꾼다.
+api는 아직 없어서 메모리 대역이다. agent는 `AGENT_BASE_URL`이 있으면 진짜를 부르고, 없으면
+각본 대역이 선다. 진짜가 생기면 이 파일에서 한 줄씩 바꾼다.
 
     uvicorn ui.main:create_app --factory
 """
@@ -11,7 +12,8 @@ from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI
 
-from ui.application.ports import Clock
+from ui.application.ports import CaptureReader, Clock
+from ui.infrastructure.agent import AgentCaptureReader
 from ui.infrastructure.memory import (
     MemoryBudgetGateway,
     MemoryCatalogGateway,
@@ -66,6 +68,15 @@ def create_app(
             narrator=ScriptedReportNarrator(),
             clock=clock,
             demo=MemoryDemoData(store, clock),
-            capture=ScriptedCaptureReader(delay=capture_delay),
+            capture=_capture_reader(settings, capture_delay),
+            live_seats=frozenset({"capture"}) if settings.agent_base_url else frozenset(),
         )
     )
+
+
+def _capture_reader(settings: Settings, delay: float) -> CaptureReader:
+    if not settings.agent_base_url:
+        return ScriptedCaptureReader(delay=delay)
+    # agent는 스키마를 못 맞추면 LLM을 한 번 더 부른다. 그 두 번을 기다리고 조금 더 기다린다.
+    timeout = settings.agent_timeout_seconds * 2 + 2
+    return AgentCaptureReader(settings.agent_base_url, settings.user_timezone, timeout)

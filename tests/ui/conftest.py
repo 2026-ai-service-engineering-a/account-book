@@ -21,6 +21,15 @@ class FixedClock:
         return self.current
 
 
+@pytest.fixture(autouse=True)
+def stand_in_agent(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ui 테스트는 언제나 각본 대역으로 돈다. 개발용 .env에 agent 주소가 있어도 부르지 않는다.
+
+    환경변수가 .env보다 먼저라서, 비워 두면 .env의 값을 덮는다.
+    """
+    monkeypatch.setenv("AGENT_BASE_URL", "")
+
+
 @pytest.fixture
 def clock() -> FixedClock:
     return FixedClock()

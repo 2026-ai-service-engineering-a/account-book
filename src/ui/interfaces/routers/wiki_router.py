@@ -19,5 +19,6 @@ async def wiki_page(request: Request, services: ServicesDep) -> HTMLResponse:
         # 대역 모드면 모든 AI 자리에 각본 대역이 서 있다
         "stand_in_mode": services.demo is not None,
         "capture_on": services.capture is not None,
+        "live_seats": services.live_seats,
     }
     return render(request, "wiki.html", context)

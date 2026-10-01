@@ -33,6 +33,10 @@ SEATS: tuple[AiSeat, ...] = (
         stand_in="ScriptedChatAgent · ScriptedCaptureReader",
         stand_in_does="정해진 모양의 한 줄과 카드 승인 문자 한 모양만 읽는다",
         doc="docs/ai/agent-loop.md 3장 · tools.md 6장",
+        live=(
+            "한 줄로 채우기는 agent의 POST /capture가 LLM으로 읽는다. 날짜 계산과 가맹점 검사는"
+            " 코드가 한다. 채팅은 아직 각본 대역"
+        ),
     ),
     AiSeat(
         key="classify",

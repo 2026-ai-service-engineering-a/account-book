@@ -1,8 +1,9 @@
 # 대역으로 도는 ui
 
-`api`와 `agent`가 아직 없다. 그래도 화면은 끝까지 돌아야 설계를 손으로 만져 볼 수 있다.
-그래서 `src/ui`는 **포트 뒤에 대역을 세워** 돈다. 화면 코드는 대역을 모르고 포트만 안다.
-진짜가 생기면 [../src/ui/main.py](../src/ui/main.py)에서 한 줄씩 바꾸고, 화면은 건드리지 않는다.
+`api`가 아직 없고, `agent`는 기록(한 줄로 채우기) 하나만 한다. 그래도 화면은 끝까지 돌아야
+설계를 손으로 만져 볼 수 있다. 그래서 `src/ui`는 **포트 뒤에 대역을 세워** 돈다. 화면 코드는
+대역을 모르고 포트만 안다. 진짜가 생기면 [../src/ui/main.py](../src/ui/main.py)에서 한 줄씩
+바꾸고, 화면은 건드리지 않는다.
 
 ```bash
 make dev     # 개발용으로 띄우고 라이브 업데이트 — http://localhost:8080
@@ -30,9 +31,13 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | `ChatAgent` | 자연어 한 줄 → 거래 제안이나 답 | `ScriptedChatAgent` — 정해진 모양만 알아듣는다 | `agent`의 `POST /chat` SSE |
 | `CategorySuggester` | 가맹점명 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | api의 `POST /v1/categories/suggest` |
 | `ReportNarrator` | 리포트의 "눈에 띈 것" 문장 | `ScriptedReportNarrator` — 규칙 문구 | 아직 안 정했다([pages/reports.md 3.2](pages/reports.md#32-눈에-띈-것은-문장으로-낸다)) |
-| `CaptureReader` | 카드 문자나 말로 쓴 한 줄 → 거래 칸 (기록) | `ScriptedCaptureReader` — 승인 문자 한 모양과 채팅 대역의 귀 | `agent`. 엔드포인트는 아직 안 정했다([pages/transaction-form.md 4.4](pages/transaction-form.md#44-한-줄로-채운다--카드-문자든-말이든)) |
+| `CaptureReader` | 카드 문자나 말로 쓴 한 줄 → 거래 칸 (기록) | `ScriptedCaptureReader` — 승인 문자 한 모양과 채팅 대역의 귀 | **붙었다.** `AgentCaptureReader` → `agent`의 `POST /capture`([pages/transaction-form.md 4.5](pages/transaction-form.md#45-agent와-주고받는-것--post-capture)) |
 
 포트는 `src/ui/application/ports/`, 대역은 `src/ui/infrastructure/scripted/`에 있다.
+
+진짜가 선 자리는 `AGENT_BASE_URL`로 고른다. 값이 있으면 그 주소의 `agent`를 부르고, 비어
+있으면 각본 대역이 선다 — 키 없이 화면을 만질 때다. 위키는 지금 어느 자리에 진짜가 섰는지
+말한다(`Services.live_seats`). 테스트는 언제나 각본 대역으로 돈다.
 
 각본 대역이 알아듣는 것:
 

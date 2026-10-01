@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import dataclasses
+
+from fastapi.testclient import TestClient
+
+from tests.ui.conftest import FixedClock
 from ui.interfaces.ai_map import SEATS
+from ui.main import create_app
 
 
 def test_wiki_has_a_section_per_seat(client):
@@ -15,6 +21,14 @@ def test_wiki_has_a_section_per_seat(client):
 
 def test_wiki_says_ai_is_not_attached_yet(client):
     assert "지금은 AI가 붙어 있지 않다." in client.get("/wiki").text
+
+
+def test_wiki_says_which_seats_run_on_the_agent():
+    app = create_app(clock=FixedClock(), seeded=False)
+    app.state.services = dataclasses.replace(app.state.services, live_seats=frozenset({"capture"}))
+    page = TestClient(app).get("/wiki").text
+    capture = next(s for s in SEATS if s.key == "capture")
+    assert "AI가 일부 자리에 붙어 있다." in page and capture.live in page
 
 
 def test_header_links_to_wiki_everywhere(client):
