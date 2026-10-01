@@ -17,7 +17,7 @@ MOCK_PORT ?= 8081
 UI_PORT ?= 8080
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up dev prod down shell mock ui review check lint format type test all
+.PHONY: help env build up dev prod down shell mock ui agent review check lint format type test all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -53,9 +53,16 @@ ifeq ($(wildcard /.dockerenv),)
 ui: env  ## 대역으로 도는 ui를 띄운다 — http://localhost:8080
 	$(COMPOSE) up -d ui
 	@echo "http://localhost:$(UI_PORT)  — 로그는 docker compose logs -f ui"
+agent: env  ## agent를 띄운다 — 포트는 열지 않는다. ui가 compose 안에서 부른다
+	$(COMPOSE) up -d agent
+	@echo "로그는 docker compose logs -f agent"
 else
+# 같은 컨테이너에서 둘 다 띄우므로 ui는 agent를 localhost로 부른다. .env의 주소는 compose용이다.
 ui:  ## 대역으로 도는 ui를 띄운다 — http://localhost:8080 (Ctrl+C로 멈춘다)
-	uvicorn ui.main:create_app --factory --reload --reload-dir src --app-dir src --host 0.0.0.0 --port 8080
+	AGENT_BASE_URL=http://localhost:8001 uvicorn ui.main:create_app --factory --reload --reload-dir src/ui --app-dir src --host 0.0.0.0 --port 8080
+
+agent:  ## agent를 띄운다 — http://localhost:8001 (Ctrl+C로 멈춘다. ui와 다른 터미널에서)
+	uvicorn agent.main:create_app --factory --reload --reload-dir src/agent --app-dir src --host 0.0.0.0 --port 8001
 endif
 
 review:  ## finish 전 점검 — BASE 이후 바뀐 파일만 (기본 develop)

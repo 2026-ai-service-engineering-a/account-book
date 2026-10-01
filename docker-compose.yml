@@ -1,5 +1,5 @@
 # 기본 구성 — 운영처럼 뜬다. 코드를 이미지에 굽고, 고쳐도 다시 뜨지 않는다.
-# db·api·agent는 각 코드가 생길 때 여기에 붙인다(README 3장).
+# db·api는 각 코드가 생길 때 여기에 붙인다(README 3장).
 #
 #   docker compose up -d --build   # http://localhost:8080
 #
@@ -17,4 +17,21 @@ services:
     ports:
       # 호스트로 여는 건 ui 하나뿐이다(README 3장). 지금은 api·agent 자리에 대역이 선다.
       - "${UI_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  # 에이전트 — LLM 키를 가진 유일한 서비스. 포트를 열지 않는다. ui만 compose 내부에서 부른다.
+  # 키가 비어 있으면 뜨는 순간 죽는다. 그래도 ui는 돈다 — 한 줄로 채우기가 "지금은 읽을 수
+  # 없어요"라고 답할 뿐이다(docs/ai/README.md 2장 원칙 8).
+  agent:
+    build:
+      context: .
+      target: runtime
+    image: account-book-agent
+    env_file:
+      - path: .env
+        required: false
+    command: >-
+      uvicorn agent.main:create_app --factory --app-dir src --host 0.0.0.0 --port 8001
+    expose:
+      - "8001"
     restart: unless-stopped
