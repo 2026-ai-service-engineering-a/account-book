@@ -18,6 +18,7 @@ from sqlalchemy import Engine, create_engine, text
 from api.application.dto import (
     IdempotencyRecord,
     StoredReply,
+    Totals,
     TransactionDraft,
     TransactionPage,
     TransactionQuery,
@@ -25,7 +26,7 @@ from api.application.dto import (
 from api.application.errors import RequestInProgress
 from api.application.ports import DatabaseProbe, UnitOfWork
 from api.domain.entities import Account, Category, Transaction
-from api.domain.values import AccountId, CategoryId, Direction, Money, TransactionId
+from api.domain.values import AccountId, CategoryId, Direction, Money, Period, TransactionId
 from api.infrastructure.settings import Settings
 from api.main import create_app
 
@@ -148,13 +149,85 @@ class FakeIdempotency:
         self.records[key] = IdempotencyRecord(self.records[key].request_hash, reply)
 
 
+class FakeStats:
+    """메모리의 거래로 실제로 더한다 — 유스케이스 테스트가 숫자까지 본다."""
+
+    def __init__(self, transactions: FakeTransactions) -> None:
+        self._transactions = transactions
+
+    def _rows(self, start: datetime | None, end: datetime | None) -> list[Transaction]:
+        return [
+            t
+            for t in self._transactions.rows.values()
+            if (start is None or t.occurred_at >= start) and (end is None or t.occurred_at < end)
+        ]
+
+    def totals(self, query: TransactionQuery) -> Totals:
+        rows = [
+            t
+            for t in self._rows(query.start, query.end)
+            if query.category_id is None or t.category_id == query.category_id
+        ]
+        return Totals(
+            Money.total(t.amount for t in rows if t.direction is Direction.EXPENSE),
+            Money.total(t.amount for t in rows if t.direction is Direction.INCOME),
+        )
+
+    def spent_by_category(self, start: datetime, end: datetime) -> dict[CategoryId, Money]:
+        out: dict[CategoryId, Money] = {}
+        for t in self._rows(start, end):
+            if t.direction is Direction.EXPENSE:
+                out[t.category_id] = out.get(t.category_id, Money(0)) + t.amount
+        return out
+
+    def daily_spent(
+        self, category_id: CategoryId, start: datetime, end: datetime
+    ) -> list[tuple[int, Money]]:
+        return [
+            (t.occurred_at.astimezone(SEOUL).day, t.amount)
+            for t in self._rows(start, end)
+            if t.category_id == category_id and t.direction is Direction.EXPENSE
+        ]
+
+    def first_occurred_at(self) -> datetime | None:
+        return min((t.occurred_at for t in self._transactions.rows.values()), default=None)
+
+
+class FakeBudgets:
+    def __init__(self) -> None:
+        self.rows: dict[tuple[str, str], Money | None] = {}
+
+    def limits(self, period: Period) -> dict[CategoryId, Money]:
+        latest: dict[str, tuple[str, Money | None]] = {}
+        for (category, month), amount in self.rows.items():
+            if month <= str(period) and (category not in latest or month > latest[category][0]):
+                latest[category] = (month, amount)
+        return {CategoryId(c): a for c, (_, a) in latest.items() if a is not None}
+
+    def set_limit(self, category_id: CategoryId, period: Period, amount: Money | None) -> None:
+        self.rows[(category_id, str(period))] = amount
+
+
+class FixedClock:
+    def __init__(self, now: datetime) -> None:
+        self.current = now
+
+    def now(self) -> datetime:
+        return self.current
+
+
 class FakeUnitOfWork:
-    """메모리 위의 작업 단위. 커밋하지 않고 나가면 이번에 바뀐 것을 되돌린다 — DB처럼."""
+    """메모리 위의 작업 단위. 커밋하지 않고 나가면 이번에 바뀐 것을 되돌린다 — DB처럼.
+
+    부르면 자기 자신을 낸다 — 유스케이스가 받는 작업 단위 공장 자리에 그대로 넘긴다.
+    """
 
     def __init__(self) -> None:
         self.transactions = FakeTransactions()
         self.catalog = FakeCatalog()
         self.idempotency = FakeIdempotency()
+        self.stats = FakeStats(self.transactions)
+        self.budgets = FakeBudgets()
         self.commits = 0
 
     def __call__(self) -> FakeUnitOfWork:
@@ -163,6 +236,7 @@ class FakeUnitOfWork:
     def __enter__(self) -> Self:
         self._rows = dict(self.transactions.rows)
         self._records = dict(self.idempotency.records)
+        self._budgets = dict(self.budgets.rows)
         self._committed = False
         return self
 
@@ -175,6 +249,7 @@ class FakeUnitOfWork:
         if not self._committed:
             self.transactions.rows = self._rows
             self.idempotency.records = self._records
+            self.budgets.rows = self._budgets
 
     def commit(self) -> None:
         self._committed = True

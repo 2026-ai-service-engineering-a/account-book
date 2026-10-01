@@ -3,8 +3,10 @@ from __future__ import annotations
 from types import TracebackType
 from typing import Protocol, Self
 
+from .budget_repository import BudgetRepository
 from .catalog_repository import CatalogRepository
 from .idempotency_store import IdempotencyStore
+from .stats_repository import StatsRepository
 from .transaction_repository import TransactionRepository
 
 
@@ -24,6 +26,12 @@ class UnitOfWork(Protocol):
 
     @property
     def idempotency(self) -> IdempotencyStore: ...
+
+    @property
+    def stats(self) -> StatsRepository: ...
+
+    @property
+    def budgets(self) -> BudgetRepository: ...
 
     def __enter__(self) -> Self: ...
 
