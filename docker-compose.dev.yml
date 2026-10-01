@@ -71,6 +71,7 @@ services:
       - .:/app
     command: >-
       sh -c "alembic -c src/api/alembic.ini upgrade head &&
+      python -m api.seed --demo &&
       uvicorn api.main:create_app --factory --app-dir src
       --reload --reload-dir src/api --host 0.0.0.0 --port 8000"
     restart: "no"

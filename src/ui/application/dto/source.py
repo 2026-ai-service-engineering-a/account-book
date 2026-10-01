@@ -8,3 +8,4 @@ class Source(StrEnum):
 
     MANUAL = "manual"
     AGENT = "agent"
+    IMPORT = "import"  # CSV 가져오기 — api가 낼 수 있는 값이라 받아 둔다

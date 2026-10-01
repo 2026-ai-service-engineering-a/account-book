@@ -1,7 +1,7 @@
 # 대역으로 도는 ui
 
-`api`는 떴지만 아직 스키마와 상태 확인(`/v1/healthz`)만 한다. 거래·집계·카테고리 검색은
-여전히 아래의 메모리 대역이 하고, `agent`는 기록(한 줄로 채우기)과 카테고리 고르기만 한다. 그래도 화면은 끝까지 돌아야
+`api`는 떴고 거래·카테고리·결제수단을 DB로 받는다. 그래도 화면은 아직 아래의 메모리 대역으로
+돈다 — 집계·예산·카테고리 검색이 같은 저장소를 읽어서, 전부 `api`에 생긴 뒤 한꺼번에 바꾼다. `agent`는 기록(한 줄로 채우기)과 카테고리 고르기만 한다. 그래도 화면은 끝까지 돌아야
 설계를 손으로 만져 볼 수 있다. 그래서 `src/ui`는 **포트 뒤에 대역을 세워** 돈다. 화면 코드는
 대역을 모르고 포트만 안다. 진짜가 생기면 [../src/ui/main.py](../src/ui/main.py)에서 한 줄씩
 바꾸고, 화면은 건드리지 않는다.
@@ -57,9 +57,10 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 ## 2. api 자리 — 메모리 저장소
 
-진짜 `api`와 `db`(PostgreSQL + pgvector)는 compose에 떠 있고 스키마도 있다. 아직 거래를 받지
-않을 뿐이다. 포트가 하나씩 `api`의 HTTP 클라이언트로 바뀌면 그 대역이 빠진다 — 거래, 집계·예산,
-카테고리 검색(벡터 이웃을 pgvector로) 순서다.
+진짜 `api`와 `db`(PostgreSQL + pgvector)는 compose에 떠 있다. `TransactionGateway`·`CatalogGateway`의
+진짜(`HttpTransactionGateway`·`HttpCatalogGateway`, `src/ui/infrastructure/api/`)도 있다. 아직
+끼우지 않았을 뿐이다 — 집계·예산·카테고리 검색 대역이 메모리 저장소의 거래를 읽기 때문이다. 셋이
+`api`에 생기면 `API_BASE_URL` 하나로 한꺼번에 바뀐다.
 
 | 포트 | 대역 |
 |---|---|
