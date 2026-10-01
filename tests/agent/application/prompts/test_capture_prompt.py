@@ -11,9 +11,9 @@ def test_user_text_goes_inside_the_fence():
 
 def test_every_property_is_required():
     # 빠진 키를 모델이 마음대로 비우지 못하게 — 모르면 0·""·unknown으로 말하게 한다
-    properties = CAPTURE_SCHEMA["properties"]
-    assert isinstance(properties, dict)
-    assert set(CAPTURE_SCHEMA["required"]) == set(properties)  # type: ignore[call-overload]
+    properties, required = CAPTURE_SCHEMA["properties"], CAPTURE_SCHEMA["required"]
+    assert isinstance(properties, dict) and isinstance(required, list)
+    assert set(required) == set(properties)
 
 
 def test_no_reference_time_in_the_prompt():
