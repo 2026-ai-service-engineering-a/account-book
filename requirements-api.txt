@@ -1,0 +1,10 @@
+# api의 런타임 의존성. 공통 위에 DB 라이브러리를 얹는다.
+# DB에 붙는 서비스는 api 하나뿐이라(README 3장) ui·agent 이미지에는 들어가지 않는다.
+-r requirements.txt
+
+# 동기 SQLAlchemy — api의 I/O는 짧은 DB 호출뿐이다(development-rules 6.2)
+sqlalchemy>=2.0,<3
+psycopg[binary]>=3.2,<4
+alembic>=1.14,<2
+# vector 열 타입. 확장 자체는 DB 이미지(pgvector/pgvector)에 들어 있다
+pgvector>=0.3,<1

@@ -17,7 +17,7 @@ MOCK_PORT ?= 8081
 UI_PORT ?= 8080
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up dev prod down shell mock ui agent review check lint format type test eval all
+.PHONY: help env build up dev prod down shell mock ui agent seed psql review check lint format type test test-db eval all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -65,6 +65,12 @@ agent:  ## agent를 띄운다 — http://localhost:8001 (Ctrl+C로 멈춘다. ui
 	API_BASE_URL=http://localhost:8080 uvicorn agent.main:create_app --factory --reload --reload-dir src/agent --app-dir src --host 0.0.0.0 --port 8001
 endif
 
+seed:  ## 기준 데이터(카테고리·결제수단)를 넣는다 — 몇 번을 쳐도 같다
+	$(COMPOSE) exec -T api python -m api.seed
+
+psql:  ## DB에 붙는다 — 표를 눈으로 볼 때 (\dt, \d text_embeddings)
+	$(COMPOSE) exec db sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+
 review:  ## finish 전 점검 — BASE 이후 바뀐 파일만 (기본 develop)
 	$(EXEC) python3 scripts/check_file_length.py --base $(BASE)
 	$(EXEC) python3 scripts/check_docs.py
@@ -88,6 +94,10 @@ test:  ## 단위 테스트
 	@$(EXEC) pytest -m "not integration"; status=$$?; \
 		if [ $$status -eq 5 ]; then echo "아직 테스트가 없다."; exit 0; fi; \
 		exit $$status
+
+# DB가 필요한 테스트. 테스트마다 빈 DB를 만들고 지운다 — 개발용 DB의 데이터는 그대로다.
+test-db:  ## DB 통합 테스트 — 실제 Postgres + pgvector. make dev로 db가 떠 있어야 한다
+	$(EXEC) pytest -m integration -q tests/api
 
 # 실제 모델을 부른다 — 돈이 들고 점수가 매번 조금씩 다르다. CI에 넣지 않는다.
 # agent 컨테이너 안에서 돈다. 키와 api 주소(ui의 대역)가 거기 있다.

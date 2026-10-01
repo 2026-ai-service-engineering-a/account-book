@@ -32,6 +32,8 @@ services:
         - action: rebuild
           path: requirements-agent.txt
         - action: rebuild
+          path: requirements-api.txt
+        - action: rebuild
           path: requirements-dev.txt
         - action: rebuild
           path: Dockerfile
@@ -53,6 +55,31 @@ services:
           path: requirements.txt
         - action: rebuild
           path: requirements-agent.txt
+        - action: rebuild
+          path: requirements-api.txt
+        - action: rebuild
+          path: requirements-dev.txt
+        - action: rebuild
+          path: Dockerfile
+
+  api:
+    build:
+      context: .
+      target: dev
+    image: account-book-api-dev
+    volumes:
+      - .:/app
+    command: >-
+      sh -c "alembic -c src/api/alembic.ini upgrade head &&
+      uvicorn api.main:create_app --factory --app-dir src
+      --reload --reload-dir src/api --host 0.0.0.0 --port 8000"
+    restart: "no"
+    develop:
+      watch:
+        - action: rebuild
+          path: requirements.txt
+        - action: rebuild
+          path: requirements-api.txt
         - action: rebuild
           path: requirements-dev.txt
         - action: rebuild
@@ -82,6 +109,8 @@ services:
           path: requirements.txt
         - action: rebuild
           path: requirements-agent.txt
+        - action: rebuild
+          path: requirements-api.txt
         - action: rebuild
           path: requirements-dev.txt
         - action: rebuild

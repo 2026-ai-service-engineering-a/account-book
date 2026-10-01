@@ -23,6 +23,12 @@
 - **`agent` 서비스** — compose에 붙었다. 포트를 열지 않고 `ui`만 부른다. LLM 키를 가진
   유일한 서비스다. ([README.md](README.md) 3장)
 
+- **`db`와 `api`** — PostgreSQL(pgvector 확장 포함)과 그 앞의 `api` 서비스가 compose에 떴다.
+  스키마는 README 7장의 테이블과 카테고리 고르기의 `text_embeddings`(768차원, 코사인 HNSW
+  인덱스)·`category_rules`. `api`가 뜰 때 Alembic으로 스키마를 올리고, `make seed`가 카테고리·
+  결제수단을 넣는다. 아직 거래는 받지 않는다 — 화면은 그대로 메모리 대역으로 돈다.
+  (README 7장, [docs/development-rules.md](docs/development-rules.md) 6.6)
+
 ### 변경
 
 - **가맹점을 넣어도 카테고리가 저절로 채워지지 않는다.** AI로 고르기를 눌러야 고른다 —
@@ -30,6 +36,8 @@
 - `.env.sample`에 카테고리 고르기의 변수 여섯(`EMBEDDING_MODEL` 등)이 생겼다. 기본 임베딩은
   `gemini/gemini-embedding-001`이라 `GEMINI_API_KEY`가 있어야 한다. 비우면 벡터 검색 없이
   돈다.
+- **`.env`에 `POSTGRES_PASSWORD`를 채워야 뜬다.** 비어 있으면 compose가 멈춘다. `POSTGRES_HOST`·
+  `POSTGRES_PORT`도 생겼다(`db`, `5432`). 의존성이 바뀌었으니 `make build`를 한 번 친다.
 - **`make dev`가 `agent`도 띄운다.** `.env`에 `AGENT_MODEL` 제공자의 키(기본은
   `GEMINI_API_KEY`)가 있어야 뜬다. 키 없이 화면만 보려면 `AGENT_BASE_URL`을 비운다 —
   지금까지처럼 각본 대역이 선다.

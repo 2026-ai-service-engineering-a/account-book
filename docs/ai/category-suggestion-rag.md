@@ -16,6 +16,9 @@
 > api 대역(`MemoryCategoryIndex`)이 계약 그대로 `/v1`을 열어 맡는다
 > ([../../ui_docs/stand-ins.md 2.1](../../ui_docs/stand-ins.md#21-agent가-부르는-api-대역--v1)).
 > 구현하며 설계에서 달라진 것은 해당 절에 **바꾼 것**으로 적었다.
+> `db`에는 `text_embeddings`(vector(768) + 코사인 HNSW)와 `category_rules`가 이미 있다. 검색이
+> 아직 메모리 대역에서 돌 뿐이고, 거래가 `api`로 옮겨 오면 이웃 찾기가 SQL 한 줄
+> (`ORDER BY vector <=> :q`)로 바뀐다.
 
 ---
 

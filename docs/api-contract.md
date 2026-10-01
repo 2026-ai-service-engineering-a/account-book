@@ -124,6 +124,7 @@ X-Agent-Run-Id: 01J9X...
 | `400` | `idempotency_key_required` | 쓰기 요청에 `Idempotency-Key`가 없다 |
 | `409` | `idempotency_key_reused` | 같은 키로 다른 본문이 왔다 |
 | `409` | `request_in_progress` | 같은 키의 요청이 아직 처리 중이다 |
+| `503` | `db_unavailable` | DB에 닿지 못했다 — `/v1/healthz`가 낸다 |
 
 에이전트는 `request_in_progress`를 받으면 재시도하지 않고 기다린다. 이미 같은 일이
 진행 중이라는 뜻이라서, 재시도가 중복을 만들지는 않지만 루프 예산만 태운다.
