@@ -7,6 +7,24 @@
 
 ## Unreleased
 
+### 추가
+
+- **한 줄로 채우기에 진짜 AI** — 거래 폼에 카드 문자나 "어제 저녁 교촌치킨 2만3천원 현금"
+  같은 한 줄을 보내면 `agent`가 LLM(기본 Gemini Flash-Lite)으로 읽어 칸을 채운다. 각본
+  대역이 알아듣지 못하던 모양도 읽는다. 날짜는 LLM이 아니라 코드가 계산하고, 글에 없는
+  가맹점명은 버린다. 저장은 여전히 사람이 누른다.
+  ([ui_docs/pages/transaction-form.md](ui_docs/pages/transaction-form.md) 4.5)
+- **`agent` 서비스** — compose에 붙었다. 포트를 열지 않고 `ui`만 부른다. LLM 키를 가진
+  유일한 서비스다. ([README.md](README.md) 3장)
+
+### 변경
+
+- **`make dev`가 `agent`도 띄운다.** `.env`에 `AGENT_MODEL` 제공자의 키(기본은
+  `GEMINI_API_KEY`)가 있어야 뜬다. 키 없이 화면만 보려면 `AGENT_BASE_URL`을 비운다 —
+  지금까지처럼 각본 대역이 선다.
+- `.env.sample`의 `AGENT_MODEL` 기본값을 `gemini/gemini-flash-lite-latest`로 바꾸고,
+  `AGENT_TIMEOUT_SECONDS`를 더했다. 의존성이 바뀌었으니 `make build`를 한 번 친다.
+
 ## 0.2.0 — 2026-09-26
 
 화면이 생겼다. **AI는 아직 붙지 않았다** — `api`·`agent` 자리에 메모리 저장소와 각본 대역이

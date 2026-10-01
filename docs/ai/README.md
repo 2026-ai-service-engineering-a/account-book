@@ -6,7 +6,8 @@
 `docs/`의 다른 문서들이 "다른 프로젝트에도 통하는 규칙"이라면 이 폴더는 **이 가계부의 AI
 설계**다. 화면 설계를 `ui_docs/pages/`에 화면 하나씩 둔 것과 같은 방식이다.
 
-> 아직 코드는 없다. `src/agent`는 비어 있고, `ui`는 포트 뒤에 각본 대역을 세워 돈다.
+> 코드는 아직 일부다. `src/agent`는 기록(`POST /capture`) 하나를 하고, 나머지 자리에서
+> `ui`는 포트 뒤에 각본 대역을 세워 돈다.
 > 이 폴더는 그 대역 자리에 무엇이 들어오는지를 미리 정해 둔 글이다. 코드가 붙는 feature는
 > 여기 적힌 것을 구현하고, 구현하다 달라진 것은 여기를 고친다.
 
@@ -112,7 +113,7 @@ graph LR
 | `domain` | 도구 스키마, 분류 결과·기간·신뢰도 값 객체, 루프 상태 |
 | `application` | 루프, 하네스 정책, 근거 검증, 프롬프트 조립 |
 | `infrastructure` | litellm 어댑터, 임베딩 클라이언트, `api` HTTP 클라이언트 |
-| `interfaces` | `POST /chat`(SSE), `POST /classify`, `POST /insights` |
+| `interfaces` | `POST /capture`, `POST /chat`(SSE), `POST /classify`, `POST /insights` |
 
 **프롬프트 문자열은 `application`에 둔다.** 모델 제공자를 바꿔도 안 바뀌는 것이라서
 `infrastructure`에 두면 어댑터마다 복사본이 생긴다.
@@ -214,6 +215,8 @@ AI 기능은 도구·엔드포인트·테이블·환경변수를 늘린다. **�
 | `GET` | `/v1/stats/outliers` | `detect_outliers` | 3 |
 
 `agent`가 새로 노출하는 것은 `POST /classify`(기능 1)와 `POST /insights`(기능 3)다.
+기록의 `POST /capture`는 이미 붙었다 — 정본은
+[../../ui_docs/pages/transaction-form.md 4.5](../../ui_docs/pages/transaction-form.md#45-agent와-주고받는-것--post-capture).
 `agent`의 표면은 계약 문서에 없다 — `ui`만 부르고, 화면 문서가 정본이다.
 
 `mcp`는 같은 도구를 프로토콜만 바꿔 내놓으므로 계약에 줄이 늘지 않는다. 대신 **서비스가
