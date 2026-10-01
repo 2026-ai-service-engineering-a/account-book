@@ -5,6 +5,7 @@ from datetime import datetime
 
 from ui.application.values import AccountId, Money
 
+from .category_suggestion import CategorySuggestion
 from .direction import Direction
 
 
@@ -21,3 +22,6 @@ class MessageReading:
     account_id: AccountId | None = None
     merchant: str | None = None
     refusal: str = ""
+    # 읽는 쪽이 카테고리까지 골랐으면 있다(agent). None이면 고르지 않은 것이라 ui가
+    # CategorySuggester로 따로 고른다(각본 대역).
+    category: CategorySuggestion | None = None

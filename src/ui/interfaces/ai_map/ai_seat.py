@@ -26,3 +26,5 @@ class AiSeat:
     stand_in: str  # 지금 그 자리에 서 있는 각본 대역
     stand_in_does: str
     doc: str
+    # agent가 붙었을 때 그 자리에 서는 것. 비어 있으면 아직 진짜가 없다
+    live: str = ""

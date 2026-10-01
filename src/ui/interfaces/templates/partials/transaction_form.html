@@ -92,10 +92,8 @@
 
     <div class="field">
       <label class="label" for="merchant">가맹점 {{ mark("merchant") }}</label>
-      <input id="merchant" class="input{{ ai('merchant') }}" name="merchant" value="{{ form.merchant }}" placeholder="선택" autocomplete="off"
-             hx-get="/partials/category-select" hx-trigger="change" hx-include="closest form"
-             hx-target="#category-select" hx-swap="outerHTML">
-      <p class="field-description">넣으면 카테고리가 비어 있을 때 채워 줍니다.</p>
+      <input id="merchant" class="input{{ ai('merchant') }}" name="merchant" value="{{ form.merchant }}" placeholder="선택" autocomplete="off">
+      <p class="field-description">넣고 카테고리의 <strong>AI로 고르기</strong>를 누르면 지난 기록을 보고 골라 줍니다.</p>
     </div>
 
     <div class="field">

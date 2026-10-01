@@ -18,3 +18,9 @@ def test_is_a_frozen_value():
     assert value == make()
     with pytest.raises(dataclasses.FrozenInstanceError):
         value.category_id = CategoryId("food")  # type: ignore[misc]
+
+
+def test_may_carry_no_category_but_still_a_reason():
+    # 못 골라도 왜 못 골랐는지는 화면에 보인다
+    value = CategorySuggestion(None, "고를 만한 근거가 없어요.")
+    assert value.category_id is None and not value.by_llm

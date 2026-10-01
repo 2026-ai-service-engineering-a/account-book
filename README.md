@@ -8,9 +8,10 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 도메인 서버(`api`)와 에이전트(`agent`)는 화면을 갖지 않는 **헤드리스**이고, 사람이 보는
 화면은 별도의 `ui` 서버가 맡는다. 전체는 docker compose 하나로 뜬다.
 
-> 이 문서는 **설계 문서**다. 코드는 아직 `ui` 하나뿐이고, 그것도 `api`·`agent` 자리에
-> 대역을 세워 돈다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)). 나머지는 여기서 정한
-> 형태대로 다음 단계에서 붙인다.
+> 이 문서는 **설계 문서**다. 서비스 넷이 다 떠서 일한다 — 거래·집계·예산·카테고리 검색은 `api`가
+> PostgreSQL(pgvector)로 하고, `agent`는 기록(한 줄로 채우기)과 카테고리 고르기(RAG)를 한다.
+> 채팅과 리포트 문장 같은 나머지 AI 자리에는 아직 각본 대역이 선다
+> ([ui_docs/stand-ins.md](ui_docs/stand-ins.md)). 나머지는 여기서 정한 형태대로 다음 단계에서 붙인다.
 >
 > 코드를 쓰기 전에 [docs/development-rules.md](docs/development-rules.md)를 읽는다 —
 > 파일·클래스 규칙, 계층 의존 규칙, 테스트 배치가 거기 있다.
@@ -110,7 +111,7 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 | `search_transactions` | 기간·카테고리·가맹점으로 거래 조회 | 읽기 — 자동 |
 | `summarize_spending` | 기간별/카테고리별 합계·비교 | 읽기 — 자동 |
 | `get_budget_status` | 예산 대비 소진율, 잔여일 기준 페이스 | 읽기 — 자동 |
-| `suggest_category` | 가맹점명 → 카테고리 후보 + 신뢰도 | 읽기 — 자동 |
+| `suggest_category` | 가맹점·메모 → 카테고리 후보 + 신뢰도 + 근거 거래 | 읽기 — 자동 |
 | `create_transaction` | 거래 1건 기록 | 쓰기 — **확인 필요** |
 | `update_transaction` | 금액·카테고리·메모 수정 | 쓰기 — **확인 필요** |
 | `delete_transaction` | 거래 삭제 | 쓰기 — **항상 확인** |
@@ -160,10 +161,18 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 | `accounts` | id, name, kind(cash/card/bank) |
 | `categories` | id, name, parent_id |
 | `transactions` | id, occurred_at, amount, direction(in/out), account_id, category_id, merchant, memo, **source**, **run_id** |
-| `budgets` | id, category_id, period(YYYY-MM), limit_amount |
+| `budgets` | id, category_id, period(YYYY-MM), limit_amount — 바뀐 달만 적고 바꿀 때까지 이어진다 |
 | `agent_runs` | id, utterance, model, steps, tokens, cost_usd, status |
 | `tool_calls` | id, run_id, tool, args, result, confirmed_at |
 | `idempotency_keys` | key, request_hash, response, status_code, created_at |
+| `text_embeddings` | model, text_hash, vector, updated_at |
+| `category_rules` | id, merchant_pattern, category_id, source(seed/user), hit_count |
+
+`text_embeddings`는 거래가 아니라 색인 텍스트(가맹점 + 메모)에 벡터를 붙인다. 같은 가게 백 건이
+벡터 하나를 나눠 쓴다([docs/ai/category-suggestion-rag.md 4.2](docs/ai/category-suggestion-rag.md#42-어디에-두나)).
+스키마는 `src/api/infrastructure/db/`에 있다 — 테이블 하나에 매핑 하나(`rows/`), 마이그레이션은
+Alembic(`migrations/`, [docs/development-rules.md 6.6](docs/development-rules.md#66-마이그레이션--alembic-만들고-나서-읽는다)).
+DB 이미지는 `pgvector/pgvector`이고, 첫 마이그레이션이 확장을 켠다.
 
 금액은 정수 최소단위(원)로 저장한다. 부동소수점은 쓰지 않는다.
 시간은 전부 `TIMESTAMPTZ`에 UTC로 저장하고, "이번 달" 같은 경계는 사용자 타임존으로 계산한다.
@@ -213,7 +222,9 @@ account-book/
 ├── docker-compose.yml     # 기본 — 운영처럼 뜬다
 ├── docker-compose.dev.yml # 개발용 — 기본 위에 겹쳐 라이브 업데이트
 ├── pyproject.toml         # ruff · mypy · pytest 설정
-├── requirements.txt       # 런타임 의존성
+├── requirements.txt       # 런타임 의존성 — ui·agent 공통
+├── requirements-agent.txt # agent만 — LLM 라이브러리. ui 이미지에는 들어가지 않는다
+├── requirements-api.txt   # api만 — SQLAlchemy·psycopg·Alembic·pgvector
 ├── requirements-dev.txt   # 개발 도구
 └── .env.sample
 ```
@@ -258,12 +269,17 @@ Watch가 이미지를 다시 만들어 띄운다 — 이 겹은 `make dev`(`up -
 화면 설계를 눈으로 보려면 `make mock` — 서버 없는 정적 목 UI가
 <http://localhost:8081>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
 
-화면을 실제로 만져 보려면 <http://localhost:8080> — `api`·`agent` 자리에 대역을 세운 진짜
-`ui`가 뜬다. 버튼이 전부 동작하고, AI가 들어갈 자리는 각본 대역이
+화면을 실제로 만져 보려면 <http://localhost:8080>. 기록은 DB에 남는다 — 다시 띄워도 그대로다.
+개발용 구성은 DB가 비어 있으면 여섯 달치 예시 거래를 한 번 넣는다. 거래 폼의 한 줄로 채우기와
+카테고리의 AI로 고르기는 `agent`가 LLM으로 하고, 채팅 같은 나머지 AI 자리는 각본 대역이
 채운다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)).
 
-compose에는 지금 `ui` 하나, 개발용에는 도구 컨테이너 `dev`가 더 붙는다.
-`db`·`api`·`agent`는 각 코드가 생길 때 붙는다.
+`agent`는 `.env`의 `AGENT_MODEL` 제공자 키가 있어야 뜬다. 키 없이 화면만 보려면
+`AGENT_BASE_URL`을 비운다. api 없이 보려면 `API_BASE_URL`을 비운다 — 메모리 대역이 선다.
+
+compose에는 지금 `ui`·`agent`·`api`·`db` 넷, 개발용에는 도구 컨테이너 `dev`가 더 붙는다.
+`api`는 뜰 때 스키마를 최신으로 올린다. DB를 눈으로 보려면 `make psql`, 기준 데이터는
+`make seed`, DB 통합 테스트는 `make test-db`. 데이터는 볼륨에 남고 `docker compose down -v`로 지운다.
 
 ### GitHub Codespaces에서 열기
 
@@ -307,11 +323,22 @@ USER_TIMEZONE=
 POSTGRES_USER=
 POSTGRES_PASSWORD=
 POSTGRES_DB=
+POSTGRES_HOST=
+POSTGRES_PORT=
 
 # 에이전트 하네스
 AGENT_MAX_STEPS=
 AGENT_MAX_COST_USD=
 AGENT_CONFIRM_THRESHOLD=
+AGENT_TIMEOUT_SECONDS=
+
+# 카테고리 고르기(RAG)
+EMBEDDING_MODEL=
+EMBEDDING_DIMENSIONS=
+RAG_TOP_K=
+RAG_VOTE_TEMPERATURE=
+CLASSIFY_MIN_CONFIDENCE=
+CLASSIFY_ABSTAIN_BELOW=
 
 # 서비스 주소 — compose 내부 네트워크 기준
 API_BASE_URL=

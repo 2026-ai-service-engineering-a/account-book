@@ -7,6 +7,54 @@
 
 ## Unreleased
 
+## 0.5.0 — 2026-10-01
+
+**AI가 붙고, 기록이 DB에 남는다.** 서비스 넷(`ui`·`agent`·`api`·`db`)이 다 떠서 일한다. 거래 폼의
+한 줄로 채우기와 카테고리 고르기는 진짜 LLM이 하고, 거래·예산은 PostgreSQL에 저장돼 다시 띄워도
+그대로다. 채팅과 리포트 문장은 아직 각본 대역이다.
+
+### 업그레이드할 때
+
+1. `.env`에 `POSTGRES_PASSWORD`를 채운다 — 비어 있으면 compose가 뜨지 않는다.
+2. `.env`에 `AGENT_MODEL` 제공자의 키를 채운다(기본은 `GEMINI_API_KEY`). 키 없이 화면만 보려면
+   `AGENT_BASE_URL`을 비운다.
+3. 의존성과 서비스가 바뀌었다. 떠 있던 `make dev`를 멈추고 `make build` 뒤 다시 띄운다 — 떠 있던
+   Watch는 처음 읽은 설정을 들고 있어서 새 서비스(`db`·`api`)와 새 변수를 모른다.
+
+`.env.sample`과 비교해 빠진 변수를 채운다. 새로 생긴 것: `POSTGRES_HOST`·`POSTGRES_PORT`,
+`AGENT_TIMEOUT_SECONDS`, 카테고리 고르기의 여섯(`EMBEDDING_MODEL` 등). 없으면 기본값으로 돈다.
+
+### 추가
+
+- **기록이 DB에 남는다** — 거래·예산이 PostgreSQL에 저장된다. 처음 뜰 때 DB가 비어 있으면
+  개발용 구성이 여섯 달치 예시 거래를 한 번 넣는다(`make demo`). 합계와 예산 페이스는 DB가 낸다.
+  ([ui_docs/stand-ins.md](ui_docs/stand-ins.md))
+- **한 줄로 채우기에 진짜 AI** — 거래 폼에 카드 문자나 "어제 저녁 교촌치킨 2만3천원 현금" 같은
+  한 줄을 보내면 LLM(기본 Gemini Flash-Lite)이 읽어 금액·날짜·가맹점·결제수단을 채우고, 카테고리까지
+  고른다. 날짜는 LLM이 아니라 코드가 계산하고, 글에 없는 가맹점명은 버린다. 저장은 여전히 사람이 누른다.
+  ([ui_docs/pages/transaction-form.md](ui_docs/pages/transaction-form.md) 4.5)
+- **카테고리 AI로 고르기(RAG)** — 카테고리 옆 버튼을 누르면 내 지난 기록에서 비슷한 거래를 찾아
+  고르고, 셀렉트 아래에 근거 한 줄을 보여 준다("같은 가맹점 최근 5건 중 5건: 식비", "비슷한 기록:
+  메가커피 · 스타벅스 → 카페"). 자주 가는 곳은 LLM 없이 기록만으로 정하고, 처음 보는 곳이 애매할
+  때만 LLM이 근거를 보고 고른다. 비슷한 기록은 pgvector로 찾고, 방금 저장한 거래가 바로 다음
+  분류의 근거가 된다. ([docs/ai/category-suggestion-rag.md](docs/ai/category-suggestion-rag.md))
+- **예산은 바꿀 때까지 이어진다** — 한 번 정하면 매달 같고, 바꾸거나 지우면 그 달부터다.
+  ([docs/api-contract.md](docs/api-contract.md) 6장)
+- **AI 위키가 진짜와 대역을 구분한다** — 어느 AI 자리에 진짜 agent가 섰는지 말한다.
+- **새 명령** — `make eval`(카테고리 고르기를 실제 모델로 평가), `make test-db`(DB 통합 테스트),
+  `make seed`·`make demo`(기준 데이터·예시), `make psql`(DB를 눈으로).
+
+### 변경
+
+- **가맹점을 넣어도 카테고리가 저절로 채워지지 않는다.** AI로 고르기를 눌러야 고른다 — 누르기
+  전에는 AI를 부르지 않는다. 한 줄로 채우기는 지금처럼 카테고리까지 채운다.
+- **데모 버튼(비우기·다시 채우기)이 없다.** 진짜 DB에서는 쓰던 가계부를 비우는 버튼을 두지 않는다.
+  `API_BASE_URL`을 비우고 띄우면 메모리 대역과 함께 돌아온다.
+- **서비스마다 자기 비밀만 받는다.** `ui`는 LLM 키도 DB 비밀번호도, `agent`는 DB 비밀번호를,
+  `api`는 LLM 키를 모른다. compose가 `.env`를 통째로 넘기지 않는다.
+- **이미지가 서비스마다 하나다.** `ui` 이미지에는 LLM·DB 라이브러리가 들어가지 않는다.
+- `.env.sample`의 `AGENT_MODEL` 기본값이 `gemini/gemini-flash-lite-latest`다.
+
 ## 0.2.0 — 2026-09-26
 
 화면이 생겼다. **AI는 아직 붙지 않았다** — `api`·`agent` 자리에 메모리 저장소와 각본 대역이

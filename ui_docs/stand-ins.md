@@ -1,8 +1,17 @@
 # 대역으로 도는 ui
 
-`api`와 `agent`가 아직 없다. 그래도 화면은 끝까지 돌아야 설계를 손으로 만져 볼 수 있다.
-그래서 `src/ui`는 **포트 뒤에 대역을 세워** 돈다. 화면 코드는 대역을 모르고 포트만 안다.
-진짜가 생기면 [../src/ui/main.py](../src/ui/main.py)에서 한 줄씩 바꾸고, 화면은 건드리지 않는다.
+`make dev`로 띄우면 화면은 진짜 `api`(PostgreSQL + pgvector)를 쓰고, AI 자리 둘(한 줄로 채우기,
+카테고리 고르기)에는 진짜 `agent`가 선다. 이 문서는 그 **진짜 대신 설 수 있는 대역**을 적는다.
+`src/ui`는 포트 뒤에 무엇이든 세울 수 있다 — 화면 코드는 포트만 안다. 무엇을 세울지는
+[../src/ui/main.py](../src/ui/main.py)가 환경변수로 고른다.
+
+| 자리 | 진짜 | 대역이 서는 때 |
+|---|---|---|
+| api 자리(거래·카탈로그·집계·예산) | `Http*Gateway` → `api` | `API_BASE_URL`이 비었을 때 — 테스트, api 없이 화면만 볼 때 |
+| AI 자리(기록, 카테고리 고르기) | `Agent*` → `agent` | `AGENT_BASE_URL`이 비었을 때 — 키 없이 볼 때 |
+| 나머지 AI 자리(채팅, 리포트 문장) | 아직 없다 | 언제나 |
+
+ui 테스트는 언제나 대역으로 돈다. 개발용 `.env`에 주소가 있어도 부르지 않는다.
 
 ```bash
 make dev     # 개발용으로 띄우고 라이브 업데이트 — http://localhost:8080
@@ -28,11 +37,15 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | 포트 | 대신하는 판단 | 지금 서 있는 대역 | 진짜가 올 곳 |
 |---|---|---|---|
 | `ChatAgent` | 자연어 한 줄 → 거래 제안이나 답 | `ScriptedChatAgent` — 정해진 모양만 알아듣는다 | `agent`의 `POST /chat` SSE |
-| `CategorySuggester` | 가맹점명 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | api의 `POST /v1/categories/suggest` |
+| `CategorySuggester` | 가맹점·메모 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | **붙었다.** `AgentCategorySuggester` → `agent`의 `POST /classify`([pages/transaction-form.md 4.1](pages/transaction-form.md#41-카테고리는-ai로-고르기를-누를-때만-고른다)) |
 | `ReportNarrator` | 리포트의 "눈에 띈 것" 문장 | `ScriptedReportNarrator` — 규칙 문구 | 아직 안 정했다([pages/reports.md 3.2](pages/reports.md#32-눈에-띈-것은-문장으로-낸다)) |
-| `CaptureReader` | 카드 문자나 말로 쓴 한 줄 → 거래 칸 (기록) | `ScriptedCaptureReader` — 승인 문자 한 모양과 채팅 대역의 귀 | `agent`. 엔드포인트는 아직 안 정했다([pages/transaction-form.md 4.4](pages/transaction-form.md#44-한-줄로-채운다--카드-문자든-말이든)) |
+| `CaptureReader` | 카드 문자나 말로 쓴 한 줄 → 거래 칸 (기록) | `ScriptedCaptureReader` — 승인 문자 한 모양과 채팅 대역의 귀 | **붙었다.** `AgentCaptureReader` → `agent`의 `POST /capture`([pages/transaction-form.md 4.5](pages/transaction-form.md#45-agent와-주고받는-것--post-capture)) |
 
 포트는 `src/ui/application/ports/`, 대역은 `src/ui/infrastructure/scripted/`에 있다.
+
+진짜가 선 자리는 `AGENT_BASE_URL`로 고른다. 값이 있으면 그 주소의 `agent`를 부르고, 비어
+있으면 각본 대역이 선다 — 키 없이 화면을 만질 때다. 위키는 지금 어느 자리에 진짜가 섰는지
+말한다(`Services.live_seats`). 테스트는 언제나 각본 대역으로 돈다.
 
 각본 대역이 알아듣는 것:
 
@@ -51,6 +64,8 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 ## 2. api 자리 — 메모리 저장소
 
+`API_BASE_URL`이 비면 선다. 진짜는 `src/ui/infrastructure/api/`의 `Http*Gateway`다.
+
 | 포트 | 대역 |
 |---|---|
 | `TransactionGateway` | `MemoryTransactionGateway` |
@@ -64,9 +79,14 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 - 서버를 끄면 기록이 사라진다.
 - 처음 뜰 때 오늘을 기준으로 여섯 달치 예시를 채운다. 상단 띠의 버튼으로 비우거나
   다시 채운다 — 빈 화면 두 종류를 보려는 것이다. 이 버튼은 `DemoData` 포트가 있을
-  때만 보이고, 진짜 api가 붙으면 사라진다.
+  때만 보이고, 진짜 api가 붙으면 사라진다. 진짜 api의 예시는 개발용 구성이 DB가 비어 있을 때
+  한 번 넣는다(`make demo`).
 
-## 3. 대역이라 아직 안 하는 것
+카테고리 검색은 메모리 대역이 없다. 검색은 `api`가 pgvector로 한다 — 같은 규칙이 두 군데 있지
+않게 대역을 지웠다. 메모리 대역으로 띄우면 AI로 고르기는 각본 대역(낱말 표)이 받거나, 진짜
+`agent`가 붙어 있으면 근거를 찾지 못해 "지금은 추천할 수 없어요"라고 한다.
+
+## 3. 아직 안 하는 것
 
 진짜가 붙을 때 같이 한다. 여기 적어 두지 않으면 된 줄 안다.
 
@@ -74,5 +94,9 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 - **스트림 재연결** — 끊기면 "다시 보내 주세요"만 띄운다. `run_id`로 이어 받기는
   진짜 `agent`가 있어야 한다([pages/chat.md 4.2](pages/chat.md#42-스트림이-끊기면)).
 - **대화 기록** — 새로고침하면 사라진다. 기록은 `agent_runs`의 몫이다.
-- **예산은 카테고리당 하나** — 달마다 따로 두지 않는다. `budgets.period`는 api가 생길 때.
-- **`confirmation_required`** — 임계값 확인은 api가 판단한다. 대역은 늘 확인 카드를 띄운다.
+- **예산은 카테고리당 하나**(메모리 대역) — 달마다 따로 두지 않는다. `api`는 바뀐 달을 적고 바꿀 때까지
+  이어 쓴다([../docs/api-contract.md 6장](../docs/api-contract.md#예산은-바꿀-때까지-이어진다)) — 화면에서는 같아 보인다.
+- **`confirmation_required`** — 임계값 확인은 api가 판단한다. 메모리 대역은 판단하지 않고, 채팅
+  대역은 늘 확인 카드를 띄운다.
+- **규칙 표를 만드는 화면** — `category_rules`(0단계)는 자리만 있고 비어 있다. "김밥천국은
+  항상 식비로 할까요?" 승격 배너는 아직 없다([../docs/ai/category-suggestion-rag.md 8.2](../docs/ai/category-suggestion-rag.md#82-고친-것이-다음-답이-된다)).

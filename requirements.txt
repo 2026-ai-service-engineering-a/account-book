@@ -7,3 +7,8 @@ fastapi>=0.115,<1
 uvicorn>=0.32,<1
 jinja2>=3.1,<4
 python-multipart>=0.0.18,<1
+
+# ui → agent, agent → api. 서비스끼리는 HTTP 하나로만 말한다(development-rules 2.3)
+httpx>=0.28,<1
+
+# agent만 쓰는 것은 requirements-agent.txt에 있다. ui 이미지에는 LLM 라이브러리가 들어가지 않는다.

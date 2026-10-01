@@ -109,7 +109,7 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 | `compare_periods` | 기간 둘, 카테고리 | 카테고리별 합과 증감 | 카테고리 30개 |
 | `detect_outliers` | 기간 | 평소 범위를 벗어난 건 | 5건 |
 | `get_budget_status` | 기간 | 카테고리별 소진율·페이스 | — |
-| `suggest_category` | 가맹점, 메모, 금액, 방향 | 후보 + 근거 거래 | 근거 8건 |
+| `suggest_category` | 가맹점, 메모, 방향 | 후보 + 근거 거래 + 그 방향의 카테고리 사전 | 근거 8건 |
 
 `suggest_category`가 근거까지 돌려주는 것이 기능 1의
 핵심이다([category-suggestion-rag.md 5장](category-suggestion-rag.md#5-검색--후보와-신뢰도)).
@@ -167,7 +167,7 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 | `classify` | 기능 1의 AI 버튼 | `suggest_category` | 없다 |
 | `query` | 기능 2의 대화 조회 | 읽기 6개 | **없다** |
 | `insight` | 기능 3의 리포트 | 집계 5개 | 없다 |
-| `capture` | 대화로 기록할 때 | `suggest_category`, `search_transactions` + 쓰기 넷 | 확인 게이트 |
+| `capture` | 대화로 기록할 때, 폼의 한 줄로 채우기 | `suggest_category`, `search_transactions` + 쓰기 넷 | 확인 게이트 |
 | `mcp` | 외부 AI 서비스 | 읽기 전부 | 제안까지만([mcp.md 4장](mcp.md#4-쓰기--제안까지만-간다)) |
 
 "조회를 물었는데 거래가 지워지는 일"을 막는 방법이 둘 있다. 프롬프트에 "지우지 마"를

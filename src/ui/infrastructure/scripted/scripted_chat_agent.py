@@ -92,9 +92,9 @@ class ScriptedChatAgent:
         if parsed.amount is None:
             return
         yield ChatEvent("tool", "suggest_category")
-        suggestion = await self._suggester.suggest(parsed.merchant, parsed.direction)
+        suggestion = await self._suggester.suggest(parsed.merchant, "", parsed.direction)
         fallback = CategoryId("etc" if parsed.direction == Direction.EXPENSE else "other_income")
-        category_id = suggestion.category_id if suggestion else fallback
+        category_id = suggestion.category_id or fallback
         draft = TransactionDraft(
             direction=parsed.direction,
             amount=parsed.amount,

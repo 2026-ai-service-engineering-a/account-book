@@ -7,11 +7,12 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from ui.application.errors import TransactionNotFound
+from ui.application.errors import LedgerUnavailable, TransactionNotFound
 
 from .request_id import assign_request_id
 from .routers import (
     budgets_router,
+    category_select_router,
     chat_router,
     demo_router,
     reports_router,
@@ -34,6 +35,7 @@ def build_web_app(services: Services) -> FastAPI:
         chat_router,
         transactions_router,
         transaction_form_router,
+        category_select_router,
         reports_router,
         budgets_router,
         demo_router,
@@ -41,6 +43,7 @@ def build_web_app(services: Services) -> FastAPI:
     ):
         app.include_router(module.router)
     app.add_exception_handler(TransactionNotFound, _not_found)
+    app.add_exception_handler(LedgerUnavailable, _ledger_unavailable)
     app.add_exception_handler(StarletteHTTPException, _http_error)
     app.add_exception_handler(Exception, _internal_error)
     return app
@@ -48,6 +51,11 @@ def build_web_app(services: Services) -> FastAPI:
 
 async def _not_found(request: Request, _: Exception) -> HTMLResponse:
     return _error(request, 404, "그 거래를 찾지 못했어요.")
+
+
+async def _ledger_unavailable(request: Request, _: Exception) -> HTMLResponse:
+    # api가 죽어도 화면은 멈추지 않고 무엇이 안 되는지 말한다. AI 자리는 각자 따로 폴백한다
+    return _error(request, 503, "가계부 서버에 닿지 못했어요. 잠시 뒤에 다시 열어 주세요.")
 
 
 async def _http_error(request: Request, error: Exception) -> HTMLResponse:

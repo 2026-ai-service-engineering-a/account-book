@@ -1,8 +1,7 @@
 # 개발 도구. 이미지에는 이것만 설치하면 런타임 의존성까지 따라온다.
--r requirements.txt
+-r requirements-agent.txt
+-r requirements-api.txt
 
 ruff>=0.8,<1
 mypy>=1.13,<2
 pytest>=8.3,<9
-# FastAPI TestClient가 쓴다
-httpx>=0.28,<1

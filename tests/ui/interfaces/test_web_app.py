@@ -30,3 +30,25 @@ def test_500_hides_internals_and_shows_request_id():
 def test_static_files_are_served(empty_client):
     assert empty_client.get("/static/chat.js").status_code == 200
     assert empty_client.get("/static/htmx.min.js").status_code == 200
+
+
+def test_ledger_unavailable_is_a_503_page():
+    import dataclasses
+
+    from fastapi.testclient import TestClient
+
+    from tests.ui.conftest import FixedClock
+    from ui.application.errors import LedgerUnavailable
+    from ui.main import create_app
+
+    class Down:
+        async def exists_any(self) -> bool:
+            raise LedgerUnavailable("ConnectError")
+
+        async def search(self, *args, **kwargs):
+            raise LedgerUnavailable("ConnectError")
+
+    app = create_app(clock=FixedClock(), seeded=False)
+    app.state.services = dataclasses.replace(app.state.services, transactions=Down())
+    page = TestClient(app).get("/transactions")
+    assert page.status_code == 503 and "가계부 서버에 닿지 못했어요" in page.text

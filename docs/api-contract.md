@@ -64,6 +64,9 @@ DB에 들어간 상황에서 재시도하면, 같은 지출이 두 건이 된다
 | 처리 중인 키가 또 들어옴 | `409 request_in_progress` |
 
 - 보존 기간은 24시간. 그 뒤 키는 지워지고, 같은 키가 와도 새 요청으로 본다.
+- **실패한 쓰기(4xx)는 저장하지 않는다.** 트랜잭션이 통째로 되돌아가 키도 남지 않는다. 화면은 폼을
+  열 때 만든 키 하나로 고쳐서 다시 보내기 때문이다 — 실패를 저장하면 고친 요청이 `idempotency_key_reused`가
+  된다([../ui_docs/pages/transaction-form.md 4.2](../ui_docs/pages/transaction-form.md#42-제출이-곧-확인이다)).
 - 저장은 실제 쓰기와 **같은 트랜잭션**에서 한다. 따로 커밋하면 그 사이에 중복이 들어간다.
 
 ```
@@ -124,6 +127,7 @@ X-Agent-Run-Id: 01J9X...
 | `400` | `idempotency_key_required` | 쓰기 요청에 `Idempotency-Key`가 없다 |
 | `409` | `idempotency_key_reused` | 같은 키로 다른 본문이 왔다 |
 | `409` | `request_in_progress` | 같은 키의 요청이 아직 처리 중이다 |
+| `503` | `db_unavailable` | DB에 닿지 못했다 — `/v1/healthz`가 낸다 |
 
 에이전트는 `request_in_progress`를 받으면 재시도하지 않고 기다린다. 이미 같은 일이
 진행 중이라는 뜻이라서, 재시도가 중복을 만들지는 않지만 루프 예산만 태운다.
@@ -137,14 +141,25 @@ X-Agent-Run-Id: 01J9X...
 | 메서드 | 경로 | 대응 도구 | 확인 |
 |---|---|---|---|
 | `GET` | `/v1/transactions` | `search_transactions` | — |
+| `GET` | `/v1/transactions/{id}` | — (화면) | — |
 | `POST` | `/v1/transactions` | `create_transaction` | 임계값 이상 |
 | `PATCH` | `/v1/transactions/{id}` | `update_transaction` | 임계값 이상 |
 | `DELETE` | `/v1/transactions/{id}` | `delete_transaction` | **항상** |
 | `GET` | `/v1/summary` | `summarize_spending` | — |
+| `GET` | `/v1/reports/monthly` | — (화면) | — |
+| `GET` | `/v1/reports/pace` | — (화면) | — |
 | `GET` | `/v1/budgets/status` | `get_budget_status` | — |
 | `PUT` | `/v1/budgets/{category_id}` | `set_budget` | 확인 |
 | `POST` | `/v1/categories/suggest` | `suggest_category` | — |
+| `GET` | `/v1/categories` | — (화면) | — |
+| `GET` | `/v1/accounts` | — (화면) | — |
+| `GET` | `/v1/embeddings/pending` | — (색인) | — |
+| `PUT` | `/v1/embeddings/{text_hash}` | — (색인) | — |
 | `GET` | `/v1/healthz` | — | — |
+
+색인 둘은 도구가 아니다. `agent`가 카테고리를 고르기 전에 색인 안 된 텍스트를 당겨 가
+임베딩하고 돌려주는 길이다. `api`는 임베딩 제공자를 모르고, `agent`를 부르지도 않는다
+([ai/category-suggestion-rag.md 4.3](ai/category-suggestion-rag.md#43-누가-벡터를-채우나)).
 
 ### 집계는 서버가 한다
 
@@ -152,10 +167,30 @@ X-Agent-Run-Id: 01J9X...
 에이전트가 합산하게 두지 않는다. LLM에게 산수를 시키지 않는다는 원칙(README 1장)이
 계약 수준에서 지켜져야 하는 자리다.
 
+- `summary`의 걸름은 거래 목록과 같다(`period`·`direction`·`category_id`·`q`) — 목록과 합계가 다른 거래를 세지 않는다.
+- 화면용 `reports/monthly`는 합계·지난달 대비·카테고리별 증감·최근 여섯 달을, `reports/pace`는 한 카테고리의
+  날짜별 누적과 말일 예상·넘는 날을 낸다. "그날"은 사용자 타임존의 날이다.
+
+### 예산은 바꿀 때까지 이어진다
+
+`budgets`는 카테고리 예산이 **바뀐 달**을 적는다. 어떤 달의 예산은 그 달까지 가장 늦게 정한 값이다 —
+5월에 30만 원으로 정하면 바꿀 때까지 매달 30만 원이다.
+
+- `PUT /v1/budgets/{category_id}` `{"limit_amount": 300000}`은 **이번 달부터** 바꾼다. 지난달은 그대로다.
+- `{"limit_amount": null}`은 이번 달부터 예산 없음이다. 행을 지우면 앞 달의 예산이 다시 이어지므로
+  "없음"도 기록으로 남긴다.
+- `budgets/status`는 지출 카테고리 전부를 낸다. 예산을 정하지 않은 것은 `limit`부터 아래가 `null`이다.
+
 ### 목록은 항상 페이지네이션
 
 `GET /v1/transactions`는 기본 50건, 최대 200건을 넘기지 않는다. 커서로 넘긴다.
 에이전트가 3년치 거래를 통째로 받아 컨텍스트에 밀어 넣는 일을 계약이 막는다.
+
+- 기간은 `period=YYYY-MM` — 사용자 타임존의 달이다. 경계는 `api`가 계산한다. 없으면 기간 없이 최근 것부터.
+- 그 밖의 걸름: `direction`, `category_id`, `q`(가맹점·메모에 든 글자).
+- 커서는 불투명한 문자열이다. 안은 (`occurred_at`, `id`) 키셋이라 앞쪽에 거래가 끼어들어도 다음 쪽이
+  밀리거나 겹치지 않는다. 못 읽는 커서는 첫 쪽부터 다시 준다.
+- 시각은 UTC로 나간다(`+00:00`). 표시는 화면이 사용자 타임존으로 바꾼다.
 
 ---
 

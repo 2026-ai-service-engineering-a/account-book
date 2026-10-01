@@ -23,12 +23,64 @@ services:
       - .:/app
     command: >-
       uvicorn ui.main:create_app --factory --app-dir src
-      --reload --reload-dir src --host 0.0.0.0 --port 8080
+      --reload --reload-dir src/ui --host 0.0.0.0 --port 8080
     restart: "no"
     develop:
       watch:
         - action: rebuild
           path: requirements.txt
+        - action: rebuild
+          path: requirements-agent.txt
+        - action: rebuild
+          path: requirements-api.txt
+        - action: rebuild
+          path: requirements-dev.txt
+        - action: rebuild
+          path: Dockerfile
+
+  agent:
+    build:
+      context: .
+      target: dev
+    image: account-book-agent-dev
+    volumes:
+      - .:/app
+    command: >-
+      uvicorn agent.main:create_app --factory --app-dir src
+      --reload --reload-dir src/agent --host 0.0.0.0 --port 8001
+    restart: "no"
+    develop:
+      watch:
+        - action: rebuild
+          path: requirements.txt
+        - action: rebuild
+          path: requirements-agent.txt
+        - action: rebuild
+          path: requirements-api.txt
+        - action: rebuild
+          path: requirements-dev.txt
+        - action: rebuild
+          path: Dockerfile
+
+  api:
+    build:
+      context: .
+      target: dev
+    image: account-book-api-dev
+    volumes:
+      - .:/app
+    command: >-
+      sh -c "alembic -c src/api/alembic.ini upgrade head &&
+      python -m api.seed --demo &&
+      uvicorn api.main:create_app --factory --app-dir src
+      --reload --reload-dir src/api --host 0.0.0.0 --port 8000"
+    restart: "no"
+    develop:
+      watch:
+        - action: rebuild
+          path: requirements.txt
+        - action: rebuild
+          path: requirements-api.txt
         - action: rebuild
           path: requirements-dev.txt
         - action: rebuild
@@ -56,6 +108,10 @@ services:
       watch:
         - action: rebuild
           path: requirements.txt
+        - action: rebuild
+          path: requirements-agent.txt
+        - action: rebuild
+          path: requirements-api.txt
         - action: rebuild
           path: requirements-dev.txt
         - action: rebuild
