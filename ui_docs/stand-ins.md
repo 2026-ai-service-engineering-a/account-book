@@ -1,10 +1,17 @@
 # 대역으로 도는 ui
 
-`api`는 떴고 거래·카탈로그·집계·예산을 DB로 한다. 그래도 화면은 아직 아래의 메모리 대역으로
-돈다 — 카테고리 검색이 같은 저장소를 읽어서, 그것까지 `api`에 생긴 뒤 한꺼번에 바꾼다. `agent`는 기록(한 줄로 채우기)과 카테고리 고르기만 한다. 그래도 화면은 끝까지 돌아야
-설계를 손으로 만져 볼 수 있다. 그래서 `src/ui`는 **포트 뒤에 대역을 세워** 돈다. 화면 코드는
-대역을 모르고 포트만 안다. 진짜가 생기면 [../src/ui/main.py](../src/ui/main.py)에서 한 줄씩
-바꾸고, 화면은 건드리지 않는다.
+`make dev`로 띄우면 화면은 진짜 `api`(PostgreSQL + pgvector)를 쓰고, AI 자리 둘(한 줄로 채우기,
+카테고리 고르기)에는 진짜 `agent`가 선다. 이 문서는 그 **진짜 대신 설 수 있는 대역**을 적는다.
+`src/ui`는 포트 뒤에 무엇이든 세울 수 있다 — 화면 코드는 포트만 안다. 무엇을 세울지는
+[../src/ui/main.py](../src/ui/main.py)가 환경변수로 고른다.
+
+| 자리 | 진짜 | 대역이 서는 때 |
+|---|---|---|
+| api 자리(거래·카탈로그·집계·예산) | `Http*Gateway` → `api` | `API_BASE_URL`이 비었을 때 — 테스트, api 없이 화면만 볼 때 |
+| AI 자리(기록, 카테고리 고르기) | `Agent*` → `agent` | `AGENT_BASE_URL`이 비었을 때 — 키 없이 볼 때 |
+| 나머지 AI 자리(채팅, 리포트 문장) | 아직 없다 | 언제나 |
+
+ui 테스트는 언제나 대역으로 돈다. 개발용 `.env`에 주소가 있어도 부르지 않는다.
 
 ```bash
 make dev     # 개발용으로 띄우고 라이브 업데이트 — http://localhost:8080
@@ -57,10 +64,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 ## 2. api 자리 — 메모리 저장소
 
-진짜 `api`와 `db`(PostgreSQL + pgvector)는 compose에 떠 있다. 거래·카탈로그·집계·예산 포트의
-진짜(`Http*Gateway`, `src/ui/infrastructure/api/`)도 있다. 아직 끼우지 않았을 뿐이다 — 카테고리
-검색 대역이 메모리 저장소의 거래를 읽기 때문이다. 검색까지 `api`에 생기면 `API_BASE_URL` 하나로
-한꺼번에 바뀐다.
+`API_BASE_URL`이 비면 선다. 진짜는 `src/ui/infrastructure/api/`의 `Http*Gateway`다.
 
 | 포트 | 대역 |
 |---|---|
@@ -68,33 +72,21 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | `ReportGateway` | `MemoryReportGateway` |
 | `BudgetGateway` | `MemoryBudgetGateway` |
 | `CatalogGateway` | `MemoryCatalogGateway` |
-| `CategoryIndex` | `MemoryCategoryIndex` — 카테고리 검색(규칙 → 이력 → 벡터 이웃)과 색인 |
 
-`src/ui/infrastructure/memory/`에 있다. 합계·페이스·검증·멱등성·카테고리 검색을 **여기서만** 계산한다.
+`src/ui/infrastructure/memory/`에 있다. 합계·페이스·검증·멱등성을 **여기서만** 계산한다.
 이 패키지가 api의 대역이기 때문이다. 화면 쪽(`interfaces`)에는 나눗셈 하나 없다.
 
 - 서버를 끄면 기록이 사라진다.
 - 처음 뜰 때 오늘을 기준으로 여섯 달치 예시를 채운다. 상단 띠의 버튼으로 비우거나
   다시 채운다 — 빈 화면 두 종류를 보려는 것이다. 이 버튼은 `DemoData` 포트가 있을
-  때만 보이고, 진짜 api가 붙으면 사라진다.
+  때만 보이고, 진짜 api가 붙으면 사라진다. 진짜 api의 예시는 개발용 구성이 DB가 비어 있을 때
+  한 번 넣는다(`make demo`).
 
-### 2.1 agent가 부르는 api 대역 — `/v1`
+카테고리 검색은 메모리 대역이 없다. 검색은 `api`가 pgvector로 한다 — 같은 규칙이 두 군데 있지
+않게 대역을 지웠다. 메모리 대역으로 띄우면 AI로 고르기는 각본 대역(낱말 표)이 받거나, 진짜
+`agent`가 붙어 있으면 근거를 찾지 못해 "지금은 추천할 수 없어요"라고 한다.
 
-카테고리 고르기는 검색이 `api`, 판단이 `agent`다. `agent`는 `api`를 HTTP로 부르는데 `api`가
-없으니, `ui`가 `CategoryIndex`를 계약 그대로 `/v1`으로 연다
-([../docs/api-contract.md 6장](../docs/api-contract.md#6-엔드포인트-초안)).
-
-| 메서드 | 경로 | 하는 일 |
-|---|---|---|
-| `POST` | `/v1/categories/suggest` | 후보 + 근거 + 그 방향의 카테고리 사전 |
-| `GET` | `/v1/embeddings/pending` | 그 모델의 벡터가 없는 색인 텍스트 |
-| `PUT` | `/v1/embeddings/{text_hash}` | 벡터 저장. `Idempotency-Key`가 없으면 400 |
-
-compose는 `agent`의 `API_BASE_URL`을 `http://ui:8080`으로 덮는다. `api`가 서면 그 한 줄을
-지우고 이 라우터는 빠진다. 벡터는 메모리에 있어서 `ui`를 다시 띄우면 비고, 다음 분류 요청 때
-`agent`가 다시 채운다(시드의 고유 텍스트 30여 개, 1초 남짓).
-
-## 3. 대역이라 아직 안 하는 것
+## 3. 아직 안 하는 것
 
 진짜가 붙을 때 같이 한다. 여기 적어 두지 않으면 된 줄 안다.
 
@@ -102,11 +94,9 @@ compose는 `agent`의 `API_BASE_URL`을 `http://ui:8080`으로 덮는다. `api`�
 - **스트림 재연결** — 끊기면 "다시 보내 주세요"만 띄운다. `run_id`로 이어 받기는
   진짜 `agent`가 있어야 한다([pages/chat.md 4.2](pages/chat.md#42-스트림이-끊기면)).
 - **대화 기록** — 새로고침하면 사라진다. 기록은 `agent_runs`의 몫이다.
-- **예산은 카테고리당 하나** — 대역은 달마다 따로 두지 않는다. `api`는 바뀐 달을 적고 바꿀 때까지
+- **예산은 카테고리당 하나**(메모리 대역) — 달마다 따로 두지 않는다. `api`는 바뀐 달을 적고 바꿀 때까지
   이어 쓴다([../docs/api-contract.md 6장](../docs/api-contract.md#예산은-바꿀-때까지-이어진다)) — 화면에서는 같아 보인다.
-- **`confirmation_required`** — 임계값 확인은 api가 판단한다. 대역은 늘 확인 카드를 띄운다.
-- **`/v1`이 ui의 공개 포트에 열린다** — 2.1의 api 대역은 `agent`만 부르라고 연 것인데, `ui`의
-  8080에 같이 열려 있어서 브라우저도 부를 수 있다. 읽는 것은 카테고리 검색과 색인 텍스트(가맹점·
-  메모)뿐이고 단일 사용자 전제지만, 진짜 `api`는 compose 내부에만 연다(README 3장).
+- **`confirmation_required`** — 임계값 확인은 api가 판단한다. 메모리 대역은 판단하지 않고, 채팅
+  대역은 늘 확인 카드를 띄운다.
 - **규칙 표를 만드는 화면** — `category_rules`(0단계)는 자리만 있고 비어 있다. "김밥천국은
   항상 식비로 할까요?" 승격 배너는 아직 없다([../docs/ai/category-suggestion-rag.md 8.2](../docs/ai/category-suggestion-rag.md#82-고친-것이-다음-답이-된다)).

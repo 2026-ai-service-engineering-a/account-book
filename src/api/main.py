@@ -21,10 +21,13 @@ from api.application.use_cases import (
     GetTransaction,
     IdempotentWrite,
     ListCatalog,
+    ListPendingTexts,
+    PutEmbedding,
     ReadBudgetStatuses,
     ReadPace,
     SearchTransactions,
     SetBudget,
+    SuggestCategory,
     SummarizeSpending,
     UpdateTransaction,
 )
@@ -73,5 +76,10 @@ def create_app(
             pace=ReadPace(unit_of_work, clock),
             budgets=ReadBudgetStatuses(unit_of_work, clock),
             set_budget=SetBudget(clock),
+            suggest=SuggestCategory(
+                unit_of_work, settings.rag_top_k, settings.rag_vote_temperature
+            ),
+            pending=ListPendingTexts(unit_of_work),
+            put_embedding=PutEmbedding(),
         )
     )

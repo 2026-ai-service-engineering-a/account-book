@@ -8,9 +8,9 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 도메인 서버(`api`)와 에이전트(`agent`)는 화면을 갖지 않는 **헤드리스**이고, 사람이 보는
 화면은 별도의 `ui` 서버가 맡는다. 전체는 docker compose 하나로 뜬다.
 
-> 이 문서는 **설계 문서**다. 서비스 넷이 다 떴지만 아직 일부만 일한다. `agent`는 기록(한 줄로
-> 채우기)과 카테고리 고르기(RAG)를 하고, `api`와 `db`는 스키마(pgvector 포함)와 상태 확인까지다.
-> 거래·집계·검색은 아직 `ui` 안의 메모리 대역이 하고, 나머지 AI 자리에도 대역이 선다
+> 이 문서는 **설계 문서**다. 서비스 넷이 다 떠서 일한다 — 거래·집계·예산·카테고리 검색은 `api`가
+> PostgreSQL(pgvector)로 하고, `agent`는 기록(한 줄로 채우기)과 카테고리 고르기(RAG)를 한다.
+> 채팅과 리포트 문장 같은 나머지 AI 자리에는 아직 각본 대역이 선다
 > ([ui_docs/stand-ins.md](ui_docs/stand-ins.md)). 나머지는 여기서 정한 형태대로 다음 단계에서 붙인다.
 >
 > 코드를 쓰기 전에 [docs/development-rules.md](docs/development-rules.md)를 읽는다 —
@@ -269,12 +269,13 @@ Watch가 이미지를 다시 만들어 띄운다 — 이 겹은 `make dev`(`up -
 화면 설계를 눈으로 보려면 `make mock` — 서버 없는 정적 목 UI가
 <http://localhost:8081>에 뜬다([mock_ui/README.md](mock_ui/README.md)).
 
-화면을 실제로 만져 보려면 <http://localhost:8080> — `api` 자리에 메모리 대역을 세운 진짜
-`ui`가 뜬다. 버튼이 전부 동작한다. 거래 폼의 한 줄로 채우기와 카테고리의 AI로 고르기는
-`agent`가 LLM으로 하고, 나머지 AI 자리는 각본 대역이 채운다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)).
+화면을 실제로 만져 보려면 <http://localhost:8080>. 기록은 DB에 남는다 — 다시 띄워도 그대로다.
+개발용 구성은 DB가 비어 있으면 여섯 달치 예시 거래를 한 번 넣는다. 거래 폼의 한 줄로 채우기와
+카테고리의 AI로 고르기는 `agent`가 LLM으로 하고, 채팅 같은 나머지 AI 자리는 각본 대역이
+채운다([ui_docs/stand-ins.md](ui_docs/stand-ins.md)).
 
 `agent`는 `.env`의 `AGENT_MODEL` 제공자 키가 있어야 뜬다. 키 없이 화면만 보려면
-`AGENT_BASE_URL`을 비운다 — 한 줄로 채우기에도 각본 대역이 선다.
+`AGENT_BASE_URL`을 비운다. api 없이 보려면 `API_BASE_URL`을 비운다 — 메모리 대역이 선다.
 
 compose에는 지금 `ui`·`agent`·`api`·`db` 넷, 개발용에는 도구 컨테이너 `dev`가 더 붙는다.
 `api`는 뜰 때 스키마를 최신으로 올린다. DB를 눈으로 보려면 `make psql`, 기준 데이터는

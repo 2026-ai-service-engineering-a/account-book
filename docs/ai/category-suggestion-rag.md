@@ -12,13 +12,11 @@
 기본값은 바뀌지 않는다. 카테고리 셀렉트는 그대로 있고, 옆에 **AI로 고르기** 버튼이 하나
 붙는다. 누르면 채워 준다. 누르지 않으면 아무 일도 없고 LLM도 돌지 않는다.
 
-> **구현 상태** — `agent`의 `POST /classify`로 붙었다. `api`가 아직 없어서 검색은 `ui` 안의
-> api 대역(`MemoryCategoryIndex`)이 계약 그대로 `/v1`을 열어 맡는다
-> ([../../ui_docs/stand-ins.md 2.1](../../ui_docs/stand-ins.md#21-agent가-부르는-api-대역--v1)).
+> **구현 상태** — 판단은 `agent`의 `POST /classify`, 검색은 `api`의 `POST /v1/categories/suggest`.
+> 벡터는 `db`의 `text_embeddings`(vector(768) + 코사인 HNSW)에 있고, 이웃은 pgvector의 코사인
+> 거리(`<=>`)로 찾는다. 거래는 쓸 때 색인 텍스트와 해시를 함께 저장한다(`transactions.search_text`·
+> `text_hash`) — 정규화를 SQL로 옮기지 않으려고 열로 뒀다.
 > 구현하며 설계에서 달라진 것은 해당 절에 **바꾼 것**으로 적었다.
-> `db`에는 `text_embeddings`(vector(768) + 코사인 HNSW)와 `category_rules`가 이미 있다. 검색이
-> 아직 메모리 대역에서 돌 뿐이고, 거래가 `api`로 옮겨 오면 이웃 찾기가 SQL 한 줄
-> (`ORDER BY vector <=> :q`)로 바뀐다.
 
 ---
 
@@ -150,6 +148,9 @@ agent — 분류 요청이 올 때마다 먼저 한 번
   PUT  /v1/embeddings/{text_hash}                 ← model + vector
        Idempotency-Key: emb:{model}:{text_hash}
 ```
+
+이웃 찾기는 HNSW 인덱스로 가까운 텍스트를 넉넉히(k의 네 배) 뽑은 뒤 방향·카테고리로 거르고,
+같은 텍스트·카테고리는 가장 최근 거래 하나로 센다.
 
 **바꾼 것 — 따로 도는 워커를 두지 않는다.** 분류 요청이 오면 그 앞에서 한 번 당긴다.
 대부분은 pending이 없어서 GET 한 번으로 끝나고 제공자는 부르지 않는다. 방금 저장한 거래가

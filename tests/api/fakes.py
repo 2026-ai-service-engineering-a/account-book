@@ -19,6 +19,8 @@ from api.application.errors import RequestInProgress
 from api.domain.entities import Account, Category, Transaction
 from api.domain.values import AccountId, CategoryId, Direction, Money, Period, TransactionId
 
+from .fake_index import FakeIndex
+
 SEOUL = ZoneInfo("Asia/Seoul")
 
 
@@ -177,6 +179,7 @@ class FakeUnitOfWork:
         self.idempotency = FakeIdempotency()
         self.stats = FakeStats(self.transactions)
         self.budgets = FakeBudgets()
+        self.index = FakeIndex(self.transactions)
         self.commits = 0
 
     def __call__(self) -> FakeUnitOfWork:

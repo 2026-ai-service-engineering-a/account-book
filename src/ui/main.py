@@ -1,7 +1,9 @@
 """조립 지점. 어느 구현이 어느 포트를 채우는지는 여기서만 정한다.
 
-api는 아직 없어서 메모리 대역이다. agent는 `AGENT_BASE_URL`이 있으면 진짜를 부르고, 없으면
-각본 대역이 선다. 진짜가 생기면 이 파일에서 한 줄씩 바꾼다.
+`API_BASE_URL`이 있으면 거래·카탈로그·집계·예산을 그 주소의 api가 하고, 없으면 메모리 대역이
+선다. `AGENT_BASE_URL`이 있으면 AI 자리(한 줄로 채우기, 카테고리 고르기)에 진짜 agent가, 없으면
+각본 대역이 선다. 둘은 따로 고른다 — 다만 카테고리 고르기는 agent가 api를 찾아보므로 api가 있어야
+근거를 찾는다.
 
     uvicorn ui.main:create_app --factory
 """
@@ -12,12 +14,27 @@ from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI
 
-from ui.application.ports import CaptureReader, CategorySuggester, Clock
+from ui.application.ports import (
+    BudgetGateway,
+    CaptureReader,
+    CatalogGateway,
+    CategorySuggester,
+    Clock,
+    DemoData,
+    ReportGateway,
+    TransactionGateway,
+)
 from ui.infrastructure.agent import AgentCaptureReader, AgentCategorySuggester
+from ui.infrastructure.api import (
+    ApiClient,
+    HttpBudgetGateway,
+    HttpCatalogGateway,
+    HttpReportGateway,
+    HttpTransactionGateway,
+)
 from ui.infrastructure.memory import (
     MemoryBudgetGateway,
     MemoryCatalogGateway,
-    MemoryCategoryIndex,
     MemoryDemoData,
     MemoryReportGateway,
     MemoryStore,
@@ -37,6 +54,8 @@ from ui.interfaces.web_app import build_web_app
 
 # agent가 붙으면 진짜가 서는 자리(ai_map의 key)
 _LIVE = frozenset({"capture", "classify"})
+# api 호출 하나의 상한. 화면 한 장이 기다리는 시간이라 짧게 둔다 — 집계도 DB가 하니 금방이다.
+_API_TIMEOUT = 5.0
 
 
 def create_app(
@@ -49,14 +68,8 @@ def create_app(
     settings = settings or Settings()
     zone = ZoneInfo(settings.user_timezone)
     clock = clock or SystemClock(zone)
-
-    store = MemoryStore.create(zone)
-    if seeded:
-        seed_demo(store, clock.now())
-    transactions = MemoryTransactionGateway(store)
-    reports = MemoryReportGateway(store, clock)
-    budgets = MemoryBudgetGateway(store, clock)
-    catalog = MemoryCatalogGateway(store)
+    ledger = _api_ledger(settings) if settings.api_base_url else _memory_ledger(zone, clock, seeded)
+    transactions, reports, budgets, catalog, demo = ledger
     # 채팅은 아직 각본 대역이라 각본 대역끼리 짝을 짓는다. 폼의 AI 버튼만 진짜 agent를 부른다.
     chat = ScriptedChatAgent(
         transactions,
@@ -77,11 +90,41 @@ def create_app(
             chat=chat,
             narrator=ScriptedReportNarrator(),
             clock=clock,
-            demo=MemoryDemoData(store, clock),
+            demo=demo,
             capture=_capture_reader(settings, capture_delay),
-            index=MemoryCategoryIndex(store, settings.rag_top_k, settings.rag_vote_temperature),
             live_seats=_LIVE if settings.agent_base_url else frozenset(),
         )
+    )
+
+
+type _Ledger = tuple[
+    TransactionGateway, ReportGateway, BudgetGateway, CatalogGateway, DemoData | None
+]
+
+
+def _api_ledger(settings: Settings) -> _Ledger:
+    """진짜 api. 기록은 DB에 남는다. 데모 버튼은 없다 — 쓰던 가계부를 비우는 버튼을 두지 않는다."""
+    client = ApiClient(settings.api_base_url, timeout=_API_TIMEOUT)
+    return (
+        HttpTransactionGateway(client),
+        HttpReportGateway(client),
+        HttpBudgetGateway(client),
+        HttpCatalogGateway(client),
+        None,
+    )
+
+
+def _memory_ledger(zone: ZoneInfo, clock: Clock, seeded: bool) -> _Ledger:
+    """api 자리의 메모리 대역. 테스트와, api 없이 화면만 볼 때. 서버를 끄면 기록이 사라진다."""
+    store = MemoryStore.create(zone)
+    if seeded:
+        seed_demo(store, clock.now())
+    return (
+        MemoryTransactionGateway(store),
+        MemoryReportGateway(store, clock),
+        MemoryBudgetGateway(store, clock),
+        MemoryCatalogGateway(store),
+        MemoryDemoData(store, clock),
     )
 
 

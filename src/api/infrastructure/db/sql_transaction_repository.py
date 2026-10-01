@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from api.application.dto import TransactionPage, TransactionQuery
 from api.domain.entities import Transaction
+from api.domain.rules.searchable_text import searchable_text, text_hash
 from api.domain.values import AccountId, CategoryId, Direction, Money, Source, TransactionId
 
 from .page_cursor import decode_cursor, encode_cursor
@@ -64,6 +65,7 @@ def _entity(row: TransactionRow) -> Transaction:
 
 
 def _row(transaction: Transaction) -> TransactionRow:
+    text = searchable_text(transaction.merchant, transaction.memo)
     return TransactionRow(
         id=transaction.id,
         direction=transaction.direction.value,
@@ -75,4 +77,6 @@ def _row(transaction: Transaction) -> TransactionRow:
         memo=transaction.memo,
         source=transaction.source.value,
         run_id=transaction.run_id,
+        search_text=text,
+        text_hash=text_hash(text) if text else "",
     )

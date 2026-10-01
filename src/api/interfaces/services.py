@@ -13,10 +13,13 @@ from api.application.use_cases import (
     GetTransaction,
     IdempotentWrite,
     ListCatalog,
+    ListPendingTexts,
+    PutEmbedding,
     ReadBudgetStatuses,
     ReadPace,
     SearchTransactions,
     SetBudget,
+    SuggestCategory,
     SummarizeSpending,
     UpdateTransaction,
 )
@@ -39,6 +42,9 @@ class Services:
     pace: ReadPace
     budgets: ReadBudgetStatuses
     set_budget: SetBudget
+    suggest: SuggestCategory
+    pending: ListPendingTexts
+    put_embedding: PutEmbedding
 
 
 def get_services(request: Request) -> Services:

@@ -6,12 +6,8 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
+from api.domain.values import EMBEDDING_DIMENSIONS
 from api.infrastructure.db.base import Base
-
-# agent의 EMBEDDING_DIMENSIONS와 같아야 한다. HNSW 인덱스는 차원이 정해진 열에만 걸리고,
-# 2000차원까지 받는다 — 그래서 768로 받는다(docs/ai/category-suggestion-rag.md 5장).
-# 바꾸려면 마이그레이션이 필요하다.
-EMBEDDING_DIMENSIONS = 768
 
 
 class TextEmbeddingRow(Base):
