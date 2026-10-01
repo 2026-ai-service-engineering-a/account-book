@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from pgvector.sqlalchemy import Vector
 
+from api.domain.values import EMBEDDING_DIMENSIONS
 from api.infrastructure.db import Base
-from api.infrastructure.db.rows import EMBEDDING_DIMENSIONS, TextEmbeddingRow
+from api.infrastructure.db.rows import TextEmbeddingRow
 
 TABLE = Base.metadata.tables[TextEmbeddingRow.__tablename__]
 

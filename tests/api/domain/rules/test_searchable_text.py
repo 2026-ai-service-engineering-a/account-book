@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from ui.infrastructure.memory.searchable_text import searchable_text, text_hash
+from api.domain.rules.searchable_text import searchable_text, text_hash
 
 
 @pytest.mark.parametrize(
@@ -22,3 +22,4 @@ def test_normalizes(merchant, memo, expected):
 
 def test_same_text_same_hash():
     assert text_hash("스타벅스") == text_hash("스타벅스") != text_hash("메가커피")
+    assert len(text_hash("x")) == 16

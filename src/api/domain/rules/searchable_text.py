@@ -9,8 +9,6 @@ from __future__ import annotations
 import hashlib
 import re
 
-from ui.application.values import TextHash
-
 # "김밥천국 강남점", "투썸 2호점" — 띄어 쓴 지점명만 뗀다. "편의점"처럼 붙은 것은 이름이다.
 _BRANCH = re.compile(r"\s+\S*점$")
 _COMPANY = re.compile(r"\(주\)|㈜|주식회사")
@@ -23,5 +21,6 @@ def searchable_text(merchant: str, memo: str) -> str:
     return _SPACES.sub(" ", f"{name} {memo}").strip()
 
 
-def text_hash(text: str) -> TextHash:
-    return TextHash(hashlib.sha256(text.encode()).hexdigest()[:16])
+def text_hash(text: str) -> str:
+    """임베딩이 붙는 열쇠. 같은 텍스트는 같은 해시다 — 같은 가게 백 건이 벡터 하나를 나눠 쓴다."""
+    return hashlib.sha256(text.encode()).hexdigest()[:16]

@@ -12,6 +12,7 @@ from datetime import date, datetime, time, tzinfo
 
 from sqlalchemy import Connection, exists, insert, select
 
+from api.domain.rules.searchable_text import searchable_text, text_hash
 from api.domain.values import Period
 
 from .rows import BudgetRow, TransactionRow
@@ -74,6 +75,8 @@ def _day(rng: random.Random, day: date, now: datetime, zone: tzinfo) -> list[dic
                 "merchant": merchant,
                 "memo": "",
                 "source": source,
+                "search_text": searchable_text(merchant, ""),
+                "text_hash": text_hash(searchable_text(merchant, "")),
             }
         )
 

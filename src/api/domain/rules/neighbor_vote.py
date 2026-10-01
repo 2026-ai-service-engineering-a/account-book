@@ -5,12 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 
-from ui.application.values import CategoryId
-
-
-def cosine(a: Sequence[float], b: Sequence[float]) -> float:
-    norm = math.sqrt(sum(x * x for x in a) * sum(y * y for y in b))
-    return sum(x * y for x, y in zip(a, b, strict=True)) / norm if norm else 0.0
+from api.domain.values import CategoryId
 
 
 def vote(
