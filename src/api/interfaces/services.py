@@ -7,12 +7,17 @@ from fastapi import Depends, Request
 
 from api.application.ports import DatabaseProbe
 from api.application.use_cases import (
+    BuildMonthlyReport,
     CreateTransaction,
     DeleteTransaction,
     GetTransaction,
     IdempotentWrite,
     ListCatalog,
+    ReadBudgetStatuses,
+    ReadPace,
     SearchTransactions,
+    SetBudget,
+    SummarizeSpending,
     UpdateTransaction,
 )
 
@@ -29,6 +34,11 @@ class Services:
     get: GetTransaction
     search: SearchTransactions
     catalog: ListCatalog
+    summarize: SummarizeSpending
+    monthly: BuildMonthlyReport
+    pace: ReadPace
+    budgets: ReadBudgetStatuses
+    set_budget: SetBudget
 
 
 def get_services(request: Request) -> Services:
