@@ -301,6 +301,11 @@ a.badge:hover { background: var(--accent); }
 .ai-badge .icon { width: 11px; height: 11px; }
 .ai-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.label-actions { display: flex; align-items: center; gap: 6px; }
+/* 카테고리 AI 버튼 — 고르는 동안만 "AI가 고르는 중…", 결과는 셀렉트 아래 근거 한 줄 */
+#category-select .htmx-indicator.thinking { display: none; }
+#category-select .htmx-indicator.thinking.htmx-request { display: flex; }
+.suggestion-note { display: flex; align-items: center; gap: 6px; color: var(--ai); }
 .card-confirm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ai-filled { border-color: color-mix(in oklch, var(--ai) 45%, transparent) !important; background-color: color-mix(in oklch, var(--ai-bg) 60%, transparent); }
 

@@ -12,6 +12,7 @@ from ui.application.errors import TransactionNotFound
 from .request_id import assign_request_id
 from .routers import (
     budgets_router,
+    category_select_router,
     chat_router,
     demo_router,
     reports_router,
@@ -35,6 +36,7 @@ def build_web_app(services: Services) -> FastAPI:
         chat_router,
         transactions_router,
         transaction_form_router,
+        category_select_router,
         reports_router,
         budgets_router,
         demo_router,

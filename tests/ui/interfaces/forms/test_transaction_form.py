@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from tests.ui.conftest import NOW, SEOUL
-from ui.application.dto import Direction, MessageReading
-from ui.application.values import Money
+from ui.application.dto import Category, CategorySuggestion, Direction, MessageReading
+from ui.application.values import CategoryId, Money
 from ui.interfaces.forms.transaction_form import TransactionForm
 
 
@@ -64,3 +64,38 @@ def test_refusal_or_missing_amount_changes_nothing():
     assert form.apply(MessageReading(refusal="못 읽음"), SEOUL) == frozenset()
     assert form.apply(MessageReading(merchant="가게"), SEOUL) == frozenset()
     assert (form.amount, form.merchant) == ("1,000", "")
+
+
+CAFE = Category(CategoryId("cafe"), "카페", Direction.EXPENSE)
+FOOD = Category(CategoryId("food"), "식비", Direction.EXPENSE)
+
+
+def test_drop_category_outside_the_list():
+    form = TransactionForm(category_id="salary")
+    form.drop_category_outside((CAFE, FOOD))
+    assert form.category_id == ""
+
+
+def test_apply_suggestion_fills_an_empty_select():
+    form = TransactionForm()
+    filled = form.apply_suggestion(
+        CategorySuggestion(CategoryId("cafe"), "r"), (CAFE, FOOD), overwrite=False
+    )
+    assert form.category_id == "cafe" and filled == {"category_id"}
+
+
+def test_apply_suggestion_respects_a_users_choice_unless_told_to_overwrite():
+    form = TransactionForm(category_id="food")
+    suggestion = CategorySuggestion(CategoryId("cafe"), "r")
+    assert form.apply_suggestion(suggestion, (CAFE, FOOD), overwrite=False) == frozenset()
+    assert form.category_id == "food"
+    assert form.apply_suggestion(suggestion, (CAFE, FOOD), overwrite=True) == {"category_id"}
+
+
+def test_apply_suggestion_ignores_no_choice_and_unknown_ids():
+    form = TransactionForm()
+    assert not form.apply_suggestion(CategorySuggestion(None, "r"), (CAFE,), overwrite=True)
+    assert not form.apply_suggestion(
+        CategorySuggestion(CategoryId("salary"), "r"), (CAFE,), overwrite=True
+    )
+    assert form.category_id == ""

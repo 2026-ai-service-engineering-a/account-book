@@ -93,3 +93,15 @@ def test_strange_answer_is_a_refusal():
     # 바깥에서 온 JSON이다. 모양이 다르면 칸을 채우지 않는다
     assert read(answer(body=READ | {"amount": -5})).refusal
     assert read(answer(body=READ | {"occurred_at": "2026-09-17T15:00:00"})).refusal
+
+
+def test_category_the_agent_chose_is_carried():
+    reason = "비슷한 기록: 메가커피 → 카페"
+    category = {"category_id": "cafe", "strategy": "vector", "reason": reason}
+    reading = read(answer(body=READ | {"category": category}))
+    assert reading.category is not None and reading.category.category_id == "cafe"
+    assert not reading.category.by_llm
+
+
+def test_no_category_from_the_agent_means_none():
+    assert read(answer()).category is None

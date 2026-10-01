@@ -60,4 +60,5 @@ def _reading(reply: AgentCaptureReply) -> MessageReading:
         # 결제수단의 종류가 곧 대역 카탈로그의 id다. 진짜 api가 오면 계좌 목록에서 찾는다.
         account_id=AccountId(reply.payment_method) if reply.payment_method else None,
         merchant=reply.merchant or None,
+        category=reply.category.suggestion() if reply.category else None,
     )

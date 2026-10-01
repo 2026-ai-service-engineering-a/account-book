@@ -49,12 +49,16 @@ SEATS: tuple[AiSeat, ...] = (
         tools=("suggest_category",),
         replaces="드롭다운에서 카테고리 고르기",
         screens=(("거래 입력 — 카테고리", "/transactions/new"),),
-        human="제안은 비어 있는 칸만 채운다. 사용자가 고른 것은 덮지 않고, 저장이 확인이다",
+        human="AI로 고르기를 누를 때만 고른다. 근거 한 줄을 같이 보여 주고, 저장이 확인이다",
         fallback="신뢰도가 낮으면 모른다고 하고 사람이 고른다",
         port="CategorySuggester",
         stand_in="ScriptedCategorySuggester",
         stand_in_does="가맹점명의 낱말 표 하나로 고른다 — 0단계 규칙 표 흉내",
         doc="docs/ai/category-suggestion-rag.md",
+        live=(
+            "AI로 고르기와 한 줄로 채우기가 agent의 POST /classify로 고른다. api 대역이 규칙·이력·"
+            "벡터 이웃으로 찾고, 애매할 때만 LLM이 근거를 보고 하나를 고른다"
+        ),
     ),
     AiSeat(
         key="query",

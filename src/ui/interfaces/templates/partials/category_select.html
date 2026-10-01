@@ -1,13 +1,25 @@
 {% from "ai.html" import ai_badge %}
+{% from "icons.html" import icon %}
 <div id="category-select" class="field">
   {% set picked = "category_id" in (filled or ()) %}
   <div class="label-row">
     <label class="label" for="category_id">카테고리 {% if picked %}<span class="ai-tag">AI가 채움</span>{% endif %}</label>
-    {{ ai_badge("classify") }}
+    <div class="label-actions">
+      {# 누르기 전에는 아무것도 부르지 않는다. 가맹점·메모·방향을 보고 고른다(category-suggestion-rag 8.1) #}
+      <button type="button" class="btn btn-ghost btn-xs" hx-post="/partials/category-suggest" hx-include="closest form"
+              hx-target="#category-select" hx-swap="outerHTML" hx-indicator="#suggest-indicator"
+              hx-disabled-elt="this">{{ icon("sparkles") }}AI로 고르기</button>
+      {{ ai_badge("classify") }}
+    </div>
   </div>
   <select id="category_id" class="select{% if picked %} ai-filled{% endif %}" name="category_id" {% if errors.category_id %}aria-invalid="true"{% endif %}>
     <option value="" {% if not form.category_id %}selected{% endif %}>고르세요</option>
     {% for c in categories %}<option value="{{ c.id }}" {% if c.id == form.category_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
   </select>
+  <div id="suggest-indicator" class="htmx-indicator thinking">AI가 고르는 중…</div>
+  {% if suggestion %}
+  {# 근거를 반드시 같이 보여 준다. 이유 없이 값이 바뀌면 사람이 검사할 방법이 없다 #}
+  <p class="field-description suggestion-note" role="status">{% if suggestion.by_llm %}<span class="ai-tag">AI</span> {% endif %}{{ suggestion.reason }}</p>
+  {% endif %}
   {% if errors.category_id %}<p class="field-error">{{ errors.category_id }}</p>{% endif %}
 </div>

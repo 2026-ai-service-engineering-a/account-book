@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from tests.ui.conftest import FixedClock
-from ui.infrastructure.agent import AgentCaptureReader
+from ui.infrastructure.agent import AgentCaptureReader, AgentCategorySuggester
 from ui.infrastructure.scripted import ScriptedCaptureReader
 from ui.infrastructure.settings import Settings
 from ui.main import create_app
@@ -19,7 +19,9 @@ def test_agent_address_brings_the_real_reader():
     settings = Settings(_env_file=None, agent_base_url="http://agent:8001")
     services = create_app(settings, clock=FixedClock(), seeded=False).state.services
     assert isinstance(services.capture, AgentCaptureReader)
-    assert services.live_seats == {"capture"}
+    assert isinstance(services.suggester, AgentCategorySuggester)
+    assert services.live_seats == {"capture", "classify"}
+    assert services.index is not None  # agent가 부를 api 대역이 열려 있다
 
 
 def test_seeded_flag_decides_first_screen():

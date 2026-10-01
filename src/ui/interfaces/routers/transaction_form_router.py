@@ -6,7 +6,13 @@ from typing import Annotated
 from fastapi import APIRouter, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ui.application.dto import Category, Direction, MessageReading, Period, Transaction
+from ui.application.dto import (
+    CategorySuggestion,
+    Direction,
+    MessageReading,
+    Period,
+    Transaction,
+)
 from ui.application.errors import LedgerValidationError
 from ui.application.values import IdempotencyKey, TransactionId
 from ui.interfaces.forms.transaction_form import TransactionForm
@@ -80,22 +86,6 @@ async def delete(
     return RedirectResponse(f"/transactions?period={period}", status_code=303)
 
 
-@router.get("/partials/category-select", response_class=HTMLResponse)
-async def category_select(
-    request: Request,
-    services: ServicesDep,
-    direction: str = "expense",
-    category_id: str = "",
-    merchant: str = "",
-) -> HTMLResponse:
-    """방향을 바꾸거나 가맹점을 넣으면 카테고리 셀렉트 하나만 갈아끼운다."""
-    form = TransactionForm(direction=direction, category_id=category_id, merchant=merchant)
-    categories = await services.catalog.categories(form.direction_value)
-    await _suggest_category(services, form, categories)
-    context = {"form": form, "categories": categories, "errors": {}, "filled": frozenset()}
-    return render(request, "partials/category_select.html", context)
-
-
 @router.post("/partials/transaction-form/read", response_class=HTMLResponse)
 async def read_capture(request: Request, services: ServicesDep) -> HTMLResponse:
     """한 줄을 보내면 폼 하나를 다시 그린다. 채우기까지만 — 저장은 사람이 누른다(4.4)."""
@@ -109,27 +99,39 @@ async def read_capture(request: Request, services: ServicesDep) -> HTMLResponse:
         return await _render_form(request, services, form, {}, None, note="보낸 내용이 없어요.")
     reading = await services.capture.read(message, services.clock.now())
     filled = form.apply(reading, services.zone())
+    suggestion = None
     if filled:
         categories = await services.catalog.categories(form.direction_value)
-        if await _suggest_category(services, form, categories):
-            filled |= {"category_id"}
+        form.drop_category_outside(categories)
+        suggestion = await _capture_category(services, form, reading)
+        if suggestion is not None:
+            filled |= form.apply_suggestion(suggestion, categories, overwrite=False)
     note = _reading_note(reading, filled)
     return await _render_form(
-        request, services, form, {}, None, filled=filled, note=note, sent=message
+        request,
+        services,
+        form,
+        {},
+        None,
+        filled=filled,
+        note=note,
+        sent=message,
+        suggestion=suggestion,
     )
 
 
-async def _suggest_category(
-    services: Services, form: TransactionForm, categories: tuple[Category, ...]
-) -> bool:
-    """제안은 비어 있을 때만 채운다. 사용자가 고른 것은 덮지 않는다(4.1). 채웠으면 True."""
-    if form.category_id not in {c.id for c in categories}:
-        form.category_id = ""
-    if form.category_id or not form.merchant:
-        return False
-    suggestion = await services.suggester.suggest(form.merchant, form.direction_value)
-    form.category_id = suggestion.category_id if suggestion else ""
-    return suggestion is not None
+async def _capture_category(
+    services: Services, form: TransactionForm, reading: MessageReading
+) -> CategorySuggestion | None:
+    """한 줄을 읽은 쪽이 카테고리까지 골랐으면 그것을 쓴다(agent). 아니면 따로 고른다(대역).
+
+    사용자가 이미 고른 카테고리가 있으면 고르지 않는다 — 덮지 않을 것을 부를 이유가 없다.
+    """
+    if reading.category is not None:
+        return reading.category
+    if form.category_id or not (form.merchant or form.memo):
+        return None
+    return await services.suggester.suggest(form.merchant, form.memo, form.direction_value)
 
 
 def _reading_note(reading: MessageReading, filled: frozenset[str]) -> str:
@@ -179,6 +181,7 @@ async def _render_form(
     filled: frozenset[str] = frozenset(),
     note: str = "",
     sent: str = "",
+    suggestion: CategorySuggestion | None = None,
 ) -> HTMLResponse:
     """검증에 걸리면 폼 조각만 다시 그린다. 이미 쓴 값은 그대로 들어 있다."""
     context = {
@@ -186,6 +189,7 @@ async def _render_form(
         "capture_on": services.capture is not None and existing is None,
         "samples": _SAMPLES if services.demo is not None else (),
         "filled": filled,
+        "suggestion": suggestion,
         "reading_note": note,
         "sent": sent,
         "section": "new" if existing is None else "transactions",
