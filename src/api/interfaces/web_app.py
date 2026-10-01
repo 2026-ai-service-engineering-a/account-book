@@ -6,6 +6,7 @@ from .error_translation import install_error_translation
 from .routers import (
     budgets_router,
     catalog_router,
+    category_search_router,
     health_router,
     reports_router,
     transactions_router,
@@ -23,6 +24,7 @@ def build_web_app(services: Services) -> FastAPI:
         catalog_router,
         reports_router,
         budgets_router,
+        category_search_router,
     ):
         app.include_router(module.router)
     install_error_translation(app)

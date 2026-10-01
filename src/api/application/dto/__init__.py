@@ -1,9 +1,15 @@
 from .budget_status import BudgetStatus
+from .category_candidate import CategoryCandidate
 from .category_change import CategoryChange
+from .category_evidence import CategoryEvidence
+from .category_query import CategoryQuery
+from .category_search import CategorySearch
 from .idempotency_record import IdempotencyRecord
+from .index_text import IndexText
 from .month_total import MonthTotal
 from .monthly_report import MonthlyReport
 from .pace_series import PaceSeries
+from .search_strategy import SearchStrategy
 from .stored_reply import StoredReply
 from .totals import Totals
 from .transaction_draft import TransactionDraft
@@ -12,11 +18,17 @@ from .transaction_query import TransactionQuery
 
 __all__ = [
     "BudgetStatus",
+    "CategoryCandidate",
     "CategoryChange",
+    "CategoryEvidence",
+    "CategoryQuery",
+    "CategorySearch",
     "IdempotencyRecord",
+    "IndexText",
     "MonthTotal",
     "MonthlyReport",
     "PaceSeries",
+    "SearchStrategy",
     "StoredReply",
     "Totals",
     "TransactionDraft",

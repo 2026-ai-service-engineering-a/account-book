@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     user_timezone: str = "Asia/Seoul"
     # 이 금액 이상의 쓰기는 X-Confirmed-By: user가 있어야 한다(api-contract 4장)
     agent_confirm_threshold: int = 100_000
+    # 카테고리 고르기의 검색 — 이웃 몇 건으로 투표하나, 가장 비슷한 이웃 쪽으로 얼마나
+    # 기울이나(docs/ai/category-suggestion-rag.md 5장)
+    rag_top_k: int = 8
+    rag_vote_temperature: float = 0.03
 
     # .env에는 다른 서비스의 변수도 있다. api가 쓰지 않는 것은 모른 척한다.
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

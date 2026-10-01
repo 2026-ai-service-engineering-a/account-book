@@ -9,7 +9,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from api.application.errors import IdempotencyKeyReused, RequestInProgress
-from api.domain.errors import ConfirmationRequired, InvalidTransaction, TransactionNotFound
+from api.domain.errors import (
+    ConfirmationRequired,
+    InvalidEmbedding,
+    InvalidTransaction,
+    TransactionNotFound,
+)
 
 from .missing_idempotency_key import MissingIdempotencyKey
 from .schemas import ErrorResponse
@@ -20,6 +25,7 @@ _log = logging.getLogger(__name__)
 def install_error_translation(app: FastAPI) -> None:
     app.add_exception_handler(TransactionNotFound, _not_found)
     app.add_exception_handler(InvalidTransaction, _invalid)
+    app.add_exception_handler(InvalidEmbedding, _invalid)
     app.add_exception_handler(RequestValidationError, _malformed)
     app.add_exception_handler(ConfirmationRequired, _confirmation)
     app.add_exception_handler(MissingIdempotencyKey, _missing_key)
@@ -33,7 +39,7 @@ async def _not_found(_: Request, __: Exception) -> JSONResponse:
 
 
 async def _invalid(_: Request, error: Exception) -> JSONResponse:
-    details = error.details if isinstance(error, InvalidTransaction) else {}
+    details = error.details if isinstance(error, InvalidTransaction | InvalidEmbedding) else {}
     return ErrorResponse.reply(422, "validation_error", "입력을 확인해 주세요.", details)
 
 

@@ -1,5 +1,6 @@
 from .budget_repository import BudgetRepository
 from .catalog_repository import CatalogRepository
+from .category_index import CategoryIndex
 from .clock import Clock
 from .database_probe import DatabaseProbe
 from .idempotency_store import IdempotencyStore
@@ -10,6 +11,7 @@ from .unit_of_work import UnitOfWork
 __all__ = [
     "BudgetRepository",
     "CatalogRepository",
+    "CategoryIndex",
     "Clock",
     "DatabaseProbe",
     "IdempotencyStore",
