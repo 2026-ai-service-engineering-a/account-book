@@ -13,19 +13,32 @@ def seed_reference(connection: Connection) -> int:
     사용자가 더한 카테고리는 건드리지 않는다. 지우지도 않는다.
     """
     categories = insert(CategoryRow).values(
-        [{"id": i, "name": n, "direction": d} for i, n, d in CATEGORIES]
+        [
+            {"id": i, "name": n, "direction": d, "position": p}
+            for p, (i, n, d) in enumerate(CATEGORIES)
+        ]
     )
-    accounts = insert(AccountRow).values([{"id": i, "name": n, "kind": k} for i, n, k in ACCOUNTS])
+    accounts = insert(AccountRow).values(
+        [{"id": i, "name": n, "kind": k, "position": p} for p, (i, n, k) in enumerate(ACCOUNTS)]
+    )
     connection.execute(
         categories.on_conflict_do_update(
             index_elements=[CategoryRow.id],
-            set_={"name": categories.excluded.name, "direction": categories.excluded.direction},
+            set_={
+                "name": categories.excluded.name,
+                "direction": categories.excluded.direction,
+                "position": categories.excluded.position,
+            },
         )
     )
     connection.execute(
         accounts.on_conflict_do_update(
             index_elements=[AccountRow.id],
-            set_={"name": accounts.excluded.name, "kind": accounts.excluded.kind},
+            set_={
+                "name": accounts.excluded.name,
+                "kind": accounts.excluded.kind,
+                "position": accounts.excluded.position,
+            },
         )
     )
     return len(CATEGORIES) + len(ACCOUNTS)
