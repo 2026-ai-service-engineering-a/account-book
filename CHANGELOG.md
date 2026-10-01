@@ -23,6 +23,10 @@
 - **`agent` 서비스** — compose에 붙었다. 포트를 열지 않고 `ui`만 부른다. LLM 키를 가진
   유일한 서비스다. ([README.md](README.md) 3장)
 
+- **거래 api** — `api`가 `/v1/transactions`(목록·한 건·넣기·고치기·지우기)와 `/v1/categories`·
+  `/v1/accounts`를 낸다. 쓰기는 멱등 키를 DB에 저장하고(같은 키 두 번 = 한 건), 10만 원 이상과 삭제는
+  확인 머리글이 있어야 한다. 개발용 구성은 DB가 비어 있으면 여섯 달치 예시 거래를 넣는다(`make demo`).
+  화면은 아직 메모리 대역으로 돈다 — 집계·검색까지 옮긴 뒤 한꺼번에 바꾼다.
 - **`db`와 `api`** — PostgreSQL(pgvector 확장 포함)과 그 앞의 `api` 서비스가 compose에 떴다.
   스키마는 README 7장의 테이블과 카테고리 고르기의 `text_embeddings`(768차원, 코사인 HNSW
   인덱스)·`category_rules`. `api`가 뜰 때 Alembic으로 스키마를 올리고, `make seed`가 카테고리·
