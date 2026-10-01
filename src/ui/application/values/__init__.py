@@ -7,7 +7,6 @@ from .money import Money
 from .page_cursor import PageCursor
 from .proposal_id import ProposalId
 from .run_id import RunId
-from .text_hash import TextHash
 from .transaction_id import TransactionId
 
 __all__ = [
@@ -18,6 +17,5 @@ __all__ = [
     "PageCursor",
     "ProposalId",
     "RunId",
-    "TextHash",
     "TransactionId",
 ]

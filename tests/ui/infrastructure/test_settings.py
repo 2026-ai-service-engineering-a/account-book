@@ -23,3 +23,8 @@ def test_agent_is_off_unless_given(monkeypatch):
 def test_reads_agent_address(monkeypatch):
     monkeypatch.setenv("AGENT_BASE_URL", "http://agent:8001")
     assert Settings(_env_file=None).agent_base_url == "http://agent:8001"
+
+
+def test_api_is_off_unless_given(monkeypatch):
+    monkeypatch.delenv("API_BASE_URL", raising=False)
+    assert Settings(_env_file=None).api_base_url == ""

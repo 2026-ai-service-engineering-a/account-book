@@ -17,7 +17,6 @@ from ui.application.values import (
     CategoryId,
     IdempotencyKey,
     Money,
-    TextHash,
     TransactionId,
 )
 
@@ -54,10 +53,6 @@ class MemoryStore:
     limits: dict[CategoryId, Money] = field(default_factory=dict)  # 월 예산
     # Idempotency-Key → 그 키로 처리한 대상의 id
     replies: dict[IdempotencyKey, str] = field(default_factory=dict)
-    # transaction_embeddings의 자리. 거래가 아니라 색인 텍스트에 붙는다 — (모델, 텍스트 해시) → 벡터
-    embeddings: dict[tuple[str, TextHash], tuple[float, ...]] = field(default_factory=dict)
-    # category_rules의 자리 — 색인 텍스트에 든 패턴 → 카테고리. 시드는 비어 있다(규칙은 사용자의 것)
-    rules: dict[str, CategoryId] = field(default_factory=dict)
     sequence: int = 0
 
     @classmethod

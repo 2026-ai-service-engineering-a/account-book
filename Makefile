@@ -58,11 +58,12 @@ agent: env  ## agent를 띄운다 — 포트는 열지 않는다. ui가 compose 
 	@echo "로그는 docker compose logs -f agent"
 else
 # 같은 컨테이너에서 둘 다 띄우므로 ui는 agent를 localhost로 부른다. .env의 주소는 compose용이다.
+# devcontainer에는 db·api가 없다 — api 자리에는 메모리 대역이 선다(카테고리 고르기는 근거를 못 찾는다).
 ui:  ## 대역으로 도는 ui를 띄운다 — http://localhost:8080 (Ctrl+C로 멈춘다)
-	AGENT_BASE_URL=http://localhost:8001 uvicorn ui.main:create_app --factory --reload --reload-dir src/ui --app-dir src --host 0.0.0.0 --port 8080
+	API_BASE_URL= AGENT_BASE_URL=http://localhost:8001 uvicorn ui.main:create_app --factory --reload --reload-dir src/ui --app-dir src --host 0.0.0.0 --port 8080
 
 agent:  ## agent를 띄운다 — http://localhost:8001 (Ctrl+C로 멈춘다. ui와 다른 터미널에서)
-	API_BASE_URL=http://localhost:8080 uvicorn agent.main:create_app --factory --reload --reload-dir src/agent --app-dir src --host 0.0.0.0 --port 8001
+	uvicorn agent.main:create_app --factory --reload --reload-dir src/agent --app-dir src --host 0.0.0.0 --port 8001
 endif
 
 seed:  ## 기준 데이터(카테고리·결제수단)를 넣는다 — 몇 번을 쳐도 같다

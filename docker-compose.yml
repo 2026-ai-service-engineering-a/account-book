@@ -10,16 +10,14 @@ services:
       context: .
       target: ui
     image: account-book-ui
-    # .env를 통째로 넘기지 않는다. 거기에는 LLM 키가 있고, ui는 키를 몰라야 한다(README 3장).
-    # 쓰는 것만 골라 넘긴다. 값은 compose가 .env에서 읽어 채우고, 없어도 뜬다.
-    # AGENT_BASE_URL이 비면 AI 자리에 각본 대역이 선다.
+    # .env를 통째로 넘기지 않는다. 거기에는 LLM 키와 DB 비밀번호가 있고, ui는 둘 다 몰라야 한다
+    # (README 3장). 쓰는 것만 골라 넘긴다. 값은 compose가 .env에서 읽어 채우고, 없어도 뜬다.
+    # API_BASE_URL이 비면 api 자리에, AGENT_BASE_URL이 비면 AI 자리에 대역이 선다.
     environment:
       USER_TIMEZONE: ${USER_TIMEZONE:-Asia/Seoul}
+      API_BASE_URL: ${API_BASE_URL:-}
       AGENT_BASE_URL: ${AGENT_BASE_URL:-}
       AGENT_TIMEOUT_SECONDS: ${AGENT_TIMEOUT_SECONDS:-10}
-      # ui 안의 api 대역이 카테고리 검색을 한다. 진짜 api가 서면 그쪽으로 옮겨 간다.
-      RAG_TOP_K: ${RAG_TOP_K:-8}
-      RAG_VOTE_TEMPERATURE: ${RAG_VOTE_TEMPERATURE:-0.03}
     ports:
       # 호스트로 여는 건 ui 하나뿐이다(README 3장). 지금은 api 자리에 대역이 선다.
       - "${UI_PORT:-8080}:8080"
@@ -33,13 +31,19 @@ services:
       context: .
       target: agent
     image: account-book-agent
-    env_file:
-      - path: .env
-        required: false
+    # .env를 통째로 넘기지 않는다 — agent는 DB 접속 정보를 모른다(README 3장). LLM 키와
+    # 카테고리 고르기의 설정, 그리고 api의 주소만 받는다.
     environment:
-      # api가 아직 없어서 ui가 api 대역의 /v1을 연다. api가 서면 이 줄을 지운다 — .env의
-      # API_BASE_URL(http://api:8000)이 그대로 쓰인다.
-      API_BASE_URL: http://ui:8080
+      AGENT_MODEL: ${AGENT_MODEL:-gemini/gemini-flash-lite-latest}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AGENT_TIMEOUT_SECONDS: ${AGENT_TIMEOUT_SECONDS:-10}
+      API_BASE_URL: ${API_BASE_URL:-http://api:8000}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL-gemini/gemini-embedding-001}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
+      CLASSIFY_MIN_CONFIDENCE: ${CLASSIFY_MIN_CONFIDENCE:-0.7}
+      CLASSIFY_ABSTAIN_BELOW: ${CLASSIFY_ABSTAIN_BELOW:-0.25}
     expose:
       - "8001"
     restart: unless-stopped
@@ -60,6 +64,8 @@ services:
       POSTGRES_PORT: "5432"
       USER_TIMEZONE: ${USER_TIMEZONE:-Asia/Seoul}
       AGENT_CONFIRM_THRESHOLD: ${AGENT_CONFIRM_THRESHOLD:-100000}
+      RAG_TOP_K: ${RAG_TOP_K:-8}
+      RAG_VOTE_TEMPERATURE: ${RAG_VOTE_TEMPERATURE:-0.03}
     depends_on:
       db:
         condition: service_healthy
