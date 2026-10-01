@@ -7,59 +7,53 @@
 
 ## Unreleased
 
+## 0.5.0 — 2026-10-01
+
+**AI가 붙고, 기록이 DB에 남는다.** 서비스 넷(`ui`·`agent`·`api`·`db`)이 다 떠서 일한다. 거래 폼의
+한 줄로 채우기와 카테고리 고르기는 진짜 LLM이 하고, 거래·예산은 PostgreSQL에 저장돼 다시 띄워도
+그대로다. 채팅과 리포트 문장은 아직 각본 대역이다.
+
+### 업그레이드할 때
+
+1. `.env`에 `POSTGRES_PASSWORD`를 채운다 — 비어 있으면 compose가 뜨지 않는다.
+2. `.env`에 `AGENT_MODEL` 제공자의 키를 채운다(기본은 `GEMINI_API_KEY`). 키 없이 화면만 보려면
+   `AGENT_BASE_URL`을 비운다.
+3. 의존성과 서비스가 바뀌었다. 떠 있던 `make dev`를 멈추고 `make build` 뒤 다시 띄운다 — 떠 있던
+   Watch는 처음 읽은 설정을 들고 있어서 새 서비스(`db`·`api`)와 새 변수를 모른다.
+
+`.env.sample`과 비교해 빠진 변수를 채운다. 새로 생긴 것: `POSTGRES_HOST`·`POSTGRES_PORT`,
+`AGENT_TIMEOUT_SECONDS`, 카테고리 고르기의 여섯(`EMBEDDING_MODEL` 등). 없으면 기본값으로 돈다.
+
 ### 추가
 
-- **한 줄로 채우기에 진짜 AI** — 거래 폼에 카드 문자나 "어제 저녁 교촌치킨 2만3천원 현금"
-  같은 한 줄을 보내면 `agent`가 LLM(기본 Gemini Flash-Lite)으로 읽어 칸을 채운다. 각본
-  대역이 알아듣지 못하던 모양도 읽는다. 날짜는 LLM이 아니라 코드가 계산하고, 글에 없는
-  가맹점명은 버린다. 저장은 여전히 사람이 누른다.
-  ([ui_docs/pages/transaction-form.md](ui_docs/pages/transaction-form.md) 4.5)
-- **카테고리 AI로 고르기(RAG)** — 거래 폼의 카테고리 옆 버튼을 누르면 `agent`가 내 지난
-  기록에서 비슷한 거래를 찾아 고르고, 셀렉트 아래에 근거 한 줄을 보여 준다("같은 가맹점 최근
-  5건 중 5건: 식비", "비슷한 기록: 메가커피 · 스타벅스 → 카페"). 자주 가는 곳은 LLM 없이
-  기록만으로 정하고, 처음 보는 곳이 애매할 때만 LLM이 근거를 보고 고른다. 한 줄로 채우기도
-  카테고리를 같은 방법으로 채운다. 평가는 `make eval`.
-  ([docs/ai/category-suggestion-rag.md](docs/ai/category-suggestion-rag.md))
-- **`agent` 서비스** — compose에 붙었다. 포트를 열지 않고 `ui`만 부른다. LLM 키를 가진
-  유일한 서비스다. ([README.md](README.md) 3장)
-
-- **기록이 DB에 남는다** — `make dev`로 띄운 화면이 진짜 `api`를 쓴다. 거래·예산이 PostgreSQL에
-  저장돼 다시 띄워도 그대로다. 카테고리 고르기의 검색도 `api`로 옮겨 가 벡터 이웃을 pgvector(코사인
-  거리, HNSW 인덱스)로 찾는다 — 방금 저장한 거래가 다음 분류의 근거가 된다.
+- **기록이 DB에 남는다** — 거래·예산이 PostgreSQL에 저장된다. 처음 뜰 때 DB가 비어 있으면
+  개발용 구성이 여섯 달치 예시 거래를 한 번 넣는다(`make demo`). 합계와 예산 페이스는 DB가 낸다.
   ([ui_docs/stand-ins.md](ui_docs/stand-ins.md))
-- **집계·예산 api** — `/v1/summary`, `/v1/reports/monthly`·`pace`, `/v1/budgets/status`,
-  `PUT /v1/budgets/{category_id}`. 합계는 DB가 내고, 페이스(말일 예상·넘는 날)는 사용자 타임존의 날로 센다.
-  예산은 바꾼 달부터 이어진다 — 한 번 정하면 바꿀 때까지 매달 같다.
-- **거래 api** — `api`가 `/v1/transactions`(목록·한 건·넣기·고치기·지우기)와 `/v1/categories`·
-  `/v1/accounts`를 낸다. 쓰기는 멱등 키를 DB에 저장하고(같은 키 두 번 = 한 건), 10만 원 이상과 삭제는
-  확인 머리글이 있어야 한다. 개발용 구성은 DB가 비어 있으면 여섯 달치 예시 거래를 넣는다(`make demo`).
-- **`db`와 `api`** — PostgreSQL(pgvector 확장 포함)과 그 앞의 `api` 서비스가 compose에 떴다.
-  스키마는 README 7장의 테이블과 카테고리 고르기의 `text_embeddings`(768차원, 코사인 HNSW
-  인덱스)·`category_rules`. `api`가 뜰 때 Alembic으로 스키마를 올리고, `make seed`가 카테고리·
-  결제수단을 넣는다.
-  (README 7장, [docs/development-rules.md](docs/development-rules.md) 6.6)
+- **한 줄로 채우기에 진짜 AI** — 거래 폼에 카드 문자나 "어제 저녁 교촌치킨 2만3천원 현금" 같은
+  한 줄을 보내면 LLM(기본 Gemini Flash-Lite)이 읽어 금액·날짜·가맹점·결제수단을 채우고, 카테고리까지
+  고른다. 날짜는 LLM이 아니라 코드가 계산하고, 글에 없는 가맹점명은 버린다. 저장은 여전히 사람이 누른다.
+  ([ui_docs/pages/transaction-form.md](ui_docs/pages/transaction-form.md) 4.5)
+- **카테고리 AI로 고르기(RAG)** — 카테고리 옆 버튼을 누르면 내 지난 기록에서 비슷한 거래를 찾아
+  고르고, 셀렉트 아래에 근거 한 줄을 보여 준다("같은 가맹점 최근 5건 중 5건: 식비", "비슷한 기록:
+  메가커피 · 스타벅스 → 카페"). 자주 가는 곳은 LLM 없이 기록만으로 정하고, 처음 보는 곳이 애매할
+  때만 LLM이 근거를 보고 고른다. 비슷한 기록은 pgvector로 찾고, 방금 저장한 거래가 바로 다음
+  분류의 근거가 된다. ([docs/ai/category-suggestion-rag.md](docs/ai/category-suggestion-rag.md))
+- **예산은 바꿀 때까지 이어진다** — 한 번 정하면 매달 같고, 바꾸거나 지우면 그 달부터다.
+  ([docs/api-contract.md](docs/api-contract.md) 6장)
+- **AI 위키가 진짜와 대역을 구분한다** — 어느 AI 자리에 진짜 agent가 섰는지 말한다.
+- **새 명령** — `make eval`(카테고리 고르기를 실제 모델로 평가), `make test-db`(DB 통합 테스트),
+  `make seed`·`make demo`(기준 데이터·예시), `make psql`(DB를 눈으로).
 
 ### 변경
 
-- **데모 버튼(비우기·다시 채우기)이 사라졌다.** 진짜 api에서는 쓰던 가계부를 비우는 버튼을 두지
-  않는다. 예시는 DB가 비어 있을 때 개발용 구성이 한 번 넣는다(`make demo`). api 없이
-  `API_BASE_URL`을 비우고 띄우면 메모리 대역과 함께 버튼이 돌아온다.
-- **각 서비스는 자기 비밀만 받는다.** ui는 키도 DB 비밀번호도, agent는 DB 비밀번호를, api는 LLM 키를
-  모른다. compose가 `.env`를 통째로 넘기지 않는다.
-- **가맹점을 넣어도 카테고리가 저절로 채워지지 않는다.** AI로 고르기를 눌러야 고른다 —
-  누르기 전에는 AI를 부르지 않는다. 한 줄로 채우기는 지금처럼 카테고리까지 채운다.
-- `.env.sample`에 카테고리 고르기의 변수 여섯(`EMBEDDING_MODEL` 등)이 생겼다. 기본 임베딩은
-  `gemini/gemini-embedding-001`이라 `GEMINI_API_KEY`가 있어야 한다. 비우면 벡터 검색 없이
-  돈다.
-- **`.env`에 `POSTGRES_PASSWORD`를 채워야 뜬다.** 비어 있으면 compose가 멈춘다. `POSTGRES_HOST`·
-  `POSTGRES_PORT`도 생겼다(`db`, `5432`). 의존성이 바뀌었으니 `make build`를 한 번 친다.
-- **`make dev`가 `agent`도 띄운다.** `.env`에 `AGENT_MODEL` 제공자의 키(기본은
-  `GEMINI_API_KEY`)가 있어야 뜬다. 키 없이 화면만 보려면 `AGENT_BASE_URL`을 비운다 —
-  지금까지처럼 각본 대역이 선다.
-- **이미지가 서비스마다 하나다.** `ui` 이미지에는 LLM 라이브러리도 `agent` 코드도 들어가지
-  않는다. `ui` 컨테이너는 `.env`를 통째로 받지 않고 쓰는 변수만 받는다 — LLM 키를 모른다.
-- `.env.sample`의 `AGENT_MODEL` 기본값을 `gemini/gemini-flash-lite-latest`로 바꾸고,
-  `AGENT_TIMEOUT_SECONDS`를 더했다. 의존성이 바뀌었으니 `make build`를 한 번 친다.
+- **가맹점을 넣어도 카테고리가 저절로 채워지지 않는다.** AI로 고르기를 눌러야 고른다 — 누르기
+  전에는 AI를 부르지 않는다. 한 줄로 채우기는 지금처럼 카테고리까지 채운다.
+- **데모 버튼(비우기·다시 채우기)이 없다.** 진짜 DB에서는 쓰던 가계부를 비우는 버튼을 두지 않는다.
+  `API_BASE_URL`을 비우고 띄우면 메모리 대역과 함께 돌아온다.
+- **서비스마다 자기 비밀만 받는다.** `ui`는 LLM 키도 DB 비밀번호도, `agent`는 DB 비밀번호를,
+  `api`는 LLM 키를 모른다. compose가 `.env`를 통째로 넘기지 않는다.
+- **이미지가 서비스마다 하나다.** `ui` 이미지에는 LLM·DB 라이브러리가 들어가지 않는다.
+- `.env.sample`의 `AGENT_MODEL` 기본값이 `gemini/gemini-flash-lite-latest`다.
 
 ## 0.2.0 — 2026-09-26
 
