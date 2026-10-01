@@ -23,6 +23,9 @@
 - **`agent` 서비스** — compose에 붙었다. 포트를 열지 않고 `ui`만 부른다. LLM 키를 가진
   유일한 서비스다. ([README.md](README.md) 3장)
 
+- **집계·예산 api** — `/v1/summary`, `/v1/reports/monthly`·`pace`, `/v1/budgets/status`,
+  `PUT /v1/budgets/{category_id}`. 합계는 DB가 내고, 페이스(말일 예상·넘는 날)는 사용자 타임존의 날로 센다.
+  예산은 바꾼 달부터 이어진다 — 한 번 정하면 바꿀 때까지 매달 같다.
 - **거래 api** — `api`가 `/v1/transactions`(목록·한 건·넣기·고치기·지우기)와 `/v1/categories`·
   `/v1/accounts`를 낸다. 쓰기는 멱등 키를 DB에 저장하고(같은 키 두 번 = 한 건), 10만 원 이상과 삭제는
   확인 머리글이 있어야 한다. 개발용 구성은 DB가 비어 있으면 여섯 달치 예시 거래를 넣는다(`make demo`).

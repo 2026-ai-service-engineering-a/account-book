@@ -34,3 +34,42 @@ def recorder(status: int = 200, body: object = None):
         return httpx.Response(status, json=body)
 
     return handler, seen
+
+
+FOOD = {"id": "food", "name": "식비", "direction": "expense"}
+MONTHLY = {
+    "period": "2026-09",
+    "totals": {"expense": 185000, "income": 3000000},
+    "previous": {"expense": 34000, "income": 0},
+    "by_category": [
+        {
+            "category": FOOD,
+            "this_month": 180000,
+            "last_month": 30000,
+            "delta": 150000,
+            "percent": 500,
+        }
+    ],
+    "months": [
+        {"period": "2026-08", "expense": 34000, "income": 0},
+        {"period": "2026-09", "expense": 185000, "income": 3000000},
+    ],
+    "through_day": 3,
+}
+STATUS = {
+    "category": FOOD,
+    "limit": 300000,
+    "spent": 180000,
+    "remaining": 120000,
+    "percent": 60,
+    "projected": 1800000,
+    "over_on": "2026-09-06",
+}
+PACE = {
+    "category": FOOD,
+    "limit": 300000,
+    "cumulative": [100000, 180000, 180000],
+    "days_in_month": 30,
+    "projected": 1800000,
+    "over_on": "2026-09-06",
+}

@@ -1,7 +1,7 @@
 # 대역으로 도는 ui
 
-`api`는 떴고 거래·카테고리·결제수단을 DB로 받는다. 그래도 화면은 아직 아래의 메모리 대역으로
-돈다 — 집계·예산·카테고리 검색이 같은 저장소를 읽어서, 전부 `api`에 생긴 뒤 한꺼번에 바꾼다. `agent`는 기록(한 줄로 채우기)과 카테고리 고르기만 한다. 그래도 화면은 끝까지 돌아야
+`api`는 떴고 거래·카탈로그·집계·예산을 DB로 한다. 그래도 화면은 아직 아래의 메모리 대역으로
+돈다 — 카테고리 검색이 같은 저장소를 읽어서, 그것까지 `api`에 생긴 뒤 한꺼번에 바꾼다. `agent`는 기록(한 줄로 채우기)과 카테고리 고르기만 한다. 그래도 화면은 끝까지 돌아야
 설계를 손으로 만져 볼 수 있다. 그래서 `src/ui`는 **포트 뒤에 대역을 세워** 돈다. 화면 코드는
 대역을 모르고 포트만 안다. 진짜가 생기면 [../src/ui/main.py](../src/ui/main.py)에서 한 줄씩
 바꾸고, 화면은 건드리지 않는다.
@@ -57,10 +57,10 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 ## 2. api 자리 — 메모리 저장소
 
-진짜 `api`와 `db`(PostgreSQL + pgvector)는 compose에 떠 있다. `TransactionGateway`·`CatalogGateway`의
-진짜(`HttpTransactionGateway`·`HttpCatalogGateway`, `src/ui/infrastructure/api/`)도 있다. 아직
-끼우지 않았을 뿐이다 — 집계·예산·카테고리 검색 대역이 메모리 저장소의 거래를 읽기 때문이다. 셋이
-`api`에 생기면 `API_BASE_URL` 하나로 한꺼번에 바뀐다.
+진짜 `api`와 `db`(PostgreSQL + pgvector)는 compose에 떠 있다. 거래·카탈로그·집계·예산 포트의
+진짜(`Http*Gateway`, `src/ui/infrastructure/api/`)도 있다. 아직 끼우지 않았을 뿐이다 — 카테고리
+검색 대역이 메모리 저장소의 거래를 읽기 때문이다. 검색까지 `api`에 생기면 `API_BASE_URL` 하나로
+한꺼번에 바뀐다.
 
 | 포트 | 대역 |
 |---|---|
@@ -102,7 +102,8 @@ compose는 `agent`의 `API_BASE_URL`을 `http://ui:8080`으로 덮는다. `api`�
 - **스트림 재연결** — 끊기면 "다시 보내 주세요"만 띄운다. `run_id`로 이어 받기는
   진짜 `agent`가 있어야 한다([pages/chat.md 4.2](pages/chat.md#42-스트림이-끊기면)).
 - **대화 기록** — 새로고침하면 사라진다. 기록은 `agent_runs`의 몫이다.
-- **예산은 카테고리당 하나** — 달마다 따로 두지 않는다. `budgets.period`는 api가 생길 때.
+- **예산은 카테고리당 하나** — 대역은 달마다 따로 두지 않는다. `api`는 바뀐 달을 적고 바꿀 때까지
+  이어 쓴다([../docs/api-contract.md 6장](../docs/api-contract.md#예산은-바꿀-때까지-이어진다)) — 화면에서는 같아 보인다.
 - **`confirmation_required`** — 임계값 확인은 api가 판단한다. 대역은 늘 확인 카드를 띄운다.
 - **`/v1`이 ui의 공개 포트에 열린다** — 2.1의 api 대역은 `agent`만 부르라고 연 것인데, `ui`의
   8080에 같이 열려 있어서 브라우저도 부를 수 있다. 읽는 것은 카테고리 검색과 색인 텍스트(가맹점·
