@@ -1,18 +1,27 @@
 from __future__ import annotations
 
-from agent.application.errors import ModelUnavailable
-from tests.agent.conftest import SENTENCE, FakeModel, extraction
+from agent.application.errors import LedgerUnavailable, ModelUnavailable
+from tests.agent.conftest import SENTENCE, FakeLedger, FakeModel, extraction, search
 from tests.agent.interfaces.conftest import client_with
 
 BODY = {"text": SENTENCE, "now": "2026-10-01T09:00:00+00:00", "timezone": "Asia/Seoul"}
 
 
-def test_reads_with_the_users_reference_time():
-    response = client_with(FakeModel(extraction())).post("/capture", json=BODY)
+def test_reads_with_the_users_reference_time_and_picks_a_category():
+    ledger = FakeLedger(search(candidates=(("cafe", 0.9),)))
+    response = client_with(FakeModel(extraction()), ledger).post("/capture", json=BODY)
     assert response.status_code == 200
     body = response.json()
     assert body["amount"] == 5000 and body["merchant"] == "카페"
     assert body["occurred_at"] == "2026-10-01T15:00:00+09:00"
+    assert body["category"]["category_id"] == "cafe" and body["category"]["strategy"] == "vector"
+
+
+def test_api_down_still_fills_the_values():
+    # 카테고리를 못 골라도 읽은 값은 살린다
+    ledger = FakeLedger(LedgerUnavailable("ConnectError"))
+    body = client_with(FakeModel(extraction()), ledger).post("/capture", json=BODY).json()
+    assert body["amount"] == 5000 and body["category"]["category_id"] is None
 
 
 def test_refusal_is_still_200():

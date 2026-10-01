@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from agent.domain.values import CaptureReading, Direction, Money, PaymentMethod
+from agent.domain.values import (
+    CaptureReading,
+    CategoryChoice,
+    CategoryId,
+    ChoiceStrategy,
+    Direction,
+    Money,
+    PaymentMethod,
+)
 from agent.interfaces.schemas import CaptureResponse
 from tests.agent.conftest import SEOUL
 
@@ -23,9 +31,22 @@ def test_plain_values_on_the_wire():
         "payment_method": "card",
         "merchant": "김밥천국",
         "refusal": "",
+        "category": None,
     }
 
 
 def test_refusal_is_all_nulls():
     body = CaptureResponse.of(CaptureReading.refused("못 읽었어요")).model_dump()
     assert body["refusal"] == "못 읽었어요" and body["amount"] is None
+
+
+def test_carries_the_chosen_category():
+    reason = "비슷한 기록: 스타벅스 → 카페"
+    choice = CategoryChoice(CategoryId("cafe"), ChoiceStrategy.VECTOR, reason)
+    reading = CaptureReading(amount=Money(5000), merchant="카페", category=choice)
+    body = CaptureResponse.of(reading).model_dump()
+    assert body["category"] == {
+        "category_id": "cafe",
+        "strategy": "vector",
+        "reason": "비슷한 기록: 스타벅스 → 카페",
+    }

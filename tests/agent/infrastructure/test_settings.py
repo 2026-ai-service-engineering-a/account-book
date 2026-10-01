@@ -5,7 +5,13 @@ from pydantic import ValidationError
 
 from agent.infrastructure.settings import Settings
 
-KEYS = ("AGENT_MODEL", "GEMINI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY")
+KEYS = (
+    "AGENT_MODEL",
+    "EMBEDDING_MODEL",
+    "GEMINI_API_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+)
 
 
 @pytest.fixture(autouse=True)
@@ -23,7 +29,23 @@ def test_picks_the_key_of_the_models_provider(monkeypatch):
 def test_other_provider(monkeypatch):
     monkeypatch.setenv("AGENT_MODEL", "anthropic/claude-haiku-4-5")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "a-key")
+    monkeypatch.setenv("EMBEDDING_MODEL", "")  # 벡터 검색을 끄면 Gemini 키가 없어도 뜬다
     assert Settings(_env_file=None).api_key() == "a-key"
+
+
+def test_embedding_model_needs_its_own_key(monkeypatch):
+    # 대화는 Anthropic이어도 임베딩이 Gemini면 Gemini 키가 있어야 한다
+    monkeypatch.setenv("AGENT_MODEL", "anthropic/claude-haiku-4-5")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "a-key")
+    with pytest.raises(ValidationError, match="GEMINI_API_KEY"):
+        Settings(_env_file=None)
+
+
+def test_rag_defaults(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "g-key")
+    settings = Settings(_env_file=None)
+    assert settings.embedding_dimensions == 768 and settings.api_key(settings.embedding_model)
+    assert settings.classify_abstain_below < settings.classify_min_confidence
 
 
 def test_dies_without_the_key_for_the_model(monkeypatch):

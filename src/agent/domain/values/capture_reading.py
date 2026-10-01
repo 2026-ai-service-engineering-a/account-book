@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from .category_choice import CategoryChoice
 from .direction import Direction
 from .money import Money
 from .payment_method import PaymentMethod
@@ -21,6 +22,9 @@ class CaptureReading:
     payment_method: PaymentMethod | None = None
     merchant: str | None = None
     refusal: str = ""
+    # 가맹점을 읽었을 때만 고른다. None이면 고르지 않은 것이고, 고르려다 못 고른 것은
+    # abstain 결과로 들어온다 — 둘을 구분해야 ui가 다시 부르지 않는다.
+    category: CategoryChoice | None = None
 
     def __post_init__(self) -> None:
         if self.occurred_at is not None and self.occurred_at.tzinfo is None:
