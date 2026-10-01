@@ -44,8 +44,8 @@ services:
       - "8001"
     restart: unless-stopped
 
-  # 가계부 도메인의 단일 진실 공급원. DB에 붙는 유일한 서비스다. 지금은 스키마와 상태 확인만
-  # 있고, 거래·집계·검색은 다음 단계에서 ui의 메모리 대역에서 옮겨 온다.
+  # 가계부 도메인의 단일 진실 공급원. DB에 붙는 유일한 서비스다. 뜰 때 스키마를 올리고 기준
+  # 데이터를 맞춘다(개발용 구성은 비어 있으면 예시 거래까지 넣는다).
   # .env를 통째로 받지 않는다 — LLM 키를 몰라야 한다(docs/ai/README.md 3장).
   api:
     build:
@@ -59,6 +59,7 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       USER_TIMEZONE: ${USER_TIMEZONE:-Asia/Seoul}
+      AGENT_CONFIRM_THRESHOLD: ${AGENT_CONFIRM_THRESHOLD:-100000}
     depends_on:
       db:
         condition: service_healthy

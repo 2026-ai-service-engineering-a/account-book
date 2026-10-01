@@ -59,8 +59,8 @@ RUN useradd --create-home --uid 10001 app
 USER app
 
 EXPOSE 8000
-# 뜨기 전에 스키마를 최신으로 올린다. 이미 최신이면 아무것도 하지 않는다.
-CMD ["sh", "-c", "alembic -c src/api/alembic.ini upgrade head && uvicorn api.main:create_app --factory --app-dir src --host 0.0.0.0 --port 8000"]
+# 뜨기 전에 스키마를 최신으로 올리고 기준 데이터를 맞춘다. 둘 다 몇 번을 돌려도 같다.
+CMD ["sh", "-c", "alembic -c src/api/alembic.ini upgrade head && python -m api.seed && uvicorn api.main:create_app --factory --app-dir src --host 0.0.0.0 --port 8000"]
 
 
 FROM base AS dev
