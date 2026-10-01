@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # 로컬에는 아무것도 설치하지 않는다.
 #
-#   ui, agent — 서비스 하나씩. 그 서비스의 의존성과 코드만 굽는다 (docker-compose.yml)
+#   ui, agent, api — 서비스 하나씩. 그 서비스의 의존성과 코드만 굽는다 (docker-compose.yml)
 #   dev       — 의존성과 도구만 담는다. 코드는 바인드 마운트로 들어온다 (docker-compose.dev.yml)
 FROM python:3.13-slim AS base
 
@@ -48,6 +48,21 @@ EXPOSE 8001
 CMD ["uvicorn", "agent.main:create_app", "--factory", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8001"]
 
 
+FROM base AS api
+
+COPY requirements.txt requirements-api.txt ./
+RUN pip install --no-cache-dir -r requirements-api.txt
+
+COPY src/api ./src/api
+
+RUN useradd --create-home --uid 10001 app
+USER app
+
+EXPOSE 8000
+# 뜨기 전에 스키마를 최신으로 올린다. 이미 최신이면 아무것도 하지 않는다.
+CMD ["sh", "-c", "alembic -c src/api/alembic.ini upgrade head && uvicorn api.main:create_app --factory --app-dir src --host 0.0.0.0 --port 8000"]
+
+
 FROM base AS dev
 
 # git — 변경 파일을 고르는 점검(--base)과 devcontainer 안에서의 작업에 쓴다.
@@ -57,5 +72,5 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && git config --global --add safe.directory /app
 
-COPY requirements.txt requirements-agent.txt requirements-dev.txt ./
+COPY requirements.txt requirements-agent.txt requirements-api.txt requirements-dev.txt ./
 RUN pip install --no-cache-dir -r requirements-dev.txt

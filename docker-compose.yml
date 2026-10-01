@@ -1,5 +1,5 @@
 # 기본 구성 — 운영처럼 뜬다. 코드를 이미지에 굽고, 고쳐도 다시 뜨지 않는다.
-# db·api는 각 코드가 생길 때 여기에 붙인다(README 3장).
+# 서비스 넷 — ui, agent, api, db(README 3장). 호스트로 여는 건 ui 하나뿐이다.
 #
 #   docker compose up -d --build   # http://localhost:8080
 #
@@ -43,3 +43,45 @@ services:
     expose:
       - "8001"
     restart: unless-stopped
+
+  # 가계부 도메인의 단일 진실 공급원. DB에 붙는 유일한 서비스다. 지금은 스키마와 상태 확인만
+  # 있고, 거래·집계·검색은 다음 단계에서 ui의 메모리 대역에서 옮겨 온다.
+  # .env를 통째로 받지 않는다 — LLM 키를 몰라야 한다(docs/ai/README.md 3장).
+  api:
+    build:
+      context: .
+      target: api
+    image: account-book-api
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-account}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env에 POSTGRES_PASSWORD를 채운다}
+      POSTGRES_DB: ${POSTGRES_DB:-account_book}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      USER_TIMEZONE: ${USER_TIMEZONE:-Asia/Seoul}
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  # PostgreSQL + pgvector. 확장이 든 이미지라 카테고리 고르기의 벡터 검색을 DB에서 한다.
+  # 포트를 열지 않는다. 데이터는 볼륨에 남는다 — 지우려면 docker compose down -v.
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-account}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env에 POSTGRES_PASSWORD를 채운다}
+      POSTGRES_DB: ${POSTGRES_DB:-account_book}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  db-data:
