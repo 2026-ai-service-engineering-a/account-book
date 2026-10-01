@@ -19,6 +19,7 @@ def test_agent_address_brings_the_real_reader():
     settings = Settings(_env_file=None, agent_base_url="http://agent:8001")
     services = create_app(settings, clock=FixedClock(), seeded=False).state.services
     assert isinstance(services.capture, AgentCaptureReader)
+    assert services.live_seats == {"capture"}
 
 
 def test_seeded_flag_decides_first_screen():

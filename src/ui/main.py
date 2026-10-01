@@ -69,6 +69,7 @@ def create_app(
             clock=clock,
             demo=MemoryDemoData(store, clock),
             capture=_capture_reader(settings, capture_delay),
+            live_seats=frozenset({"capture"}) if settings.agent_base_url else frozenset(),
         )
     )
 

@@ -19,6 +19,8 @@ from agent.interfaces.web_app import build_web_app
 
 def create_app(settings: Settings | None = None, model: LanguageModel | None = None) -> FastAPI:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    # litellm은 호출마다 INFO 두 줄을 찍는다. 우리 로그(capture done …)가 그 사이에 묻힌다.
+    logging.getLogger("LiteLLM").setLevel(logging.WARNING)
     if model is None:
         settings = settings or Settings()
         model = LitellmLanguageModel(

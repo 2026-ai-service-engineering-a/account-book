@@ -46,3 +46,7 @@ def test_every_listed_screen_shows_the_badge(client, key, path):
 def test_cited_doc_exists(seat):
     # 위키가 가리키는 정본이 옮겨지거나 지워지면 여기서 걸린다
     assert Path(seat.doc.split()[0]).is_file()
+
+
+def test_only_capture_has_a_real_agent_so_far():
+    assert {s.key for s in SEATS if s.live} == {"capture"}

@@ -30,10 +30,17 @@
   <div class="wiki-body">
     <div class="alert">
       {{ icon("info") }}
+      {% if live_seats %}
+      <div class="alert-title">AI가 일부 자리에 붙어 있다.</div>
+      <div class="alert-description">
+        {% for s in seats if s.key in live_seats %}<strong>{{ s.name }}</strong>{% if not loop.last %} · {% endif %}{% endfor %} 자리는 <code>agent</code>가 진짜 LLM으로 돈다.
+        나머지 자리에는 키 없이 도는 <strong>각본 대역</strong>이 선다.
+      {% else %}
       <div class="alert-title">지금은 AI가 붙어 있지 않다.</div>
       <div class="alert-description">
         {% if stand_in_mode %}모든 AI 자리에 키 없이 도는 <strong>각본 대역</strong>이 선다. 정해진 모양의 입력만 알아듣고, 모르면 모른다고 답한다.
         {% else %}AI 자리는 포트로 비어 있다.{% endif %}
+      {% endif %}
         화면의 {{ ai_badge("capture") }} 같은 표시는 "여기에 AI가 들어간다, 이 흐름으로 돈다"는 뜻이다. 누르면 이 문서의 그 자리로 온다.
       </div>
     </div>
@@ -52,7 +59,7 @@
               <td>{{ ai_badge(s.key) }}</td>
               <td class="num">{{ s.llm_calls }}</td>
               <td><code>{{ s.mode }}</code></td>
-              <td class="small muted">각본 대역</td>
+              <td class="small muted">{{ "agent" if s.key in live_seats else "각본 대역" }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -177,7 +184,7 @@
           <dt>사람이 끼는 자리</dt><dd>{{ s.human }}</dd>
           <dt>못 할 때</dt><dd>{{ s.fallback }}</dd>
           <dt>화면</dt><dd>{% for label, href in s.screens %}<a href="{{ href }}">{{ label }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</dd>
-          <dt>지금</dt><dd><code>{{ s.port }}</code> 자리에 <code>{{ s.stand_in }}</code> — {{ s.stand_in_does }}</dd>
+          <dt>지금</dt><dd>{% if s.key in live_seats %}{{ s.live }}{% else %}<code>{{ s.port }}</code> 자리에 <code>{{ s.stand_in }}</code> — {{ s.stand_in_does }}{% endif %}</dd>
           <dt>문서</dt><dd><code>{{ s.doc }}</code></dd>
         </dl>
       </div>
@@ -262,7 +269,7 @@
           <thead><tr><th>포트</th><th>지금 서 있는 대역</th><th>대역이 하는 것</th></tr></thead>
           <tbody>
             {% for s in seats %}
-            <tr><td><code>{{ s.port }}</code></td><td><code>{{ s.stand_in }}</code></td><td class="small">{{ s.stand_in_does }}</td></tr>
+            <tr><td><code>{{ s.port }}</code></td><td><code>{{ s.stand_in }}</code></td><td class="small">{% if s.key in live_seats %}<strong>지금은 진짜가 선다.</strong> {{ s.live }}{% else %}{{ s.stand_in_does }}{% endif %}</td></tr>
             {% endfor %}
           </tbody>
         </table>
