@@ -30,6 +30,8 @@ services:
         - action: rebuild
           path: requirements.txt
         - action: rebuild
+          path: requirements-agent.txt
+        - action: rebuild
           path: requirements-dev.txt
         - action: rebuild
           path: Dockerfile
@@ -49,6 +51,8 @@ services:
       watch:
         - action: rebuild
           path: requirements.txt
+        - action: rebuild
+          path: requirements-agent.txt
         - action: rebuild
           path: requirements-dev.txt
         - action: rebuild
@@ -76,6 +80,8 @@ services:
       watch:
         - action: rebuild
           path: requirements.txt
+        - action: rebuild
+          path: requirements-agent.txt
         - action: rebuild
           path: requirements-dev.txt
         - action: rebuild

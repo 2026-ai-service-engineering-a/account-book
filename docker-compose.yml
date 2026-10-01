@@ -8,14 +8,17 @@ services:
   ui:
     build:
       context: .
-      target: runtime
+      target: ui
     image: account-book-ui
-    # .env가 없어도 뜬다. 값은 전부 기본값이 있다.
-    env_file:
-      - path: .env
-        required: false
+    # .env를 통째로 넘기지 않는다. 거기에는 LLM 키가 있고, ui는 키를 몰라야 한다(README 3장).
+    # 쓰는 것만 골라 넘긴다. 값은 compose가 .env에서 읽어 채우고, 없어도 뜬다.
+    # AGENT_BASE_URL이 비면 AI 자리에 각본 대역이 선다.
+    environment:
+      USER_TIMEZONE: ${USER_TIMEZONE:-Asia/Seoul}
+      AGENT_BASE_URL: ${AGENT_BASE_URL:-}
+      AGENT_TIMEOUT_SECONDS: ${AGENT_TIMEOUT_SECONDS:-10}
     ports:
-      # 호스트로 여는 건 ui 하나뿐이다(README 3장). 지금은 api·agent 자리에 대역이 선다.
+      # 호스트로 여는 건 ui 하나뿐이다(README 3장). 지금은 api 자리에 대역이 선다.
       - "${UI_PORT:-8080}:8080"
     restart: unless-stopped
 
@@ -25,13 +28,11 @@ services:
   agent:
     build:
       context: .
-      target: runtime
+      target: agent
     image: account-book-agent
     env_file:
       - path: .env
         required: false
-    command: >-
-      uvicorn agent.main:create_app --factory --app-dir src --host 0.0.0.0 --port 8001
     expose:
       - "8001"
     restart: unless-stopped

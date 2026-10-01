@@ -213,7 +213,8 @@ account-book/
 ├── docker-compose.yml     # 기본 — 운영처럼 뜬다
 ├── docker-compose.dev.yml # 개발용 — 기본 위에 겹쳐 라이브 업데이트
 ├── pyproject.toml         # ruff · mypy · pytest 설정
-├── requirements.txt       # 런타임 의존성
+├── requirements.txt       # 런타임 의존성 — ui·agent 공통
+├── requirements-agent.txt # agent만 — LLM 라이브러리. ui 이미지에는 들어가지 않는다
 ├── requirements-dev.txt   # 개발 도구
 └── .env.sample
 ```

@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1
-# 두 벌이다. 로컬에는 아무것도 설치하지 않는다.
+# 로컬에는 아무것도 설치하지 않는다.
 #
-#   runtime — 코드를 이미지에 굽는다. 운영처럼 뜨는 ui·agent (docker-compose.yml)
-#             기본 CMD는 ui다. agent는 compose가 command를 바꿔 띄운다.
-#   dev     — 의존성과 도구만 담는다. 코드는 바인드 마운트로 들어온다 (docker-compose.dev.yml)
+#   ui, agent — 서비스 하나씩. 그 서비스의 의존성과 코드만 굽는다 (docker-compose.yml)
+#   dev       — 의존성과 도구만 담는다. 코드는 바인드 마운트로 들어온다 (docker-compose.dev.yml)
 FROM python:3.13-slim AS base
 
 WORKDIR /app
@@ -18,13 +17,14 @@ ENV PYTHONPATH=/app/src \
     LITELLM_LOCAL_MODEL_COST_MAP=True
 
 
-FROM base AS runtime
+FROM base AS ui
 
-# 의존성 레이어 — requirements가 바뀔 때만 다시 설치된다. 개발 도구는 넣지 않는다.
+# 의존성 레이어 — requirements가 바뀔 때만 다시 설치된다. 개발 도구도 LLM 라이브러리도 넣지 않는다.
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src ./src
+# 자기 코드만 굽는다. 서비스끼리 import하지 않으니(development-rules 2.3) 다른 폴더는 필요 없다.
+COPY src/ui ./src/ui
 
 # root로 돌지 않는다.
 RUN useradd --create-home --uid 10001 app
@@ -32,6 +32,20 @@ USER app
 
 EXPOSE 8080
 CMD ["uvicorn", "ui.main:create_app", "--factory", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8080"]
+
+
+FROM base AS agent
+
+COPY requirements.txt requirements-agent.txt ./
+RUN pip install --no-cache-dir -r requirements-agent.txt
+
+COPY src/agent ./src/agent
+
+RUN useradd --create-home --uid 10001 app
+USER app
+
+EXPOSE 8001
+CMD ["uvicorn", "agent.main:create_app", "--factory", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8001"]
 
 
 FROM base AS dev
@@ -43,5 +57,5 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && git config --global --add safe.directory /app
 
-COPY requirements.txt requirements-dev.txt ./
+COPY requirements.txt requirements-agent.txt requirements-dev.txt ./
 RUN pip install --no-cache-dir -r requirements-dev.txt

@@ -22,6 +22,8 @@
 - **`make dev`가 `agent`도 띄운다.** `.env`에 `AGENT_MODEL` 제공자의 키(기본은
   `GEMINI_API_KEY`)가 있어야 뜬다. 키 없이 화면만 보려면 `AGENT_BASE_URL`을 비운다 —
   지금까지처럼 각본 대역이 선다.
+- **이미지가 서비스마다 하나다.** `ui` 이미지에는 LLM 라이브러리도 `agent` 코드도 들어가지
+  않는다. `ui` 컨테이너는 `.env`를 통째로 받지 않고 쓰는 변수만 받는다 — LLM 키를 모른다.
 - `.env.sample`의 `AGENT_MODEL` 기본값을 `gemini/gemini-flash-lite-latest`로 바꾸고,
   `AGENT_TIMEOUT_SECONDS`를 더했다. 의존성이 바뀌었으니 `make build`를 한 번 친다.
 
