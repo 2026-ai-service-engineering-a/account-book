@@ -56,8 +56,8 @@ SEATS: tuple[AiSeat, ...] = (
         stand_in_does="가맹점명의 낱말 표 하나로 고른다 — 0단계 규칙 표 흉내",
         doc="docs/ai/category-suggestion-rag.md",
         live=(
-            "AI로 고르기와 한 줄로 채우기가 agent의 POST /classify로 고른다. api 대역이 규칙·이력·"
-            "벡터 이웃으로 찾고, 애매할 때만 LLM이 근거를 보고 하나를 고른다"
+            "AI로 고르기와 한 줄로 채우기가 agent의 POST /classify로 고른다. api가 규칙·이력·"
+            "pgvector 이웃으로 찾고, 애매할 때만 LLM이 근거를 보고 하나를 고른다"
         ),
     ),
     AiSeat(
