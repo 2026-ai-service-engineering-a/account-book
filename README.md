@@ -161,7 +161,7 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 | `accounts` | id, name, kind(cash/card/bank) |
 | `categories` | id, name, parent_id |
 | `transactions` | id, occurred_at, amount, direction(in/out), account_id, category_id, merchant, memo, **source**, **run_id** |
-| `budgets` | id, category_id, period(YYYY-MM), limit_amount |
+| `budgets` | id, category_id, period(YYYY-MM), limit_amount — 바뀐 달만 적고 바꿀 때까지 이어진다 |
 | `agent_runs` | id, utterance, model, steps, tokens, cost_usd, status |
 | `tool_calls` | id, run_id, tool, args, result, confirmed_at |
 | `idempotency_keys` | key, request_hash, response, status_code, created_at |

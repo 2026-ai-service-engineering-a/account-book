@@ -146,6 +146,8 @@ X-Agent-Run-Id: 01J9X...
 | `PATCH` | `/v1/transactions/{id}` | `update_transaction` | 임계값 이상 |
 | `DELETE` | `/v1/transactions/{id}` | `delete_transaction` | **항상** |
 | `GET` | `/v1/summary` | `summarize_spending` | — |
+| `GET` | `/v1/reports/monthly` | — (화면) | — |
+| `GET` | `/v1/reports/pace` | — (화면) | — |
 | `GET` | `/v1/budgets/status` | `get_budget_status` | — |
 | `PUT` | `/v1/budgets/{category_id}` | `set_budget` | 확인 |
 | `POST` | `/v1/categories/suggest` | `suggest_category` | — |
@@ -164,6 +166,20 @@ X-Agent-Run-Id: 01J9X...
 `summary`와 `budgets/status`는 **계산된 숫자**를 돌려준다. 거래 목록을 내려주고
 에이전트가 합산하게 두지 않는다. LLM에게 산수를 시키지 않는다는 원칙(README 1장)이
 계약 수준에서 지켜져야 하는 자리다.
+
+- `summary`의 걸름은 거래 목록과 같다(`period`·`direction`·`category_id`·`q`) — 목록과 합계가 다른 거래를 세지 않는다.
+- 화면용 `reports/monthly`는 합계·지난달 대비·카테고리별 증감·최근 여섯 달을, `reports/pace`는 한 카테고리의
+  날짜별 누적과 말일 예상·넘는 날을 낸다. "그날"은 사용자 타임존의 날이다.
+
+### 예산은 바꿀 때까지 이어진다
+
+`budgets`는 카테고리 예산이 **바뀐 달**을 적는다. 어떤 달의 예산은 그 달까지 가장 늦게 정한 값이다 —
+5월에 30만 원으로 정하면 바꿀 때까지 매달 30만 원이다.
+
+- `PUT /v1/budgets/{category_id}` `{"limit_amount": 300000}`은 **이번 달부터** 바꾼다. 지난달은 그대로다.
+- `{"limit_amount": null}`은 이번 달부터 예산 없음이다. 행을 지우면 앞 달의 예산이 다시 이어지므로
+  "없음"도 기록으로 남긴다.
+- `budgets/status`는 지출 카테고리 전부를 낸다. 예산을 정하지 않은 것은 `limit`부터 아래가 `null`이다.
 
 ### 목록은 항상 페이지네이션
 
