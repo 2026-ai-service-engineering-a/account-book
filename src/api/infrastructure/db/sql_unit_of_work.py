@@ -6,23 +6,29 @@ from typing import Self
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from .sql_budget_repository import SqlBudgetRepository
 from .sql_catalog_repository import SqlCatalogRepository
 from .sql_idempotency_store import SqlIdempotencyStore
+from .sql_stats_repository import SqlStatsRepository
 from .sql_transaction_repository import SqlTransactionRepository
 
 
 class SqlUnitOfWork:
     """세션 하나 = DB 트랜잭션 하나. `commit()` 없이 나가면 되돌린다.
 
-    저장소 셋이 같은 세션을 나눠 쓴다 — 멱등 키와 거래가 한 트랜잭션에 들어간다.
+    저장소들이 같은 세션을 나눠 쓴다 — 멱등 키와 거래(예산)가 한 트랜잭션에 들어간다.
+    `zone_name`은 집계의 "그날"을 정하는 사용자 타임존이다.
     """
 
     transactions: SqlTransactionRepository
     catalog: SqlCatalogRepository
     idempotency: SqlIdempotencyStore
+    stats: SqlStatsRepository
+    budgets: SqlBudgetRepository
 
-    def __init__(self, sessions: sessionmaker[Session]) -> None:
+    def __init__(self, sessions: sessionmaker[Session], zone_name: str = "Asia/Seoul") -> None:
         self._sessions = sessions
+        self._zone_name = zone_name
         self._session: Session | None = None
 
     @classmethod
@@ -36,6 +42,8 @@ class SqlUnitOfWork:
         self.transactions = SqlTransactionRepository(session)
         self.catalog = SqlCatalogRepository(session)
         self.idempotency = SqlIdempotencyStore(session)
+        self.stats = SqlStatsRepository(session, self._zone_name)
+        self.budgets = SqlBudgetRepository(session)
         return self
 
     def __exit__(

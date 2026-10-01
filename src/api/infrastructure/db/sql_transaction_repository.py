@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import delete, or_, select, tuple_
+from sqlalchemy import delete, select, tuple_
 from sqlalchemy.orm import Session
 
 from api.application.dto import TransactionPage, TransactionQuery
@@ -9,6 +9,7 @@ from api.domain.values import AccountId, CategoryId, Direction, Money, Source, T
 
 from .page_cursor import decode_cursor, encode_cursor
 from .rows import TransactionRow
+from .transaction_filter import filter_conditions
 
 
 class SqlTransactionRepository:
@@ -20,23 +21,7 @@ class SqlTransactionRepository:
         return _entity(row) if row else None
 
     def search(self, query: TransactionQuery) -> TransactionPage:
-        statement = select(TransactionRow)
-        if query.start is not None:
-            statement = statement.where(TransactionRow.occurred_at >= query.start)
-        if query.end is not None:
-            statement = statement.where(TransactionRow.occurred_at < query.end)
-        if query.direction is not None:
-            statement = statement.where(TransactionRow.direction == query.direction.value)
-        if query.category_id is not None:
-            statement = statement.where(TransactionRow.category_id == query.category_id)
-        if query.text:
-            # %·_를 글자로 — 사용자가 친 "100%"가 와일드카드가 되지 않게
-            statement = statement.where(
-                or_(
-                    TransactionRow.merchant.icontains(query.text, autoescape=True),
-                    TransactionRow.memo.icontains(query.text, autoescape=True),
-                )
-            )
+        statement = select(TransactionRow).where(*filter_conditions(query))
         after = decode_cursor(query.cursor) if query.cursor else None
         if after is not None:
             statement = statement.where(
