@@ -8,8 +8,9 @@ AI 에이전트가 들어가는 가계부. 사람이 "어제 점심 김밥천국
 도메인 서버(`api`)와 에이전트(`agent`)는 화면을 갖지 않는 **헤드리스**이고, 사람이 보는
 화면은 별도의 `ui` 서버가 맡는다. 전체는 docker compose 하나로 뜬다.
 
-> 이 문서는 **설계 문서**다. 코드는 아직 `ui`와 `agent` 둘이다. `agent`는 기록(한 줄로
-> 채우기)과 카테고리 고르기(RAG)를 하고, `api` 자리와 나머지 AI 자리에는 대역이 선다
+> 이 문서는 **설계 문서**다. 서비스 넷이 다 떴지만 아직 일부만 일한다. `agent`는 기록(한 줄로
+> 채우기)과 카테고리 고르기(RAG)를 하고, `api`와 `db`는 스키마(pgvector 포함)와 상태 확인까지다.
+> 거래·집계·검색은 아직 `ui` 안의 메모리 대역이 하고, 나머지 AI 자리에도 대역이 선다
 > ([ui_docs/stand-ins.md](ui_docs/stand-ins.md)). 나머지는 여기서 정한 형태대로 다음 단계에서 붙인다.
 >
 > 코드를 쓰기 전에 [docs/development-rules.md](docs/development-rules.md)를 읽는다 —
@@ -169,6 +170,10 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 
 `text_embeddings`는 거래가 아니라 색인 텍스트(가맹점 + 메모)에 벡터를 붙인다. 같은 가게 백 건이
 벡터 하나를 나눠 쓴다([docs/ai/category-suggestion-rag.md 4.2](docs/ai/category-suggestion-rag.md#42-어디에-두나)).
+스키마는 `src/api/infrastructure/db/`에 있다 — 테이블 하나에 매핑 하나(`rows/`), 마이그레이션은
+Alembic(`migrations/`, [docs/development-rules.md 6.6](docs/development-rules.md#66-마이그레이션--alembic-만들고-나서-읽는다)).
+DB 이미지는 `pgvector/pgvector`이고, 첫 마이그레이션이 확장을 켠다.
+
 금액은 정수 최소단위(원)로 저장한다. 부동소수점은 쓰지 않는다.
 시간은 전부 `TIMESTAMPTZ`에 UTC로 저장하고, "이번 달" 같은 경계는 사용자 타임존으로 계산한다.
 `idempotency_keys`가 필요한 이유는 [docs/api-contract.md 3장](docs/api-contract.md#3-멱등성--같은-거래가-두-번-들어가지-않게)에 있다.
@@ -219,6 +224,7 @@ account-book/
 ├── pyproject.toml         # ruff · mypy · pytest 설정
 ├── requirements.txt       # 런타임 의존성 — ui·agent 공통
 ├── requirements-agent.txt # agent만 — LLM 라이브러리. ui 이미지에는 들어가지 않는다
+├── requirements-api.txt   # api만 — SQLAlchemy·psycopg·Alembic·pgvector
 ├── requirements-dev.txt   # 개발 도구
 └── .env.sample
 ```
@@ -270,8 +276,9 @@ Watch가 이미지를 다시 만들어 띄운다 — 이 겹은 `make dev`(`up -
 `agent`는 `.env`의 `AGENT_MODEL` 제공자 키가 있어야 뜬다. 키 없이 화면만 보려면
 `AGENT_BASE_URL`을 비운다 — 한 줄로 채우기에도 각본 대역이 선다.
 
-compose에는 지금 `ui`와 `agent`, 개발용에는 도구 컨테이너 `dev`가 더 붙는다.
-`db`·`api`는 각 코드가 생길 때 붙는다.
+compose에는 지금 `ui`·`agent`·`api`·`db` 넷, 개발용에는 도구 컨테이너 `dev`가 더 붙는다.
+`api`는 뜰 때 스키마를 최신으로 올린다. DB를 눈으로 보려면 `make psql`, 기준 데이터는
+`make seed`, DB 통합 테스트는 `make test-db`. 데이터는 볼륨에 남고 `docker compose down -v`로 지운다.
 
 ### GitHub Codespaces에서 열기
 

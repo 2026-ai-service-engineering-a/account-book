@@ -421,6 +421,24 @@ class Settings(BaseSettings):
 - `except Exception: pass` 금지. 삼킬 거라면 왜 삼키는지 주석을 남긴다.
 - 전체 계약은 [api-contract.md](api-contract.md)에 있다.
 
+### 6.6 마이그레이션 — Alembic, 만들고 나서 읽는다
+
+스키마를 바꾸는 길은 Alembic 하나다. `create_all`은 쓰지 않는다 — 이미 있는 DB를 고치지 못한다.
+
+```bash
+# 매핑(rows/)을 고친 뒤
+alembic -c src/api/alembic.ini revision --autogenerate -m "무엇을 바꾸나"
+```
+
+- **autogenerate가 만든 파일은 반드시 읽고 고친다.** 확장(`CREATE EXTENSION vector`), 데이터
+  옮기기, 이름 바꾸기(지우고 새로 만드는 걸로 나온다)는 autogenerate가 모른다.
+- 매핑과 마이그레이션이 같은지는 통합 테스트가 `compare_metadata`로 본다. 매핑만 고치고
+  마이그레이션을 안 만들면 `make test-db`에서 걸린다.
+- 적용은 `api`가 뜰 때 `alembic upgrade head`로 한다. 사람이 따로 치지 않는다.
+- 값의 목록(방향·출처 따위)은 Postgres enum이 아니라 `CHECK` 제약이다. 값을 늘릴 때
+  마이그레이션이 가볍다.
+- 오프라인(SQL 파일) 모드는 쓰지 않는다. 마이그레이션은 언제나 실제 DB에 대고 돈다.
+
 ---
 
 ## 7. 검사
