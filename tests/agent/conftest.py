@@ -9,10 +9,12 @@ from agent.application.dto import (
     CategoryEntry,
     CategoryQuery,
     Evidence,
+    ModelReply,
     PendingText,
     Prompt,
     SearchResult,
     SearchStrategy,
+    ToolPrompt,
     TransactionFilter,
 )
 from agent.application.errors import ModelUnavailable
@@ -48,11 +50,27 @@ def extraction(**overrides: object) -> dict[str, object]:
 
 
 class FakeModel:
-    """고정 응답을 차례로 내는 LLM. 테스트는 실제 모델을 부르지 않는다(development-rules 4.3)."""
+    """고정 응답을 차례로 내는 LLM. 테스트는 실제 모델을 부르지 않는다(development-rules 4.3).
 
-    def __init__(self, *replies: Mapping[str, object] | Exception) -> None:
+    `tape`는 도구를 쓰는 호출의 답이다 — 루프가 같은 경로를 밟는지 본다(ai/agent-loop.md 10장).
+    """
+
+    def __init__(
+        self,
+        *replies: Mapping[str, object] | Exception,
+        tape: Sequence[ModelReply | Exception] = (),
+    ) -> None:
         self._replies = list(replies)
         self.prompts: list[Prompt] = []
+        self._tape = list(tape)
+        self.tool_prompts: list[ToolPrompt] = []
+
+    async def complete_with_tools(self, prompt: ToolPrompt) -> ModelReply:
+        self.tool_prompts.append(prompt)
+        reply = self._tape.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
 
     async def complete_json(self, prompt: Prompt) -> Mapping[str, object]:
         self.prompts.append(prompt)
