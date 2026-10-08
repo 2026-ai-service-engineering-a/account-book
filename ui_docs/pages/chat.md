@@ -53,6 +53,11 @@
 질문(대화로 묻는 통계)의 답은 `token` 없이 `message` 한 번으로 온다. 답의 숫자가 도구에서
 온 것인지 검사한 뒤에야 문장을 내보낼 수 있어서다([../../docs/ai/chat-analytics.md 8장](../../docs/ai/chat-analytics.md#8-화면)).
 
+조문을 물으면(`search_documents`) 진행 줄은 "조문을 찾는 중…"이고, 답은 같은 `message` 하나다.
+본문의 `[1]`과 끝의 "출처" 줄은 agent가 글로 붙여 보낸다 — 새 이벤트도, 화면의 새 칸도 없다
+([../../docs/ai/document-rag.md 5.5](../../docs/ai/document-rag.md#55-채팅의-도구--search_documents)).
+원문을 펼쳐 읽는 것은 문서 화면의 일이다.
+
 `tool` 이벤트에 **도구 인자를 싣지 않는다.** 화면에 필요한 건 "무엇을 하는 중"이지
 "어떤 값으로 조회하는 중"이 아니다. 로그 규칙과 같은 이유다
 ([../../docs/development-rules.md 6.4](../../docs/development-rules.md#64-로깅--운영-로그와-감사-로그를-나눈다)).
