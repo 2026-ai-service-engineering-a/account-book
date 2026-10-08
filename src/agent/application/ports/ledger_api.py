@@ -4,7 +4,14 @@ from datetime import date
 from typing import Protocol
 
 from agent.application.dto import CategoryQuery, PendingText, SearchResult, TransactionFilter
-from agent.domain.tools import BudgetLine, CategoryShift, Frequency, SpendingTotals, TransactionList
+from agent.domain.tools import (
+    BudgetLine,
+    CategoryLine,
+    CategoryShift,
+    Frequency,
+    SpendingTotals,
+    TransactionList,
+)
 from agent.domain.values import CategoryId, TimeRange
 
 
@@ -37,4 +44,8 @@ class LedgerApi(Protocol):
         self, month: date, category_id: CategoryId | None
     ) -> tuple[BudgetLine, ...]:
         """`month`는 그 달 1일이다. 예산은 달 단위로만 있다."""
+        ...
+
+    async def categories(self) -> tuple[CategoryLine, ...]:
+        """카테고리 사전 — 지출·수입 전부. 도구가 아니라 루프가 인자를 검사하는 데 쓴다."""
         ...

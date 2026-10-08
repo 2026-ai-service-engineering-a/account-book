@@ -50,6 +50,9 @@
 | `error` | `code`, `message`, `request_id` | 에러 줄 |
 | `done` | — | 입력창을 다시 연다 |
 
+질문(대화로 묻는 통계)의 답은 `token` 없이 `message` 한 번으로 온다. 답의 숫자가 도구에서
+온 것인지 검사한 뒤에야 문장을 내보낼 수 있어서다([../../docs/ai/chat-analytics.md 8장](../../docs/ai/chat-analytics.md#8-화면)).
+
 `tool` 이벤트에 **도구 인자를 싣지 않는다.** 화면에 필요한 건 "무엇을 하는 중"이지
 "어떤 값으로 조회하는 중"이 아니다. 로그 규칙과 같은 이유다
 ([../../docs/development-rules.md 6.4](../../docs/development-rules.md#64-로깅--운영-로그와-감사-로그를-나눈다)).

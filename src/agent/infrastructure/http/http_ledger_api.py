@@ -7,10 +7,18 @@ from pydantic import BaseModel, ValidationError
 
 from agent.application.dto import CategoryQuery, PendingText, SearchResult, TransactionFilter
 from agent.application.errors import LedgerRejected, LedgerUnavailable
-from agent.domain.tools import BudgetLine, CategoryShift, Frequency, SpendingTotals, TransactionList
+from agent.domain.tools import (
+    BudgetLine,
+    CategoryLine,
+    CategoryShift,
+    Frequency,
+    SpendingTotals,
+    TransactionList,
+)
 from agent.domain.values import CategoryId, Direction, TimeRange
 
 from .budget_status_reply import BudgetStatusReply
+from .categories_reply import CategoriesReply
 from .compare_reply import CompareReply
 from .error_reply import ErrorReply
 from .frequency_reply import FrequencyReply
@@ -103,6 +111,10 @@ class HttpLedgerApi:
             params["category_id"] = category_id
         response = await self._send("GET", "/v1/budgets/status", params=params)
         return self._parse(BudgetStatusReply, response).lines()
+
+    async def categories(self) -> tuple[CategoryLine, ...]:
+        response = await self._send("GET", "/v1/categories")
+        return self._parse(CategoriesReply, response).lines()
 
     async def _send(
         self,

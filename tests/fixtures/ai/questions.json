@@ -1,0 +1,38 @@
+{
+  "about": "대화로 묻는 통계 평가 세트(docs/ai/chat-analytics.md 9장). 라벨은 손으로 붙였다. single·period는 첫 도구와 인자를, pair는 부른 도구의 집합을(순서는 보지 않는다), refuse는 못 한다고 말했는지를 본다. 기간은 이름으로 라벨을 단다 — months_ago는 오늘 기준 몇 달 전의 month인지, month_of_year는 올해의 그 달이다.",
+  "cases": [
+    {"group": "single", "question": "저번 주에 카페 몇 번 갔어?", "tool": "count_frequency", "period": {"name": "last_week"}, "category_id": "cafe"},
+    {"group": "single", "question": "이번 달 식비 얼마 썼어?", "tool": "summarize_spending", "period": {"name": "this_month"}, "category_id": "food"},
+    {"group": "single", "question": "지난달보다 식비 늘었어?", "tool": "compare_periods", "a": {"name": "last_month"}, "b": {"name": "this_month"}, "category_id": "food"},
+    {"group": "single", "question": "김밥천국에 올해 얼마 썼어?", "tool": "summarize_spending", "period": {"name": "this_year"}, "merchant": "김밥천국"},
+    {"group": "single", "question": "예산 안에 있어?", "tool": "get_budget_status", "period": {"name": "this_month"}},
+    {"group": "single", "question": "이번 주에 뭐 샀어?", "tool": "search_transactions", "period": {"name": "this_week"}},
+    {"group": "single", "question": "이번 달 교통비 얼마야?", "tool": "summarize_spending", "period": {"name": "this_month"}, "category_id": "transport"},
+    {"group": "single", "question": "지난달에 카페 몇 번 갔어?", "tool": "count_frequency", "period": {"name": "last_month"}, "category_id": "cafe"},
+    {"group": "single", "question": "이번 달 식비 예산 얼마나 남았어?", "tool": "get_budget_status", "period": {"name": "this_month"}, "category_id": "food"},
+    {"group": "single", "question": "오늘 쓴 거 보여줘", "tool": "search_transactions", "period": {"name": "today"}},
+    {"group": "single", "question": "이번 달 생활비 얼마 썼어?", "tool": "summarize_spending", "period": {"name": "this_month"}, "category_id": "living"},
+    {"group": "single", "question": "스타벅스 이번 달에 몇 번 갔어?", "tool": "count_frequency", "period": {"name": "this_month"}, "merchant": "스타벅스"},
+    {"group": "single", "question": "지난달이랑 이번 달 카페 지출 비교해줘", "tool": "compare_periods", "a": {"name": "last_month"}, "b": {"name": "this_month"}, "category_id": "cafe"},
+    {"group": "single", "question": "어제 얼마 썼어?", "tool": "summarize_spending", "period": {"name": "yesterday"}},
+    {"group": "single", "question": "이번 달 주거비 얼마 나갔어?", "tool": "summarize_spending", "period": {"name": "this_month"}, "category_id": "housing"},
+
+    {"group": "period", "question": "최근 3일 동안 얼마 썼어?", "tool": "summarize_spending", "period": {"name": "last_n_days", "days": 3}},
+    {"group": "period", "question": "지난주 식비 얼마야?", "tool": "summarize_spending", "period": {"name": "last_week"}, "category_id": "food"},
+    {"group": "period", "question": "9월에 카페 몇 번 갔어?", "tool": "count_frequency", "period": {"name": "month", "month_of_year": 9}, "category_id": "cafe"},
+    {"group": "period", "question": "올해 교통비 얼마 썼어?", "tool": "summarize_spending", "period": {"name": "this_year"}, "category_id": "transport"},
+    {"group": "period", "question": "최근 7일 카페 몇 번 갔어?", "tool": "count_frequency", "period": {"name": "last_n_days", "days": 7}, "category_id": "cafe"},
+    {"group": "period", "question": "오늘 카페 갔어?", "tool": "count_frequency", "period": {"name": "today"}, "category_id": "cafe"},
+    {"group": "period", "question": "9월 3일부터 9월 10일까지 식비 얼마 썼어?", "tool": "summarize_spending", "period": {"name": "range", "start_md": "09-03", "end_md": "09-10"}, "category_id": "food"},
+    {"group": "period", "question": "지지난달 식비 얼마 썼어?", "tool": "summarize_spending", "period": {"name": "month", "months_ago": 2}, "category_id": "food"},
+
+    {"group": "pair", "question": "식비는 줄었는데 카페는 늘었어? 지난달이랑 이번 달로 봐줘", "tools": ["compare_periods"]},
+    {"group": "pair", "question": "이번 달 카페 몇 번 갔고 얼마 썼어?", "tools": ["count_frequency", "summarize_spending"]},
+    {"group": "pair", "question": "이번 달 식비 예산 상황이랑 지난달 대비 식비 증감 알려줘", "tools": ["get_budget_status", "compare_periods"]},
+    {"group": "pair", "question": "저번 주랑 이번 주 카페 간 횟수 각각 알려줘", "tools": ["count_frequency"]},
+
+    {"group": "refuse", "question": "다음 달에 얼마 쓸 것 같아?", "refuse": "예측"},
+    {"group": "refuse", "question": "왜 이렇게 많이 썼어?", "refuse": "인과"},
+    {"group": "refuse", "question": "남들은 식비에 얼마 써?", "refuse": "비교"}
+  ]
+}
