@@ -9,6 +9,7 @@ from .routers import (
     category_search_router,
     health_router,
     reports_router,
+    stats_router,
     transactions_router,
 )
 from .services import Services
@@ -23,6 +24,7 @@ def build_web_app(services: Services) -> FastAPI:
         transactions_router,
         catalog_router,
         reports_router,
+        stats_router,
         budgets_router,
         category_search_router,
     ):

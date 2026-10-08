@@ -8,11 +8,13 @@ from .embedding_body import EmbeddingBody
 from .error_body import ErrorBody
 from .error_response import ErrorResponse
 from .evidence_body import EvidenceBody
+from .frequency_body import FrequencyBody
 from .month_total_body import MonthTotalBody
 from .monthly_report_body import MonthlyReportBody
 from .pace_body import PaceBody
 from .pending_body import PendingBody
 from .pending_response import PendingResponse
+from .period_change_body import PeriodChangeBody
 from .suggest_request import SuggestRequest
 from .suggest_response import SuggestResponse
 from .totals_body import TotalsBody
@@ -31,11 +33,13 @@ __all__ = [
     "ErrorBody",
     "ErrorResponse",
     "EvidenceBody",
+    "FrequencyBody",
     "MonthTotalBody",
     "MonthlyReportBody",
     "PaceBody",
     "PendingBody",
     "PendingResponse",
+    "PeriodChangeBody",
     "SuggestRequest",
     "SuggestResponse",
     "TotalsBody",

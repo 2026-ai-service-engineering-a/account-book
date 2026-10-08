@@ -8,6 +8,8 @@ from fastapi import Depends, Request
 from api.application.ports import DatabaseProbe
 from api.application.use_cases import (
     BuildMonthlyReport,
+    ComparePeriods,
+    CountFrequency,
     CreateTransaction,
     DeleteTransaction,
     GetTransaction,
@@ -38,6 +40,8 @@ class Services:
     search: SearchTransactions
     catalog: ListCatalog
     summarize: SummarizeSpending
+    frequency: CountFrequency
+    compare: ComparePeriods
     monthly: BuildMonthlyReport
     pace: ReadPace
     budgets: ReadBudgetStatuses
