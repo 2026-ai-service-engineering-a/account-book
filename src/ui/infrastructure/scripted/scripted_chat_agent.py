@@ -32,6 +32,10 @@ _FALLBACK = (
     "'어제 점심 김밥천국 8500원 카드로' 같은 기록이나 "
     "'이번 달 식비 얼마 썼어?' 같은 질문을 해 보세요."
 )
+_OTHER_PERIOD = (
+    "저는 아직 각본 대역이라 기간은 이번 달과 지난달만 읽어요.\n"
+    "다른 달은 리포트 화면에서 달을 바꿔 보세요."
+)
 
 
 class ScriptedChatAgent:
@@ -140,14 +144,22 @@ class ScriptedChatAgent:
         return lines
 
     async def _answer(self, utterance: str, parsed: ParsedUtterance) -> AsyncIterator[ChatEvent]:
-        period = Period.of(self._clock.now().date())
+        if parsed.other_period:
+            async for event in self._say(_OTHER_PERIOD):
+                yield event
+            return
+        today = self._clock.now().date()
+        period = Period.of(today)
         if parsed.previous_month:
             period = period.previous()
         yield ChatEvent("tool", "summarize_spending")
         report = await self._reports.monthly(period)
         categories = await self._catalog.categories(Direction.EXPENSE)
         named = next((c for c in categories if c.name in utterance), None)
-        when = "지난달" if parsed.previous_month else "이번 달"
+        # 해석한 기간을 늘 밝힌다 — 경계를 다르게 생각한 사람이 바로 알아챈다(chat-analytics 5장)
+        through = today.day if period.contains(today) else period.days
+        name = "지난달" if parsed.previous_month else "이번 달"
+        when = f"{name}({period.month}/1~{period.month}/{through})"
         if named is None:
             text = (
                 f"{when} 지출은 {report.totals.expense:,}원, "
@@ -159,7 +171,8 @@ class ScriptedChatAgent:
             text = f"{when} {named.name}에 {spent:,}원 썼어요."
             if change and change.delta:
                 more = "많습니다" if change.delta.amount > 0 else "적습니다"
-                text += f" 지난달보다 {abs(change.delta):,}원 {more}."
+                before = "그 전 달" if parsed.previous_month else "지난달"
+                text += f" {before}보다 {abs(change.delta):,}원 {more}."
         async for event in self._say(text):
             yield event
 

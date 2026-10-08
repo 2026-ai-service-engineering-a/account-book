@@ -21,6 +21,11 @@ _MEALS = {"아침": time(8, 30), "점심": time(12, 30), "저녁": time(19, 0), 
 _ACCOUNTS = {"카드": "card", "현금": "cash", "이체": "bank", "계좌": "bank"}
 _INCOME_WORDS = ("급여", "월급", "입금", "받았", "들어왔")
 _QUESTION_WORDS = ("얼마", "보여줘", "알려줘", "?")
+# 대역이 읽는 기간은 이번 달과 지난달뿐이다. 그 밖의 기간을 말했으면 읽은 척하지 않는다 —
+# 못 읽은 기간을 이번 달로 바꿔 답하면 틀린 숫자가 그럴듯하게 나간다
+_OTHER_PERIOD = re.compile(
+    r"\d{1,2}\s*월|지지난|(?:이번|지난|저번)\s*주|주말|일주일|올해|작년|최근|오늘|어제|그제|그저께"
+)
 _FILLERS = (
     "결제",
     "샀어",
@@ -64,6 +69,7 @@ class UtteranceParser:
             merchant=place or (names[0] if names else ""),
             is_question=any(w in text for w in _QUESTION_WORDS),
             previous_month="지난달" in text or "지난 달" in text,
+            other_period=_OTHER_PERIOD.search(text) is not None,
         )
 
 
