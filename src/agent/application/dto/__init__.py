@@ -10,6 +10,11 @@ from .pending_text import PendingText
 from .prompt import Prompt
 from .search_result import SearchResult
 from .search_strategy import SearchStrategy
+from .tool_call import ToolCall
+from .tool_error import ToolError
+from .tool_meta import ToolMeta
+from .tool_result import ToolResult
+from .transaction_filter import TransactionFilter
 
 __all__ = [
     "Candidate",
@@ -24,4 +29,9 @@ __all__ = [
     "Prompt",
     "SearchResult",
     "SearchStrategy",
+    "ToolCall",
+    "ToolError",
+    "ToolMeta",
+    "ToolResult",
+    "TransactionFilter",
 ]

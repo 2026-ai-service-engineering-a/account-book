@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 
 from api.infrastructure.db import SqlDatabaseProbe
 from api.infrastructure.db.reference_seeder import seed_reference
 from api.infrastructure.db.sql_unit_of_work import SqlUnitOfWork
-from tests.api.conftest import client_with
+from tests.api.conftest import FakeUnitOfWork, client_with
 from tests.api.interfaces.test_write_headers import BODY
 
 
@@ -70,6 +71,23 @@ def test_update_and_delete():
 
 def test_bad_query_is_422():
     assert client_with().get("/v1/transactions?period=2026-13").status_code == 422
+    naive = {"from": "2026-09-01T00:00:00", "to": "2026-10-01T00:00:00+09:00"}
+    assert client_with().get("/v1/transactions", params=naive).status_code == 422
+    half = {"from": "2026-09-01T00:00:00+09:00"}
+    assert client_with().get("/v1/transactions", params=half).json()["error"]["details"] == {
+        "to": "값의 모양이 맞지 않습니다."
+    }
+
+
+def test_range_reaches_the_query_as_given():
+    uow = FakeUnitOfWork()
+    week = {"from": "2026-09-28T00:00:00+09:00", "to": "2026-10-05T00:00:00+09:00"}
+    assert client_with(uow).get("/v1/transactions", params=week).status_code == 200
+    query = uow.transactions.last_query
+    assert (query.start, query.end) == (
+        datetime(2026, 9, 27, 15, tzinfo=UTC),
+        datetime(2026, 10, 4, 15, tzinfo=UTC),
+    )
 
 
 @pytest.mark.integration

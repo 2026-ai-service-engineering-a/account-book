@@ -8,8 +8,10 @@ from __future__ import annotations
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query
+from pydantic import AwareDatetime
 
 from api.domain.values import CategoryId, Direction, Period
+from api.interfaces.query_span import period_or_range
 from api.interfaces.schemas import MonthlyReportBody, PaceBody, TotalsBody
 from api.interfaces.services import ServicesDep
 
@@ -21,13 +23,18 @@ _PERIOD = r"^\d{4}-(0[1-9]|1[0-2])$"
 def summary(
     services: ServicesDep,
     period: Annotated[str | None, Query(pattern=_PERIOD)] = None,
+    start: Annotated[AwareDatetime | None, Query(alias="from")] = None,
+    end: Annotated[AwareDatetime | None, Query(alias="to")] = None,
     direction: Literal["expense", "income"] | None = None,
     category_id: str | None = None,
     q: Annotated[str, Query(max_length=100)] = "",
 ) -> TotalsBody:
-    """거래 목록과 같은 걸름이다 — 목록과 합계가 다른 거래를 세지 않는다."""
+    """거래 목록과 같은 걸름이다 — 목록과 합계가 다른 거래를 세지 않는다.
+
+    기간은 `period`(사용자 타임존의 달)나 `from`·`to`(`[from, to)`) 중 하나다.
+    """
     totals = services.summarize(
-        period=Period.parse(period) if period else None,
+        period=period_or_range(period, start, end),
         direction=Direction(direction) if direction else None,
         category_id=CategoryId(category_id) if category_id else None,
         text=q,
