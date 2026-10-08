@@ -5,6 +5,7 @@ from collections.abc import Mapping
 
 from agent.application.dto import (
     AnswerStatus,
+    CitationVerdict,
     DocumentAnswer,
     DocumentAnswerDraft,
     Retrieval,
@@ -16,7 +17,7 @@ from agent.application.ports import LanguageModel
 from agent.application.prompts import document_qa_prompt
 from agent.domain.values import SearchMode
 
-from .number_check import numbers_in, unsupported
+from .citation_check import check_citations, source_text
 from .retrieve import Retrieve
 
 _log = logging.getLogger(__name__)
@@ -68,20 +69,21 @@ class AskDocuments:
             return self._end(
                 AnswerStatus.ABSTAINED, retrieval, reason="이 조문들에는 근거가 없어요."
             )
-        if any(c not in labelled for c in draft.citations):
+        sources = {k: source_text(c.title, c.heading, c.body) for k, c in labelled.items()}
+        verdict = check_citations(draft.answer, draft.citations, sources)
+        if verdict is CitationVerdict.UNKNOWN:
             return self._end(
                 AnswerStatus.SEARCH_ONLY, retrieval, reason="답이 넘겨주지 않은 조문을 인용했어요."
             )
-        if not draft.citations or not draft.answer:
+        if verdict is CitationVerdict.MISSING or not draft.answer:
             return self._end(
                 AnswerStatus.ABSTAINED, retrieval, reason="근거를 인용하지 않은 답이라 버렸어요."
             )
-        cited = tuple(labelled[c] for c in draft.citations)
-        allowed = set().union(*(numbers_in(c.body) for c in cited))
-        if unsupported(draft.answer, allowed):
+        if verdict is CitationVerdict.NUMBERS:
             return self._end(
                 AnswerStatus.SEARCH_ONLY, retrieval, reason="답의 숫자가 인용한 조문에 없어요."
             )
+        cited = tuple(labelled[c] for c in draft.citations)
         return self._end(AnswerStatus.ANSWERED, retrieval, draft.answer, cited)
 
     def _end(
