@@ -273,7 +273,19 @@ flowchart LR
 
 ## 8. 만드는 순서
 
-feature 넷으로 나눈다 — `doc-store` → `doc-index` → `doc-qa` → `doc-tool`.
+feature 넷이다. 앞의 것이 뒤의 것의 재료가 되고, **생성 LLM은 셋째부터 들어온다.**
+
+| # | feature | 서비스 | 내용 | 모델 |
+|---|---|---|---|---|
+| 1 | `doc-store` | `api` + `db` | `documents`·`document_chunks` 테이블과 마이그레이션. Markdown → 조각(경로 메타데이터, 원문 보존)을 청킹 설정마다 만든다. 문서 넣기·목록·조각 조회(`POST /v1/documents`, `GET /v1/documents`, `GET /v1/documents/{id}/chunks`). 법령 아홉 조문을 넣는 명령. 청킹 단위 테스트 — 경로, `<16>`, 꼬리표 | 없음 |
+| 2 | `doc-index` | `agent` + `api` | 조각의 `embed_text`를 `text_embeddings`에 — 색인 워커가 문서 조각도 당겨 간다. 질문 벡터로 top-k 조각을 내는 검색(`POST /v1/documents/search`). 검색 평가(recall@k·MRR, 설정별 표) — 7.2의 청킹·`DOC_TOP_K`·하이브리드를 여기서 정한다 | 임베딩만 |
+| 3 | `doc-qa` | `agent` + `ui` | 단발 생성, 인용·숫자 검증, abstain — `agent`의 `POST /ask`. 질문 화면 — 답, 인용 조각, 점수, 시행일자, 고지. 생성 평가(근거 충실도, abstain율, 기준선). 7.2의 재랭킹·임계값을 여기서 정한다 | 생성 |
+| 4 | `doc-tool` | `agent` | `search_documents` 읽기 도구를 query 모드에. 모드별 스키마 스냅샷이 바뀐다. 대화 통계 평가 세트에 문서 질문을 몇 건 더한다 | 없음(기존 루프) |
+
+- 청킹 설정은 `doc-store`에서 여럿을 만들 수 있게 한다. 무엇을 쓸지는 `doc-index`의 평가가 정한다.
+  설정 하나만 만들면 견줄 수 없다.
+- 각 feature가 붙을 때 계약(엔드포인트·테이블·환경변수)을 옮긴다. 아직 옮기지 않은 줄은
+  [README.md 7장](README.md#7-계약에-늘어나는-것)에 있다.
 
 ---
 
