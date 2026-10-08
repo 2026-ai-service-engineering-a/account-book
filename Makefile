@@ -17,7 +17,7 @@ MOCK_PORT ?= 8081
 UI_PORT ?= 8080
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up dev prod down shell mock ui agent seed demo psql review check lint format type test test-db eval all
+.PHONY: help env build up dev prod down shell mock ui agent seed demo psql review check lint format type test test-db eval eval-chat all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -107,5 +107,8 @@ test-db:  ## DB 통합 테스트 — 실제 Postgres + pgvector. make dev로 db�
 # agent 컨테이너 안에서 돈다. 키와 api 주소(ui의 대역)가 거기 있다.
 eval:  ## 카테고리 고르기 평가 — 실제 모델. make dev로 ui·agent가 떠 있어야 한다
 	$(COMPOSE) exec -T agent pytest -m integration -s -q tests/agent/application/use_cases/test_classify_category_eval.py
+
+eval-chat:  ## 대화 통계 평가 — 실제 모델. make dev로 api·agent가 떠 있어야 한다
+	$(COMPOSE) exec -T agent pytest -m integration -s -q tests/agent/application/use_cases/test_answer_question_eval.py
 
 all: check lint type test  ## 전부
