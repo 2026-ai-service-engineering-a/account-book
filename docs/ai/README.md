@@ -229,7 +229,8 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 기능 1의 색인 엔드포인트 둘과 기능 2의 `/v1/stats/frequency`·`/v1/stats/compare`는 계약에
 옮겼다(api-contract 6장).
 
-`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)와 `POST /ask`(기능 4)다. 기록의 `POST /capture`, 기능 1의
+`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)와 `POST /ask`(기능 4)다. 기능 4의 찾기
+`POST /retrieve`는 붙었다 — 정본은 [../../ui_docs/pages/documents.md](../../ui_docs/pages/documents.md). 기록의 `POST /capture`, 기능 1의
 `POST /classify`, 기능 2의 `POST /chat`(SSE)은 이미 붙었다 — `/chat`의 정본은
 [../../ui_docs/pages/chat.md 4.1](../../ui_docs/pages/chat.md#41-sse-이벤트가-화면으로), 나머지 둘은
 [../../ui_docs/pages/transaction-form.md 4.5](../../ui_docs/pages/transaction-form.md#45-agent와-주고받는-것--post-capture)와

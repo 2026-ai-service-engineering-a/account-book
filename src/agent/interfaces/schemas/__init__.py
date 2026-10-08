@@ -5,6 +5,8 @@ from .chat_request import ChatRequest
 from .classify_request import ClassifyRequest
 from .error_body import ErrorBody
 from .error_response import ErrorResponse
+from .retrieve_request import RetrieveRequest
+from .retrieve_response import RetrieveResponse
 
 __all__ = [
     "CaptureRequest",
@@ -14,4 +16,6 @@ __all__ = [
     "ClassifyRequest",
     "ErrorBody",
     "ErrorResponse",
+    "RetrieveRequest",
+    "RetrieveResponse",
 ]

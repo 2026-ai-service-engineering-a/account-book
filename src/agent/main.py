@@ -12,7 +12,13 @@ from fastapi import FastAPI
 
 from agent.application.dto import ClassifyThresholds, LoopLimits
 from agent.application.ports import Embedder, LanguageModel, LedgerApi
-from agent.application.use_cases import AnswerQuestion, ClassifyCategory, ReadCapture
+from agent.application.use_cases import (
+    AnswerQuestion,
+    ClassifyCategory,
+    ReadCapture,
+    Retrieve,
+    SyncIndex,
+)
 from agent.infrastructure.http import HttpLedgerApi
 from agent.infrastructure.llm import LitellmEmbedder, LitellmLanguageModel
 from agent.infrastructure.settings import Settings
@@ -60,6 +66,12 @@ def create_app(
             )
     classify = ClassifyCategory(ledger, model, thresholds, embedder)
     answer = AnswerQuestion(model, ledger, limits, time.perf_counter)
+    retrieve = Retrieve(ledger, embedder, SyncIndex(ledger, embedder) if embedder else None)
     return build_web_app(
-        Services(read_capture=ReadCapture(model, classify), classify=classify, answer=answer)
+        Services(
+            read_capture=ReadCapture(model, classify),
+            classify=classify,
+            answer=answer,
+            retrieve=retrieve,
+        )
     )

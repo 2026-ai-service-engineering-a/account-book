@@ -7,9 +7,9 @@ from datetime import date, datetime
 import httpx
 import pytest
 
-from agent.application.dto import CategoryQuery, TransactionFilter
+from agent.application.dto import CategoryQuery, DocumentQuery, TransactionFilter
 from agent.application.errors import LedgerRejected, LedgerUnavailable
-from agent.domain.values import CategoryId, Direction, TimeRange
+from agent.domain.values import CategoryId, ChunkStrategy, Direction, SearchMode, TimeRange
 from agent.infrastructure.http import HttpLedgerApi
 from tests.agent.conftest import SEOUL
 from tests.agent.infrastructure.http.test_suggest_reply import BODY
@@ -141,3 +141,23 @@ def test_categories_are_the_whole_dictionary():
     (line,) = asyncio.run(api(handler).categories())
     assert seen[0].url.path == "/v1/categories" and not seen[0].url.params
     assert line.id == "salary"
+
+
+def test_search_documents_posts_the_query_with_its_vector():
+    from tests.agent.infrastructure.http.test_document_hits_reply import HIT
+
+    handler, seen = recorder(body=[HIT])
+    query = DocumentQuery(
+        "노트북 취소", ChunkStrategy.PARAGRAPH, 3, SearchMode.HYBRID, "m@768", (0.1, 0.2)
+    )
+    (chunk,) = asyncio.run(api(handler).search_documents(query))
+    assert seen[0].method == "POST" and seen[0].url.path == "/v1/documents/search"
+    assert json.loads(seen[0].content) == {
+        "q": "노트북 취소",
+        "k": 3,
+        "strategy": "paragraph",
+        "mode": "hybrid",
+        "embedding_model": "m@768",
+        "query_vector": [0.1, 0.2],
+    }
+    assert chunk.title == "할부거래에 관한 법률"
