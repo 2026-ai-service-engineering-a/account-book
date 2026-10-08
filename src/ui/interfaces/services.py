@@ -14,6 +14,7 @@ from ui.application.ports import (
     ChatAgent,
     Clock,
     DemoData,
+    DocumentGateway,
     ReportGateway,
     ReportNarrator,
     TransactionGateway,
@@ -28,6 +29,7 @@ class Services:
     reports: ReportGateway
     budgets: BudgetGateway
     catalog: CatalogGateway
+    documents: DocumentGateway
     suggester: CategorySuggester
     chat: ChatAgent
     narrator: ReportNarrator

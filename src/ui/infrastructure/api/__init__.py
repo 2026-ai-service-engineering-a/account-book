@@ -8,6 +8,7 @@ from .budget_status_reply import BudgetStatusReply
 from .category_reply import CategoryReply
 from .http_budget_gateway import HttpBudgetGateway
 from .http_catalog_gateway import HttpCatalogGateway
+from .http_document_gateway import HttpDocumentGateway
 from .http_report_gateway import HttpReportGateway
 from .http_transaction_gateway import HttpTransactionGateway
 from .monthly_report_reply import MonthlyReportReply
@@ -21,6 +22,7 @@ __all__ = [
     "CategoryReply",
     "HttpBudgetGateway",
     "HttpCatalogGateway",
+    "HttpDocumentGateway",
     "HttpReportGateway",
     "HttpTransactionGateway",
     "MonthlyReportReply",

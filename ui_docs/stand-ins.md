@@ -75,6 +75,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | `ReportGateway` | `MemoryReportGateway` |
 | `BudgetGateway` | `MemoryBudgetGateway` |
 | `CatalogGateway` | `MemoryCatalogGateway` |
+| `DocumentGateway` | `MemoryDocumentGateway` — 법령 조문 네 줄. 진짜 자료(아홉 조문)는 `make docs`로 api에 넣는다 |
 
 `src/ui/infrastructure/memory/`에 있다. 합계·페이스·검증·멱등성을 **여기서만** 계산한다.
 이 패키지가 api의 대역이기 때문이다. 화면 쪽(`interfaces`)에는 나눗셈 하나 없다.

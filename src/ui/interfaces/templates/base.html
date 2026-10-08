@@ -29,6 +29,7 @@
         ("new", "/transactions/new", "입력", "plus"),
         ("reports", "/reports", "리포트", "chart"),
         ("budgets", "/budgets", "예산", "wallet"),
+        ("documents", "/documents", "문서", "book"),
       ] %}
       <a href="{{ href }}" {% if section == key %}aria-current="page"{% endif %}>{{ icon(glyph) }}<span class="label-text">{{ name }}</span></a>
       {% endfor %}

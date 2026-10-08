@@ -4,7 +4,9 @@ from .category import Category
 from .category_change import CategoryChange
 from .category_suggestion import CategorySuggestion
 from .chat_event import ChatEvent, ChatEventKind
+from .chunk_strategy import ChunkStrategy
 from .direction import Direction
+from .document_hit import DocumentHit
 from .message_reading import MessageReading
 from .month_total import MonthTotal
 from .monthly_report import MonthlyReport
@@ -26,7 +28,9 @@ __all__ = [
     "CategorySuggestion",
     "ChatEvent",
     "ChatEventKind",
+    "ChunkStrategy",
     "Direction",
+    "DocumentHit",
     "MessageReading",
     "MonthTotal",
     "MonthlyReport",
