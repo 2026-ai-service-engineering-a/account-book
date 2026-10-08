@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agent.domain.tools import CategoryLine
+
 from .model_usage import ModelUsage
 from .stop_reason import StopReason
 from .tool_step import ToolStep
@@ -16,3 +18,4 @@ class LoopOutcome:
     steps: tuple[ToolStep, ...]
     usage: ModelUsage
     model_calls: int
+    categories: tuple[CategoryLine, ...] = ()  # 표에 카테고리 이름을 쓰려고 들고 간다

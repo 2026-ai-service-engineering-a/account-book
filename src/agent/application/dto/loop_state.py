@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
+from agent.domain.tools import CategoryLine
+
 from .loop_outcome import LoopOutcome
 from .model_usage import ModelUsage
 from .stop_reason import StopReason
@@ -22,6 +24,7 @@ class LoopState:
     usage: ModelUsage = field(default_factory=ModelUsage)
     steps: list[ToolStep] = field(default_factory=list)
     malformed: bool = False  # 모델 출력의 모양이 한 번 틀렸다
+    categories: tuple[CategoryLine, ...] = ()
     _seen: set[tuple[str, str]] = field(default_factory=set)
     _failures: dict[str, int] = field(default_factory=dict)
 
@@ -41,4 +44,4 @@ class LoopState:
         return self._failures[call.name] > FIXES_PER_TOOL
 
     def end(self, stop: StopReason, text: str = "") -> LoopOutcome:
-        return LoopOutcome(stop, text, tuple(self.steps), self.usage, self.calls)
+        return LoopOutcome(stop, text, tuple(self.steps), self.usage, self.calls, self.categories)

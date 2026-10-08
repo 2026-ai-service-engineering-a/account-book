@@ -67,6 +67,7 @@ class AnswerQuestion:
         except LedgerUnavailable:
             yield self._finish(state, StopReason.LEDGER_UNAVAILABLE)
             return
+        state.categories = dictionary
         turns = [Turn("user", query_user_turn(question, today, dictionary))]
         prompt = ToolPrompt("query", QUERY_SYSTEM, (), Mode.QUERY.specs())
         while (stop := self._limit(state)) is None:
@@ -96,8 +97,8 @@ class AnswerQuestion:
                     stop = StopReason.REPEATED
                     break
                 yield LoopEvent(tool=call.name)
-                result = await self._tool(call, dictionary, today, zone)
-                state.steps.append(ToolStep(call, result))
+                ran, result = await self._tool(call, dictionary, today, zone)
+                state.steps.append(ToolStep(ran, result))
                 envelope = json.dumps(result.envelope(), ensure_ascii=False)
                 turns.append(Turn("tool", envelope, call_id=call.call_id))
                 if state.failed_too_often(call, result):
@@ -108,17 +109,18 @@ class AnswerQuestion:
 
     async def _tool(
         self, call: ToolCall, dictionary: tuple[CategoryLine, ...], today: date, zone: tzinfo
-    ) -> ToolResult:
+    ) -> tuple[ToolCall, ToolResult]:
+        """실제로 부른 호출(고쳤으면 고친 것)과 그 봉투."""
         checked = _checked(call, dictionary)
         if isinstance(checked, ToolResult):
-            return checked
+            return call, checked
         result = await self._run_tool(checked, today, zone)
         for attempt in range(1, _SERVER_RETRIES + 1):
             if result.error is None or result.error.code != "internal_error":
                 break
             await self._pause(0.2 * attempt)  # 네트워크는 코드의 일이다 — 모델에게 넘기지 않는다
             result = await self._run_tool(checked, today, zone)
-        return result
+        return checked, result
 
     def _limit(self, state: LoopState) -> StopReason | None:
         """다음 스텝을 밟기 전에 본다(ai/agent-loop.md 8장)."""
