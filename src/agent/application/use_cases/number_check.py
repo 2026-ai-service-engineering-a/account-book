@@ -36,6 +36,13 @@ def numbers_from_tools(steps: Iterable[ToolStep], today: date) -> set[str]:
     return allowed
 
 
+def numbers_in(text: str) -> set[str]:
+    """글에 든 숫자들 — 표기를 맞춰서. "100분의 40"은 100과 40이 되어 "40%"의 40과 맞는다."""
+    allowed: set[str] = set()
+    _collect(text, allowed)
+    return allowed
+
+
 def unsupported(sentence: str, allowed: set[str]) -> list[str]:
     """문장에 있는데 도구 결과에 없는 숫자들. 비었으면 문장을 내보내도 된다."""
     return [n for n in (_normal(m) for m in _NUMBER.findall(sentence)) if n and n not in allowed]
