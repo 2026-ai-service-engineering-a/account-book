@@ -28,7 +28,7 @@ from agent.domain.tools import (
     SpendingTotals,
     TransactionList,
 )
-from agent.domain.values import CategoryId, Confidence, Money, TimeRange
+from agent.domain.values import CategoryId, ChunkStrategy, Confidence, Money, TimeRange
 
 SEOUL = ZoneInfo("Asia/Seoul")
 NOW = datetime(2026, 10, 1, 18, 0, tzinfo=SEOUL)
@@ -112,6 +112,21 @@ def search(
         candidates=tuple(Candidate(CategoryId(c), Confidence(p)) for c, p in candidates),
         evidence=tuple(found),
         categories=EXPENSE_CATEGORIES,
+    )
+
+
+def chunk(
+    path: str, heading: str, body: str, title: str = "할부거래에 관한 법률"
+) -> RetrievedChunk:
+    """paragraph_item 조각 하나. `path`는 id의 법령명 뒤 — "8/1/1"."""
+    return RetrievedChunk(
+        f"paragraph_item:{title}/{path}",
+        title,
+        date(2025, 1, 1),
+        ChunkStrategy.PARAGRAPH_ITEM,
+        heading,
+        body,
+        0.5,
     )
 
 

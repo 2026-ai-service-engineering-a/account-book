@@ -7,11 +7,13 @@ from .category_shift import CategoryShift
 from .category_suggestion import CategorySuggestion
 from .compare_periods_input import ComparePeriodsInput
 from .count_frequency_input import CountFrequencyInput
+from .document_line import DocumentLine
 from .evidence_line import EvidenceLine
 from .frequency import Frequency
 from .get_budget_status_input import GetBudgetStatusInput
 from .mode import Mode
 from .permission import Permission
+from .search_documents_input import SearchDocumentsInput
 from .search_transactions_input import DEFAULT_ROWS, MAX_ROWS, SearchTransactionsInput
 from .spending_totals import SpendingTotals
 from .suggest_category_input import SuggestCategoryInput
@@ -32,11 +34,13 @@ __all__ = [
     "CategorySuggestion",
     "ComparePeriodsInput",
     "CountFrequencyInput",
+    "DocumentLine",
     "EvidenceLine",
     "Frequency",
     "GetBudgetStatusInput",
     "Mode",
     "Permission",
+    "SearchDocumentsInput",
     "SearchTransactionsInput",
     "SpendingTotals",
     "SuggestCategoryInput",

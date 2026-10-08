@@ -24,6 +24,7 @@ from agent.application.ports import LanguageModel, LedgerApi
 from agent.application.prompts import QUERY_SYSTEM, query_user_turn
 from agent.domain.tools import CategoryLine, Mode, ToolName
 
+from .retrieve import Retrieve
 from .run_tool import RunTool
 
 _log = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class AnswerQuestion:
         self,
         model: LanguageModel,
         ledger: LedgerApi,
+        retrieve: Retrieve,
         limits: LoopLimits,
         timer: Callable[[], float],
         pause: Callable[[float], Awaitable[None]] = asyncio.sleep,
@@ -57,7 +59,7 @@ class AnswerQuestion:
         self._limits = limits
         self._timer = timer  # 단조 시계(초) — 벽시계 상한과 elapsed_ms
         self._pause = pause
-        self._run_tool = RunTool(ledger, Mode.QUERY.tools, timer)
+        self._run_tool = RunTool(ledger, retrieve, Mode.QUERY.tools, timer)
 
     async def __call__(self, question: str, today: date, zone: tzinfo) -> AsyncIterator[LoopEvent]:
         """`today`는 사용자 타임존의 오늘이다. 도구 이름을 흘리고, 끝에 실행 하나를 낸다."""

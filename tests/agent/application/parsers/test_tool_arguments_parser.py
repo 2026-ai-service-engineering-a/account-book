@@ -10,6 +10,7 @@ from agent.domain.tools import (
     ComparePeriodsInput,
     CountFrequencyInput,
     GetBudgetStatusInput,
+    SearchDocumentsInput,
     SearchTransactionsInput,
     SuggestCategoryInput,
     ToolName,
@@ -63,6 +64,13 @@ def test_compare_and_search_and_suggest():
     assert suggest == SuggestCategoryInput("블루보틀")
 
 
+def test_a_document_query_is_one_line_cut_at_the_api_limit():
+    found = parse_tool_arguments(ToolName.SEARCH_DOCUMENTS, {"query": " 할부  철회\n기간 "})
+    assert found == SearchDocumentsInput("할부 철회 기간")
+    long = parse_tool_arguments(ToolName.SEARCH_DOCUMENTS, {"query": "가" * 500})
+    assert len(long.query) == 200  # type: ignore[union-attr]
+
+
 def test_empty_category_means_no_category():
     raw = {"period": "today", "category_id": ""}
     found = parse_tool_arguments(ToolName.SUMMARIZE_SPENDING, raw)
@@ -85,6 +93,8 @@ def test_empty_category_means_no_category():
         (ToolName.SEARCH_TRANSACTIONS, {"period": "today", "limit": 0}, "limit"),
         (ToolName.GET_BUDGET_STATUS, {"period": "this_week"}, "arguments"),
         (ToolName.SUGGEST_CATEGORY, {"merchant": " "}, "arguments"),
+        (ToolName.SEARCH_DOCUMENTS, {"query": ""}, "arguments"),
+        (ToolName.SEARCH_DOCUMENTS, {"query": "할부", "k": 3}, "k"),
         (ToolName.DELETE_TRANSACTION, {}, "name"),
     ],
 )

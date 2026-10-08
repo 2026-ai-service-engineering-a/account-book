@@ -19,14 +19,14 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from agent.application.dto import LoopLimits, LoopOutcome
+from agent.application.dto import LoopLimits, LoopOutcome, RetrievalDefaults
 from agent.application.parsers import parse_tool_arguments
-from agent.application.use_cases import AnswerQuestion
+from agent.application.use_cases import AnswerQuestion, Retrieve, SyncIndex
 from agent.application.use_cases.number_check import numbers_from_tools, unsupported
 from agent.domain.tools import ToolName
-from agent.domain.values import PeriodName, PeriodSpec
+from agent.domain.values import ChunkStrategy, PeriodName, PeriodSpec, SearchMode
 from agent.infrastructure.http import HttpLedgerApi
-from agent.infrastructure.llm import LitellmLanguageModel
+from agent.infrastructure.llm import LitellmEmbedder, LitellmLanguageModel
 from agent.infrastructure.settings import Settings
 
 FIXTURE = Path(__file__).parents[3] / "fixtures" / "ai" / "questions.json"
@@ -143,9 +143,22 @@ def test_questions_become_the_right_tool_calls():
         settings.agent_model, settings.api_key(), timeout=settings.agent_timeout_seconds
     )
     ledger = HttpLedgerApi(settings.api_base_url, timeout=settings.agent_timeout_seconds)
+    embedder = LitellmEmbedder(
+        settings.embedding_model,
+        settings.api_key(settings.embedding_model),
+        dimensions=settings.embedding_dimensions,
+        timeout=settings.agent_timeout_seconds,
+    )
+    defaults = RetrievalDefaults(
+        ChunkStrategy(settings.doc_chunk_strategy),
+        SearchMode(settings.doc_search_mode),
+        settings.doc_top_k,
+    )
+    retrieve = Retrieve(ledger, embedder, SyncIndex(ledger, embedder), defaults)
     limits = LoopLimits(settings.agent_max_steps, settings.agent_max_cost_usd, 20.0)
     today = datetime.now(ZONE).date()
-    graded = run(AnswerQuestion(model, ledger, limits, time.perf_counter), today)
+    loop = AnswerQuestion(model, ledger, retrieve, limits, time.perf_counter)
+    graded = run(loop, today)
     report(f"대화 통계 — {settings.agent_model}", graded)
     # 기간이 틀리면 숫자가 전부 틀리고 사용자는 알아채지 못한다(9장). 여기만 100%를 요구한다.
     periods = [g.period_right for g in graded if g.period_right is not None]

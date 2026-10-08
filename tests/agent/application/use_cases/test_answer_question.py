@@ -16,7 +16,7 @@ from agent.application.dto import (
     ToolCall,
 )
 from agent.application.errors import LedgerUnavailable, MalformedOutput, ModelUnavailable
-from agent.application.use_cases import AnswerQuestion
+from agent.application.use_cases import AnswerQuestion, Retrieve
 from agent.domain.tools import READ_TOOLS, CategoryLine, Frequency, Mode, Permission
 from agent.domain.values import Amount, CategoryId
 from tests.agent.conftest import SEOUL, FakeLedger, FakeModel
@@ -62,7 +62,9 @@ def ask(
     async def pause(seconds: float) -> None:
         pauses.append(seconds)
 
-    loop = AnswerQuestion(model, ledger, limits, clock or Clock(), pause)
+    loop = AnswerQuestion(
+        model, ledger, Retrieve(ledger, None, None), limits, clock or Clock(), pause
+    )
 
     async def go() -> list[LoopEvent]:
         return [e async for e in loop("저번 주에 카페 몇 번 갔어?", TODAY, SEOUL)]

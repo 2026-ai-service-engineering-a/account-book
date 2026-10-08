@@ -1,4 +1,4 @@
-"""읽기 도구 여섯의 설명과 입력 JSON Schema. 모델이 읽는 문서다(ai/tools.md 2장).
+"""읽기 도구 일곱의 설명과 입력 JSON Schema. 모델이 읽는 문서다(ai/tools.md 2장).
 
 이 파일이 바뀌면 모델에게 주는 프롬프트가 바뀐 것이다 — 모드별 스키마 스냅샷 테스트가
 리뷰에서 그 차이를 보이게 한다(ai/tools.md 8장).
@@ -10,6 +10,7 @@ from collections.abc import Mapping
 
 from agent.domain.values import Direction, PeriodName
 
+from .search_documents_input import QUERY_LIMIT
 from .search_transactions_input import DEFAULT_ROWS, MAX_ROWS
 from .tool_name import ToolName
 from .tool_spec import ToolSpec
@@ -124,6 +125,23 @@ READ_TOOLS: Mapping[ToolName, ToolSpec] = {
                     "direction": _DIRECTION,
                 },
                 ["merchant"],
+            ),
+        ),
+        ToolSpec(
+            ToolName.SEARCH_DOCUMENTS,
+            does="카드·할부·전자금융·연말정산 법령의 조문 조각을 찾는다. "
+            "조각마다 인용할 ref가 있다.",
+            avoid="내 지출 숫자가 필요하면 통계 도구를 쓴다 — 조문에는 내 기록이 없다.",
+            input_schema=_object(
+                {
+                    "query": {
+                        "type": "string",
+                        "maxLength": QUERY_LIMIT,
+                        "description": "찾을 내용을 한국어 한 문장으로. 사용자의 금액·가맹점은 "
+                        "넣지 않는다.",
+                    }
+                },
+                ["query"],
             ),
         ),
     )
