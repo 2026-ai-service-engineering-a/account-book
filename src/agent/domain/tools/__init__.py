@@ -10,6 +10,7 @@ from .count_frequency_input import CountFrequencyInput
 from .evidence_line import EvidenceLine
 from .frequency import Frequency
 from .get_budget_status_input import GetBudgetStatusInput
+from .mode import Mode
 from .permission import Permission
 from .search_transactions_input import DEFAULT_ROWS, MAX_ROWS, SearchTransactionsInput
 from .spending_totals import SpendingTotals
@@ -34,6 +35,7 @@ __all__ = [
     "EvidenceLine",
     "Frequency",
     "GetBudgetStatusInput",
+    "Mode",
     "Permission",
     "SearchTransactionsInput",
     "SpendingTotals",
