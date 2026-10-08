@@ -5,11 +5,11 @@ from collections.abc import Sequence
 from sqlalchemy import Float, delete, func, select
 from sqlalchemy.orm import Session
 
-from api.application.dto import ChunkHit
+from api.application.dto import ChunkHit, IndexText
 from api.domain.entities import Document, DocumentChunk
 from api.domain.values import ChunkId, ChunkStrategy, DocumentId
 
-from .rows import DocumentChunkRow, DocumentRow
+from .rows import DocumentChunkRow, DocumentRow, TextEmbeddingRow
 
 
 class SqlDocumentRepository:
@@ -64,6 +64,17 @@ class SqlDocumentRepository:
             ChunkHit(_chunk(row), float(value), title, effective)
             for row, value, title, effective in self._session.execute(statement)
         )
+
+    def pending(self, model: str, limit: int) -> tuple[IndexText, ...]:
+        embedded = select(TextEmbeddingRow.text_hash).where(TextEmbeddingRow.model == model)
+        statement = (
+            select(DocumentChunkRow.text_hash, DocumentChunkRow.search_text)
+            .where(DocumentChunkRow.text_hash.not_in(embedded))
+            .distinct()
+            .order_by(DocumentChunkRow.text_hash)
+            .limit(limit)
+        )
+        return tuple(IndexText(h, t) for h, t in self._session.execute(statement))
 
 
 def _chunk(row: DocumentChunkRow) -> DocumentChunk:

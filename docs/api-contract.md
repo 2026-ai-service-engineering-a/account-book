@@ -161,7 +161,8 @@ X-Agent-Run-Id: 01J9X...
 | `GET` | `/v1/healthz` | — | — |
 
 색인 둘은 도구가 아니다. `agent`가 카테고리를 고르기 전에 색인 안 된 텍스트를 당겨 가
-임베딩하고 돌려주는 길이다. `api`는 임베딩 제공자를 모르고, `agent`를 부르지도 않는다
+임베딩하고 돌려주는 길이다. 문서 조각의 찾는 글도 같은 길로 색인된다 — `pending`은 거래의 색인 텍스트를
+먼저, 남는 자리를 문서 조각으로 채운다. 벡터는 둘 다 `text_embeddings`에 있다. `api`는 임베딩 제공자를 모르고, `agent`를 부르지도 않는다
 ([ai/category-suggestion-rag.md 4.3](ai/category-suggestion-rag.md#43-누가-벡터를-채우나)).
 
 ### 집계는 서버가 한다

@@ -4,16 +4,30 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date
+from typing import TYPE_CHECKING
 
-from api.application.dto import ChunkHit
+from api.application.dto import ChunkHit, IndexText
 from api.domain.entities import Document, DocumentChunk
 from api.domain.values import ChunkStrategy, DocumentId
 
+if TYPE_CHECKING:
+    from .fake_index import FakeIndex
+
 
 class FakeDocuments:
-    def __init__(self) -> None:
+    def __init__(self, index: FakeIndex | None = None) -> None:
         self.documents: dict[DocumentId, Document] = {}
         self.chunks: dict[str, DocumentChunk] = {}
+        self._index = index  # 벡터는 거래와 같은 자리(text_embeddings)에 있다
+
+    def pending(self, model: str, limit: int) -> tuple[IndexText, ...]:
+        vectors = self._index.vectors if self._index else {}
+        texts = {
+            c.text_hash: c.search_text
+            for c in self.chunks.values()
+            if (model, c.text_hash) not in vectors
+        }
+        return tuple(IndexText(h, t) for h, t in sorted(texts.items()))[:limit]
 
     def replace(self, document: Document, chunks: Sequence[DocumentChunk]) -> None:
         self.documents[document.id] = document
