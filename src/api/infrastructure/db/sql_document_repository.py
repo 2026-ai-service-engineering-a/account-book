@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from sqlalchemy import delete
+from sqlalchemy import Float, delete, func, select
 from sqlalchemy.orm import Session
 
+from api.application.dto import ChunkHit
 from api.domain.entities import Document, DocumentChunk
+from api.domain.values import ChunkId, ChunkStrategy, DocumentId
 
 from .rows import DocumentChunkRow, DocumentRow
 
@@ -44,3 +46,34 @@ class SqlDocumentRepository:
             for c in chunks
         )
         self._session.flush()
+
+    def search(self, query: str, strategy: ChunkStrategy, k: int) -> tuple[ChunkHit, ...]:
+        # word_similarity(q, 글): 질문의 트라이그램이 글의 가장 비슷한 구간과 얼마나 겹치나.
+        # 긴 조각이 짧은 질문 때문에 손해 보지 않는다(similarity는 글 전체 길이로 나눈다)
+        score = func.word_similarity(query, DocumentChunkRow.search_text, type_=Float).label(
+            "score"
+        )
+        statement = (
+            select(DocumentChunkRow, score, DocumentRow.title, DocumentRow.effective_date)
+            .join(DocumentRow, DocumentRow.id == DocumentChunkRow.document_id)
+            .where(DocumentChunkRow.strategy == strategy.value)
+            .order_by(score.desc(), DocumentChunkRow.document_id, DocumentChunkRow.position)
+            .limit(k)
+        )
+        return tuple(
+            ChunkHit(_chunk(row), float(value), title, effective)
+            for row, value, title, effective in self._session.execute(statement)
+        )
+
+
+def _chunk(row: DocumentChunkRow) -> DocumentChunk:
+    return DocumentChunk(
+        id=ChunkId(row.id),
+        document_id=DocumentId(row.document_id),
+        strategy=ChunkStrategy(row.strategy),
+        heading=row.heading,
+        body=row.body,
+        search_text=row.search_text,
+        text_hash=row.text_hash,
+        position=row.position,
+    )

@@ -221,7 +221,8 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 | `GET` | `/v1/documents/{id}/chunks` | — (화면·평가) | 4 |
 | `POST` | `/v1/documents/search` | `search_documents` | 4 |
 
-기능 4의 검색은 기능 1의 `POST /v1/categories/suggest`와 같은 모양이다 — `agent`가 질문을
+기능 4의 키워드 검색 `GET /v1/documents/search`는 계약에 옮겼다(api-contract 6장). 남은 줄의 벡터 검색은
+기능 1의 `POST /v1/categories/suggest`와 같은 모양이다 — `agent`가 질문을
 임베딩해 벡터를 보내고, `api`는 유사도로 조각을 고른다. 조각의 임베딩은 기능 1의 색인 엔드포인트
 둘(`/v1/embeddings/pending`·`PUT /v1/embeddings/{text_hash}`)로 채운다. 늘어나는 색인 엔드포인트는 없다
 ([document-rag.md 7.1](document-rag.md#71-지금-정하는-것)).

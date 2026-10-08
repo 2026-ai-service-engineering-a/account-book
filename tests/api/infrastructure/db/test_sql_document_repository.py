@@ -38,3 +38,20 @@ def test_replace_swaps_the_chunks_and_keeps_one_document(migrated):
     assert count(migrated, DocumentChunkRow) == 3
     with migrated.connect() as connection:
         assert connection.execute(select(DocumentRow.mst)).scalar_one() == "999"
+
+
+def test_keyword_search_with_pg_trgm(migrated):
+    laws = sorted(LAW.parent.glob("*.md"))
+    sessions = SqlUnitOfWork.factory(migrated)
+    with SqlUnitOfWork(sessions) as uow:
+        for path in laws:
+            document = parse_law(path.read_text(encoding="utf-8"))
+            uow.documents.replace(document, chunk_law(document, ChunkStrategy.PARAGRAPH))
+        uow.commit()
+    with SqlUnitOfWork(sessions) as uow:
+        hits = uow.documents.search("수영장 및 체력단련장", ChunkStrategy.PARAGRAPH, 5)
+        none = uow.documents.search("수영장", ChunkStrategy.FIXED_500, 5)
+    assert hits[0].chunk.id == "paragraph:조세특례제한법 시행령/제121조의2/16"
+    assert hits[0].score > hits[-1].score and len(hits) == 5
+    assert hits[0].title == "조세특례제한법 시행령"
+    assert none == ()  # 그 전략의 조각은 넣지 않았다

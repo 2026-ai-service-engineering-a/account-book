@@ -19,6 +19,7 @@ from api.application.use_cases import (
     PutEmbedding,
     ReadBudgetStatuses,
     ReadPace,
+    SearchDocuments,
     SearchTransactions,
     SetBudget,
     SuggestCategory,
@@ -49,6 +50,7 @@ class Services:
     suggest: SuggestCategory
     pending: ListPendingTexts
     put_embedding: PutEmbedding
+    search_documents: SearchDocuments
 
 
 def get_services(request: Request) -> Services:
