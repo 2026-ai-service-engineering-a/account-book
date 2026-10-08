@@ -110,6 +110,8 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 |---|---|---|
 | `search_transactions` | 기간·카테고리·가맹점으로 거래 조회 | 읽기 — 자동 |
 | `summarize_spending` | 기간별/카테고리별 합계·비교 | 읽기 — 자동 |
+| `count_frequency` | 기간 내 건수·거래가 있던 날 수·평균 간격 | 읽기 — 자동 |
+| `compare_periods` | 두 기간의 카테고리별 합계와 증감 | 읽기 — 자동 |
 | `get_budget_status` | 예산 대비 소진율, 잔여일 기준 페이스 | 읽기 — 자동 |
 | `suggest_category` | 가맹점·메모 → 카테고리 후보 + 신뢰도 + 근거 거래 | 읽기 — 자동 |
 | `create_transaction` | 거래 1건 기록 | 쓰기 — **확인 필요** |

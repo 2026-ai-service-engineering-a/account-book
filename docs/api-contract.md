@@ -146,6 +146,8 @@ X-Agent-Run-Id: 01J9X...
 | `PATCH` | `/v1/transactions/{id}` | `update_transaction` | 임계값 이상 |
 | `DELETE` | `/v1/transactions/{id}` | `delete_transaction` | **항상** |
 | `GET` | `/v1/summary` | `summarize_spending` | — |
+| `GET` | `/v1/stats/frequency` | `count_frequency` | — |
+| `GET` | `/v1/stats/compare` | `compare_periods` | — |
 | `GET` | `/v1/reports/monthly` | — (화면) | — |
 | `GET` | `/v1/reports/pace` | — (화면) | — |
 | `GET` | `/v1/budgets/status` | `get_budget_status` | — |
@@ -170,6 +172,25 @@ X-Agent-Run-Id: 01J9X...
 - `summary`의 걸름은 거래 목록과 같다(`period`·`direction`·`category_id`·`q`) — 목록과 합계가 다른 거래를 세지 않는다.
 - 화면용 `reports/monthly`는 합계·지난달 대비·카테고리별 증감·최근 여섯 달을, `reports/pace`는 한 카테고리의
   날짜별 누적과 말일 예상·넘는 날을 낸다. "그날"은 사용자 타임존의 날이다.
+
+### 기간 집계는 이름이 아니라 경계로 받는다
+
+`stats/*`는 기간을 `from`·`to`로 받는다. 오프셋이 붙은 ISO 8601 시각이고 `[from, to)`다.
+"저번 주"·"최근 3일"을 날짜로 푸는 일은 부르는 쪽(`agent`)이 사용자 타임존으로
+한다([ai/chat-analytics.md 5장](ai/chat-analytics.md#5-기간--llm에게-날짜를-계산시키지-않는다)).
+기간 이름도 `period=YYYY-MM`도 받지 않는다.
+
+- 오프셋이 없는 시각, `from >= to`는 `422 validation_error`다. 쿼리 문자열에서 `+09:00`의 `+`는
+  `%2B`로 보낸다 — 그대로 보내면 공백이 되어 422가 난다.
+- `frequency`의 걸름은 `summary`와 같다(`direction`·`category_id`·`q`) — 목록이 보여주는 거래와
+  센 거래가 같다. `direction`의 기본만 `expense`다. 수입과 섞으면 회당 평균이 뜻을 잃는다.
+- `frequency`는 `count`, `day_count`(거래가 있던 사용자 타임존의 날 수), `avg_gap_days`(그 날들
+  사이 평균 간격, 소수 한 자리), `avg_amount`(회당 평균, 원 단위 반올림)를 낸다. 날이 둘
+  미만이면 `avg_gap_days`가, 0건이면 `avg_amount`도 `null`이다 — 0건은 "평균 0원"이 아니다.
+- `compare`는 `a_from`·`a_to`·`b_from`·`b_to`와 `category_id`를 받아 지출 카테고리별 `a`·`b` 합,
+  `delta`(b - a), `percent`(a 대비 절댓값, a가 0이면 `null`)를 `b`가 큰 순서로 낸다. 둘 다 0인
+  카테고리는 빠지지만 `category_id`로 집어 물으면 0이어도 한 줄이 온다.
+- "지난달보다 늘었나"를 같은 날까지로 견줄지는 부르는 쪽이 `a`의 끝을 잘라서 정한다.
 
 ### 예산은 바꿀 때까지 이어진다
 

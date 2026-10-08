@@ -5,6 +5,7 @@ from datetime import tzinfo
 
 from api.application.dto import CategoryChange, MonthlyReport, MonthTotal, TransactionQuery
 from api.application.ports import Clock, UnitOfWork
+from api.domain.rules import change
 from api.domain.values import CategoryId, Direction, Money, Period
 
 # 추세 차트에 보이는 달 수
@@ -64,11 +65,7 @@ def _changes(
         if not now.amount and not (before and before.amount):
             continue
         delta = None if before is None else now - before
-        percent = (
-            round(abs(delta.amount) * 100 / before.amount)
-            if delta is not None and before is not None and before.amount
-            else None
-        )
+        percent = None if before is None else change.percent(before, now)
         changes.append(CategoryChange(category, now, before, delta, percent))
     return tuple(sorted(changes, key=lambda c: c.this_month, reverse=True))
 

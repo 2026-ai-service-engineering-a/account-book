@@ -16,6 +16,8 @@ from fastapi import FastAPI
 from api.application.ports import Clock, DatabaseProbe, UnitOfWork
 from api.application.use_cases import (
     BuildMonthlyReport,
+    ComparePeriods,
+    CountFrequency,
     CreateTransaction,
     DeleteTransaction,
     GetTransaction,
@@ -72,6 +74,8 @@ def create_app(
             search=SearchTransactions(unit_of_work, zone),
             catalog=ListCatalog(unit_of_work),
             summarize=SummarizeSpending(unit_of_work, zone),
+            frequency=CountFrequency(unit_of_work),
+            compare=ComparePeriods(unit_of_work),
             monthly=BuildMonthlyReport(unit_of_work, clock),
             pace=ReadPace(unit_of_work, clock),
             budgets=ReadBudgetStatuses(unit_of_work, clock),
