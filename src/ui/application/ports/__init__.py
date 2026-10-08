@@ -5,6 +5,7 @@ from .category_suggester import CategorySuggester
 from .chat_agent import ChatAgent
 from .clock import Clock
 from .demo_data import DemoData
+from .document_gateway import DocumentGateway
 from .report_gateway import ReportGateway
 from .report_narrator import ReportNarrator
 from .transaction_gateway import TransactionGateway
@@ -17,6 +18,7 @@ __all__ = [
     "ChatAgent",
     "Clock",
     "DemoData",
+    "DocumentGateway",
     "ReportGateway",
     "ReportNarrator",
     "TransactionGateway",

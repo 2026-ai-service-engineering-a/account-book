@@ -6,6 +6,7 @@ from typing import Protocol, Self
 from .budget_repository import BudgetRepository
 from .catalog_repository import CatalogRepository
 from .category_index import CategoryIndex
+from .document_repository import DocumentRepository
 from .idempotency_store import IdempotencyStore
 from .stats_repository import StatsRepository
 from .transaction_repository import TransactionRepository
@@ -36,6 +37,9 @@ class UnitOfWork(Protocol):
 
     @property
     def index(self) -> CategoryIndex: ...
+
+    @property
+    def documents(self) -> DocumentRepository: ...
 
     def __enter__(self) -> Self: ...
 

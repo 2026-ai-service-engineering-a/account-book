@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from .sql_budget_repository import SqlBudgetRepository
 from .sql_catalog_repository import SqlCatalogRepository
 from .sql_category_index import SqlCategoryIndex
+from .sql_document_repository import SqlDocumentRepository
 from .sql_idempotency_store import SqlIdempotencyStore
 from .sql_stats_repository import SqlStatsRepository
 from .sql_transaction_repository import SqlTransactionRepository
@@ -27,6 +28,7 @@ class SqlUnitOfWork:
     stats: SqlStatsRepository
     budgets: SqlBudgetRepository
     index: SqlCategoryIndex
+    documents: SqlDocumentRepository
 
     def __init__(self, sessions: sessionmaker[Session], zone_name: str = "Asia/Seoul") -> None:
         self._sessions = sessions
@@ -47,6 +49,7 @@ class SqlUnitOfWork:
         self.stats = SqlStatsRepository(session, self._zone_name)
         self.budgets = SqlBudgetRepository(session)
         self.index = SqlCategoryIndex(session)
+        self.documents = SqlDocumentRepository(session)
         return self
 
     def __exit__(

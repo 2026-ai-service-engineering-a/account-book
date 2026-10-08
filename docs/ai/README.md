@@ -221,7 +221,8 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 | `GET` | `/v1/documents/{id}/chunks` | — (화면·평가) | 4 |
 | `POST` | `/v1/documents/search` | `search_documents` | 4 |
 
-기능 4의 검색은 기능 1의 `POST /v1/categories/suggest`와 같은 모양이다 — `agent`가 질문을
+기능 4의 키워드 검색 `GET /v1/documents/search`는 계약에 옮겼다(api-contract 6장). 남은 줄의 벡터 검색은
+기능 1의 `POST /v1/categories/suggest`와 같은 모양이다 — `agent`가 질문을
 임베딩해 벡터를 보내고, `api`는 유사도로 조각을 고른다. 조각의 임베딩은 기능 1의 색인 엔드포인트
 둘(`/v1/embeddings/pending`·`PUT /v1/embeddings/{text_hash}`)로 채운다. 늘어나는 색인 엔드포인트는 없다
 ([document-rag.md 7.1](document-rag.md#71-지금-정하는-것)).
@@ -242,15 +243,8 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 
 ### 7.3 테이블 (README 7장)
 
-기능 1의 `text_embeddings`·`category_rules`는 README 7장에 옮겼다.
-
-| 테이블 | 핵심 컬럼 | 기능 |
-|---|---|---|
-| `documents` | id, 제목(법령명), 출처, 법령일련번호, 시행일자, 원문, 넣은 시각 | 4 |
-| `document_chunks` | id, document_id, 청킹 설정 이름, 경로(법령·조·항·호), 원문, 임베딩할 글의 해시, 순서 | 4 |
-
-조각의 벡터는 따로 두지 않는다. 임베딩할 글의 해시로 `text_embeddings`를 같이 쓴다.
-청킹 설정 이름이 컬럼인 이유는 설정끼리 견주기 위해서다([document-rag.md 8장](document-rag.md#8-만드는-순서)).
+기능 1의 `text_embeddings`·`category_rules`와 기능 4의 `documents`·`document_chunks`는 README 7장에
+옮겼다. 남은 것이 없다. 조각의 벡터는 따로 두지 않는다 — `text_hash`로 `text_embeddings`를 같이 쓴다.
 
 ### 7.4 환경변수 (.env.sample)
 

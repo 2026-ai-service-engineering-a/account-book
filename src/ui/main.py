@@ -22,6 +22,7 @@ from ui.application.ports import (
     ChatAgent,
     Clock,
     DemoData,
+    DocumentGateway,
     ReportGateway,
     TransactionGateway,
 )
@@ -35,6 +36,7 @@ from ui.infrastructure.api import (
     ApiClient,
     HttpBudgetGateway,
     HttpCatalogGateway,
+    HttpDocumentGateway,
     HttpReportGateway,
     HttpTransactionGateway,
 )
@@ -42,6 +44,7 @@ from ui.infrastructure.memory import (
     MemoryBudgetGateway,
     MemoryCatalogGateway,
     MemoryDemoData,
+    MemoryDocumentGateway,
     MemoryReportGateway,
     MemoryStore,
     MemoryTransactionGateway,
@@ -93,6 +96,7 @@ def create_app(
             reports=reports,
             budgets=budgets,
             catalog=catalog,
+            documents=_documents(settings),
             suggester=_category_suggester(settings),
             chat=chat,
             narrator=ScriptedReportNarrator(),
@@ -133,6 +137,13 @@ def _memory_ledger(zone: ZoneInfo, clock: Clock, seeded: bool) -> _Ledger:
         MemoryCatalogGateway(store),
         MemoryDemoData(store, clock),
     )
+
+
+def _documents(settings: Settings) -> DocumentGateway:
+    """문서 검색. api가 없으면 조문 네 줄짜리 대역이 선다."""
+    if not settings.api_base_url:
+        return MemoryDocumentGateway()
+    return HttpDocumentGateway(ApiClient(settings.api_base_url, timeout=_API_TIMEOUT))
 
 
 def _capture_reader(settings: Settings, delay: float) -> CaptureReader:

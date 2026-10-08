@@ -4,6 +4,7 @@ from .category_change import CategoryChange
 from .category_evidence import CategoryEvidence
 from .category_query import CategoryQuery
 from .category_search import CategorySearch
+from .chunk_hit import ChunkHit
 from .frequency import Frequency
 from .idempotency_record import IdempotencyRecord
 from .index_text import IndexText
@@ -25,6 +26,7 @@ __all__ = [
     "CategoryEvidence",
     "CategoryQuery",
     "CategorySearch",
+    "ChunkHit",
     "Frequency",
     "IdempotencyRecord",
     "IndexText",

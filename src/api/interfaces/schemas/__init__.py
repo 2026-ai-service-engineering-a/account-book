@@ -4,6 +4,7 @@ from .budget_write import BudgetWrite
 from .candidate_body import CandidateBody
 from .category_body import CategoryBody
 from .category_change_body import CategoryChangeBody
+from .chunk_hit_body import ChunkHitBody
 from .embedding_body import EmbeddingBody
 from .error_body import ErrorBody
 from .error_response import ErrorResponse
@@ -29,6 +30,7 @@ __all__ = [
     "CandidateBody",
     "CategoryBody",
     "CategoryChangeBody",
+    "ChunkHitBody",
     "EmbeddingBody",
     "ErrorBody",
     "ErrorResponse",

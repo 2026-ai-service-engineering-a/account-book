@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}문서{% endblock %}
+{% block main %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">문서</h1>
+    <p class="page-description">카드·할부·전자금융·연말정산에 관한 법령 아홉 조문에서 찾습니다. 지금은 낱말로만 찾습니다.</p>
+  </div>
+</div>
+<div class="stack">
+  <form class="card" method="get" action="/documents" role="search">
+    <div class="card-content stack">
+      <div class="field">
+        <label class="label" for="q">무엇이 궁금한가요</label>
+        <input id="q" class="input" type="search" name="q" value="{{ query }}" maxlength="200"
+               placeholder="체력단련장 소득공제" autofocus>
+      </div>
+      <div class="doc-search-row">
+        <div class="field">
+          <label class="label" for="strategy">조각 나누기</label>
+          <select id="strategy" class="select" name="strategy">
+            {% for s in strategies %}<option value="{{ s.value }}" {% if s == strategy %}selected{% endif %}>{{ s.label }}</option>{% endfor %}
+          </select>
+        </div>
+        <button class="btn" type="submit">{{ icon("search") }}<span>찾기</span></button>
+      </div>
+    </div>
+  </form>
+
+  {% if not query %}
+  <div class="alert">{{ icon("info") }}<div class="alert-title">조문에 나오는 낱말로 찾아보세요.</div>
+    <div class="alert-description">"헬스장"보다 "체력단련장", "카드값 공제"보다 "신용카드등사용금액"이 잘 찾힙니다. 사람의 말로 찾는 검색은 다음 단계에서 붙습니다.</div></div>
+  {% elif not hits %}
+  <div class="alert">{{ icon("inbox") }}<div class="alert-title">찾은 조각이 없어요.</div></div>
+  {% else %}
+  {% for hit in hits %}
+  <article class="card">
+    <div class="card-content stack">
+      <div class="doc-hit-head">
+        <strong>{{ hit.title }} {{ hit.heading }}</strong>
+        <span class="small muted">점수 {{ "%.2f" | format(hit.score) }}</span>
+      </div>
+      <div class="quote doc-quote">{{ hit.body }}</div>
+      <div class="small muted">시행 {{ hit.effective_date.isoformat() }} · <code>{{ hit.id }}</code></div>
+    </div>
+  </article>
+  {% endfor %}
+  <p class="small muted">조문을 옮긴 것이고 법률 자문이 아닙니다. 시행일자 뒤에 법이 바뀌었을 수 있습니다.</p>
+  {% endif %}
+</div>
+{% endblock %}

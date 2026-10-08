@@ -7,6 +7,7 @@ from .routers import (
     budgets_router,
     catalog_router,
     category_search_router,
+    documents_router,
     health_router,
     reports_router,
     stats_router,
@@ -27,6 +28,7 @@ def build_web_app(services: Services) -> FastAPI:
         stats_router,
         budgets_router,
         category_search_router,
+        documents_router,
     ):
         app.include_router(module.router)
     install_error_translation(app)
