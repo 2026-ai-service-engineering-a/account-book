@@ -6,12 +6,13 @@ uvicorn agent.main:create_app --factory --port 8001
 from __future__ import annotations
 
 import logging
+import time
 
 from fastapi import FastAPI
 
-from agent.application.dto import ClassifyThresholds
+from agent.application.dto import ClassifyThresholds, LoopLimits
 from agent.application.ports import Embedder, LanguageModel, LedgerApi
-from agent.application.use_cases import ClassifyCategory, ReadCapture
+from agent.application.use_cases import AnswerQuestion, ClassifyCategory, ReadCapture
 from agent.infrastructure.http import HttpLedgerApi
 from agent.infrastructure.llm import LitellmEmbedder, LitellmLanguageModel
 from agent.infrastructure.settings import Settings
@@ -20,6 +21,9 @@ from agent.interfaces.web_app import build_web_app
 
 # 테스트가 설정 없이 가짜만 끼울 때 쓰는 갈림길. 운영 값은 Settings가 낸다.
 _DEFAULT_THRESHOLDS = ClassifyThresholds(min_confidence=0.7, abstain_below=0.25)
+# 대화 한 번의 벽시계 상한. 흐름이 정하는 값이다(docs/ai/agent-loop.md 8장 — 대화 20초).
+_CHAT_WALL_SECONDS = 20.0
+_DEFAULT_LIMITS = LoopLimits(max_steps=8, max_cost_usd=0.5, wall_seconds=_CHAT_WALL_SECONDS)
 
 
 def create_app(
@@ -32,11 +36,14 @@ def create_app(
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     # litellm은 호출마다 INFO 두 줄을 찍는다. 우리 로그(capture done …)가 그 사이에 묻힌다.
     logging.getLogger("LiteLLM").setLevel(logging.WARNING)
-    thresholds = _DEFAULT_THRESHOLDS
+    thresholds, limits = _DEFAULT_THRESHOLDS, _DEFAULT_LIMITS
     if model is None or ledger is None:
         settings = settings or Settings()
         thresholds = ClassifyThresholds(
             settings.classify_min_confidence, settings.classify_abstain_below
+        )
+        limits = LoopLimits(
+            settings.agent_max_steps, settings.agent_max_cost_usd, _CHAT_WALL_SECONDS
         )
         model = model or LitellmLanguageModel(
             settings.agent_model, settings.api_key(), timeout=settings.agent_timeout_seconds
@@ -52,4 +59,7 @@ def create_app(
                 timeout=settings.agent_timeout_seconds,
             )
     classify = ClassifyCategory(ledger, model, thresholds, embedder)
-    return build_web_app(Services(read_capture=ReadCapture(model, classify), classify=classify))
+    answer = AnswerQuestion(model, ledger, limits, time.perf_counter)
+    return build_web_app(
+        Services(read_capture=ReadCapture(model, classify), classify=classify, answer=answer)
+    )
