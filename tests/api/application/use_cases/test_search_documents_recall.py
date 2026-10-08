@@ -93,4 +93,4 @@ def test_recall_at_five_by_strategy(migrated):
         mrr = sum(1 / g.rank for g in graded if g.rank) / len(graded)
         right = " ".join(f"{g.case}@{g.rank}" for g in graded if g.rank)
         print(f"{strategy.value:16} {recall:>9.2f} {mrr:>6.2f}  {right or '-'}")
-        assert len(graded) == 12  # 답이 있거나 일부 있는 질문
+        assert len(graded) == 30  # 답이 있거나 일부 있는 질문

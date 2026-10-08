@@ -14,6 +14,7 @@ from agent.application.dto import ClassifyThresholds, LoopLimits, RetrievalDefau
 from agent.application.ports import Embedder, LanguageModel, LedgerApi
 from agent.application.use_cases import (
     AnswerQuestion,
+    AskDocuments,
     ClassifyCategory,
     ReadCapture,
     Retrieve,
@@ -80,5 +81,6 @@ def create_app(
             classify=classify,
             answer=answer,
             retrieve=retrieve,
+            ask=AskDocuments(retrieve, model),
         )
     )

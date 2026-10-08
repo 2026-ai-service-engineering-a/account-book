@@ -5,7 +5,13 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
-from agent.application.use_cases import AnswerQuestion, ClassifyCategory, ReadCapture, Retrieve
+from agent.application.use_cases import (
+    AnswerQuestion,
+    AskDocuments,
+    ClassifyCategory,
+    ReadCapture,
+    Retrieve,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,6 +22,7 @@ class Services:
     classify: ClassifyCategory
     answer: AnswerQuestion
     retrieve: Retrieve
+    ask: AskDocuments
 
 
 def get_services(request: Request) -> Services:

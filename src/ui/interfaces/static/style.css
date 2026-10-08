@@ -407,3 +407,6 @@ a.badge:hover { background: var(--accent); }
 .doc-search-row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
 .doc-hit-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .doc-quote { margin: 0; white-space: pre-line; }
+.doc-answer { margin: 0; font-size: 15px; line-height: 1.6; }
+.doc-source { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; }
+.doc-source summary { cursor: pointer; font-weight: 500; }

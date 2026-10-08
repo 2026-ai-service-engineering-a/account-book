@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from agent.application.dto import ToolCall, ToolError, ToolMeta, ToolResult, ToolStep
-from agent.application.use_cases.number_check import numbers_from_tools, unsupported
+from agent.application.use_cases.number_check import numbers_from_tools, numbers_in, unsupported
 from agent.domain.values import TimeRange
 from tests.agent.conftest import SEOUL
 
@@ -47,3 +47,9 @@ def test_signs_are_dropped_so_a_decrease_can_be_told():
 def test_failed_steps_lend_no_numbers():
     failed = ToolStep(STEP.call, ToolResult("c1", error=ToolError("not_found", False, "x")))
     assert unsupported("7번이에요.", numbers_from_tools([failed], TODAY)) == ["7"]
+
+
+def test_numbers_in_a_text_see_fractions_as_their_parts():
+    found = numbers_in("대중교통이용분 \N{MULTIPLICATION SIGN} 100분의 40, 연 250만원")
+    assert {"100", "40", "250"} <= found
+    assert unsupported("40%예요.", found) == []
