@@ -17,7 +17,7 @@ MOCK_PORT ?= 8081
 UI_PORT ?= 8080
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up dev prod down shell mock ui agent seed demo docs psql review check lint format type test test-db measure-docs eval eval-chat eval-docs all
+.PHONY: help env build up dev prod down shell mock ui agent seed demo docs psql review check lint format type test test-db measure-docs eval eval-chat eval-docs eval-qa all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -116,6 +116,9 @@ eval:  ## 카테고리 고르기 평가 — 실제 모델. make dev로 ui·agent
 
 eval-docs:  ## 문서 찾기 평가 — 청킹 3 × 방법 3 × k 3, 실제 임베딩. make docs를 먼저
 	$(COMPOSE) exec -T agent pytest -m integration -s -q tests/agent/application/use_cases/test_retrieve_eval.py
+
+eval-qa:  ## 문서 Q&A 평가 — 같은 모델로 기준선(검색 없음)과 RAG, 질문 35건. make docs를 먼저
+	$(COMPOSE) exec -T agent pytest -m integration -s -q tests/agent/application/use_cases/test_ask_documents_eval.py
 
 eval-chat:  ## 대화 통계 평가 — 실제 모델. make dev로 api·agent가 떠 있어야 한다
 	$(COMPOSE) exec -T agent pytest -m integration -s -q tests/agent/application/use_cases/test_answer_question_eval.py
