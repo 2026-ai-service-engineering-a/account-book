@@ -197,9 +197,10 @@ AI 기능은 도구·엔드포인트·테이블·환경변수를 늘린다. **�
 
 | 도구 | 하는 일 | 권한 | 기능 |
 |---|---|---|---|
-| `count_frequency` | 기간 내 건수·방문 일수·평균 간격 | 읽기 — 자동 | 2 |
-| `compare_periods` | 두 기간의 카테고리별 증감 | 읽기 — 자동 | 2 · 3 |
 | `detect_outliers` | 평소와 다른 지출 골라내기 | 읽기 — 자동 | 3 |
+
+`count_frequency`·`compare_periods`는 README 4장에 옮겼다. 엔드포인트와 함께 옮긴다 —
+README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 본다.
 
 `suggest_category`는 이미 있다. 기능 1은 도구를 늘리지 않고 그 도구가 돌려주는 것을
 늘렸다 — 후보 하나에서 후보 + 근거로. 반영했다(README 4장).
@@ -208,14 +209,14 @@ AI 기능은 도구·엔드포인트·테이블·환경변수를 늘린다. **�
 
 | 메서드 | 경로 | 대응 도구 | 기능 |
 |---|---|---|---|
-| `GET` | `/v1/stats/frequency` | `count_frequency` | 2 |
-| `GET` | `/v1/stats/compare` | `compare_periods` | 2 · 3 |
 | `GET` | `/v1/stats/outliers` | `detect_outliers` | 3 |
 
-기능 1의 색인 엔드포인트 둘은 계약에 옮겼다(api-contract 6장).
+기능 1의 색인 엔드포인트 둘과 기능 2의 `/v1/stats/frequency`·`/v1/stats/compare`는 계약에
+옮겼다(api-contract 6장).
 
-`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)다. 기록의 `POST /capture`와 기능 1의
-`POST /classify`는 이미 붙었다 — 정본은
+`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)다. 기록의 `POST /capture`, 기능 1의
+`POST /classify`, 기능 2의 `POST /chat`(SSE)은 이미 붙었다 — `/chat`의 정본은
+[../../ui_docs/pages/chat.md 4.1](../../ui_docs/pages/chat.md#41-sse-이벤트가-화면으로), 나머지 둘은
 [../../ui_docs/pages/transaction-form.md 4.5](../../ui_docs/pages/transaction-form.md#45-agent와-주고받는-것--post-capture)와
 [4.1](../../ui_docs/pages/transaction-form.md#41-카테고리는-ai로-고르기를-누를-때만-고른다).
 `agent`의 표면은 계약 문서에 없다 — `ui`만 부르고, 화면 문서가 정본이다.

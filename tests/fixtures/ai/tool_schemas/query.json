@@ -1,0 +1,378 @@
+[
+  {
+    "name": "summarize_spending",
+    "description": "기간 안의 지출 합과 수입 합을 낸다. 카테고리·가맹점으로 좁힐 수 있다.\n몇 번인지는 count_frequency, 두 기간을 견주는 건 compare_periods를 쓴다.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "object",
+          "description": "기간은 이름만 고른다. 날짜를 계산하지 않는다. 최근 n일은 days, 특정 달은 month(YYYY-MM), 질문에 날짜가 적혔을 때만 range로 start·end(YYYY-MM-DD, 끝 날짜 포함)를 그대로 옮긴다.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "enum": [
+                "today",
+                "yesterday",
+                "this_week",
+                "last_week",
+                "this_month",
+                "last_month",
+                "this_year",
+                "last_n_days",
+                "month",
+                "range"
+              ]
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            },
+            "month": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "start": {
+              "type": "string",
+              "format": "date"
+            },
+            "end": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "category_id": {
+          "type": "string",
+          "description": "카테고리 사전에 있는 id만. 사전에 없으면 비우고 merchant로 찾는다."
+        },
+        "merchant": {
+          "type": "string",
+          "description": "가맹점·메모에 든 글자(부분 일치)."
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "expense",
+            "income"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "count_frequency",
+    "description": "기간 안의 거래 건수와 거래가 있던 날 수, 날 사이 평균 간격, 회당 평균을 센다.\n금액 합계가 필요하면 이 도구가 아니라 summarize_spending을 쓴다.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "object",
+          "description": "기간은 이름만 고른다. 날짜를 계산하지 않는다. 최근 n일은 days, 특정 달은 month(YYYY-MM), 질문에 날짜가 적혔을 때만 range로 start·end(YYYY-MM-DD, 끝 날짜 포함)를 그대로 옮긴다.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "enum": [
+                "today",
+                "yesterday",
+                "this_week",
+                "last_week",
+                "this_month",
+                "last_month",
+                "this_year",
+                "last_n_days",
+                "month",
+                "range"
+              ]
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            },
+            "month": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "start": {
+              "type": "string",
+              "format": "date"
+            },
+            "end": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "category_id": {
+          "type": "string",
+          "description": "카테고리 사전에 있는 id만. 사전에 없으면 비우고 merchant로 찾는다."
+        },
+        "merchant": {
+          "type": "string",
+          "description": "가맹점·메모에 든 글자(부분 일치)."
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "expense",
+            "income"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "compare_periods",
+    "description": "두 기간의 지출을 카테고리별로 견주어 합과 증감(b - a, 금액·비율)을 낸다.\n한 기간의 합만 필요하면 summarize_spending을 쓴다.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "a": {
+          "type": "object",
+          "description": "기간은 이름만 고른다. 날짜를 계산하지 않는다. 최근 n일은 days, 특정 달은 month(YYYY-MM), 질문에 날짜가 적혔을 때만 range로 start·end(YYYY-MM-DD, 끝 날짜 포함)를 그대로 옮긴다.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "enum": [
+                "today",
+                "yesterday",
+                "this_week",
+                "last_week",
+                "this_month",
+                "last_month",
+                "this_year",
+                "last_n_days",
+                "month",
+                "range"
+              ]
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            },
+            "month": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "start": {
+              "type": "string",
+              "format": "date"
+            },
+            "end": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "b": {
+          "type": "object",
+          "description": "기간은 이름만 고른다. 날짜를 계산하지 않는다. 최근 n일은 days, 특정 달은 month(YYYY-MM), 질문에 날짜가 적혔을 때만 range로 start·end(YYYY-MM-DD, 끝 날짜 포함)를 그대로 옮긴다.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "enum": [
+                "today",
+                "yesterday",
+                "this_week",
+                "last_week",
+                "this_month",
+                "last_month",
+                "this_year",
+                "last_n_days",
+                "month",
+                "range"
+              ]
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            },
+            "month": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "start": {
+              "type": "string",
+              "format": "date"
+            },
+            "end": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "category_id": {
+          "type": "string",
+          "description": "카테고리 사전에 있는 id만. 사전에 없으면 비우고 merchant로 찾는다."
+        }
+      },
+      "required": [
+        "a",
+        "b"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_budget_status",
+    "description": "한 달의 카테고리별 예산·쓴 돈·남은 돈·소진율·말일 예상을 낸다.\n예산은 달 단위다. 주·일 기간이나 예산과 상관없는 지출 합에는 쓰지 않는다.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "object",
+          "description": "기간은 이름만 고른다. 날짜를 계산하지 않는다. 최근 n일은 days, 특정 달은 month(YYYY-MM), 질문에 날짜가 적혔을 때만 range로 start·end(YYYY-MM-DD, 끝 날짜 포함)를 그대로 옮긴다.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "enum": [
+                "today",
+                "yesterday",
+                "this_week",
+                "last_week",
+                "this_month",
+                "last_month",
+                "this_year",
+                "last_n_days",
+                "month",
+                "range"
+              ]
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            },
+            "month": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "start": {
+              "type": "string",
+              "format": "date"
+            },
+            "end": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "category_id": {
+          "type": "string",
+          "description": "카테고리 사전에 있는 id만. 사전에 없으면 비우고 merchant로 찾는다."
+        }
+      },
+      "required": [
+        "period"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "search_transactions",
+    "description": "기간 안의 거래를 최근 것부터 한 줄씩 보여준다(기본 20건, 최대 50건).\n합계·건수·비교를 세려고 쓰지 않는다 — summarize_spending·count_frequency·compare_periods를 쓴다.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "object",
+          "description": "기간은 이름만 고른다. 날짜를 계산하지 않는다. 최근 n일은 days, 특정 달은 month(YYYY-MM), 질문에 날짜가 적혔을 때만 range로 start·end(YYYY-MM-DD, 끝 날짜 포함)를 그대로 옮긴다.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "enum": [
+                "today",
+                "yesterday",
+                "this_week",
+                "last_week",
+                "this_month",
+                "last_month",
+                "this_year",
+                "last_n_days",
+                "month",
+                "range"
+              ]
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            },
+            "month": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "start": {
+              "type": "string",
+              "format": "date"
+            },
+            "end": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "category_id": {
+          "type": "string",
+          "description": "카테고리 사전에 있는 id만. 사전에 없으면 비우고 merchant로 찾는다."
+        },
+        "merchant": {
+          "type": "string",
+          "description": "가맹점·메모에 든 글자(부분 일치)."
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "expense",
+            "income"
+          ]
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": [
+        "period"
+      ],
+      "additionalProperties": false
+    }
+  }
+]

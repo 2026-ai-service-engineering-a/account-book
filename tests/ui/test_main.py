@@ -3,14 +3,18 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from tests.ui.conftest import FixedClock
-from ui.infrastructure.agent import AgentCaptureReader, AgentCategorySuggester
+from ui.infrastructure.agent import (
+    AgentCaptureReader,
+    AgentCategorySuggester,
+    RoutedChatAgent,
+)
 from ui.infrastructure.api import (
     HttpBudgetGateway,
     HttpCatalogGateway,
     HttpReportGateway,
     HttpTransactionGateway,
 )
-from ui.infrastructure.scripted import ScriptedCaptureReader
+from ui.infrastructure.scripted import ScriptedCaptureReader, ScriptedChatAgent
 from ui.infrastructure.settings import Settings
 from ui.main import create_app
 
@@ -26,7 +30,8 @@ def test_agent_address_brings_the_real_reader():
     services = create_app(settings, clock=FixedClock(), seeded=False).state.services
     assert isinstance(services.capture, AgentCaptureReader)
     assert isinstance(services.suggester, AgentCategorySuggester)
-    assert services.live_seats == {"capture", "classify"}
+    assert isinstance(services.chat, RoutedChatAgent)  # 질문만 agent로, 기록은 대역으로
+    assert services.live_seats == {"capture", "classify", "query"}
 
 
 def test_api_address_brings_the_http_gateways_and_hides_the_demo_buttons():
@@ -50,3 +55,8 @@ def test_seeded_flag_decides_first_screen():
     empty = TestClient(create_app(clock=FixedClock(), seeded=False)).get("/transactions")
     assert "아직 기록이 없어요" not in seeded.text
     assert "아직 기록이 없어요" in empty.text
+
+
+def test_without_an_agent_the_chat_is_the_scripted_stand_in():
+    services = create_app(Settings(_env_file=None), clock=FixedClock(), seeded=False).state.services
+    assert isinstance(services.chat, ScriptedChatAgent)

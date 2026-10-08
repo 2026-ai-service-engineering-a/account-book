@@ -76,10 +76,32 @@ def test_question_is_answered_from_report(agent, store):
     )
     events = collect(agent.run("이번 달 카페에 얼마 썼어?"))
     assert events[0].text == "summarize_spending"
-    assert events[-2].text == "이번 달 카페에 31,000원 썼어요."
+    assert events[-2].text == "이번 달(9/1~9/17) 카페에 31,000원 썼어요."
     assert "".join(e.text for e in events if e.kind == "token") == events[-2].text
 
 
 def test_unknown_sentence_admits_it_is_scripted(agent):
     events = collect(agent.run("안녕"))
     assert "각본 대역" in events[-2].text
+
+
+def test_last_month_names_its_whole_range(agent):
+    events = collect(agent.run("지난달 얼마 썼어?"))
+    assert events[-2].text.startswith("지난달(8/1~8/31) 지출은")
+
+
+@pytest.mark.parametrize("question", ["8월 식비는?", "지지난 달 식비 얼마?", "저번 주 카페 얼마?"])
+def test_periods_it_cannot_read_are_admitted_not_guessed(agent, question):
+    events = collect(agent.run(question))
+    # 집계를 부르지 않는다 — tool 이벤트가 없다
+    assert [e.kind for e in events if e.kind != "token"] == ["message", "done"]
+    assert "이번 달과 지난달만" in events[-2].text
+
+
+def test_last_month_compares_with_the_month_before_it(agent, store):
+    gateway = MemoryTransactionGateway(store)
+    asyncio.run(gateway.create(draft(amount=5_000, month=7), key("july")))
+    asyncio.run(gateway.create(draft(amount=9_000, month=8), key("august")))
+    text = collect(agent.run("지난달 식비 얼마 썼어?"))[-2].text
+    # "지난달(8월) … 지난달보다"가 아니다 — 견주는 건 그 전 달(7월)이다
+    assert text == "지난달(8/1~8/31) 식비에 9,000원 썼어요. 그 전 달보다 4,000원 많습니다."

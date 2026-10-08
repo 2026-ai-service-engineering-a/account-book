@@ -30,7 +30,15 @@ def test_income_and_question():
     parser = UtteranceParser()
     assert parser.parse("월급 3200000원 들어왔어").direction == Direction.INCOME
     question = parser.parse("지난달 카페에 얼마 썼어?")
-    assert question.is_question and question.previous_month
+    assert question.is_question and question.previous_month and not question.other_period
+
+
+def test_periods_beyond_this_and_last_month_are_flagged():
+    parser = UtteranceParser()
+    for text in ("8월 식비는?", "10월 식비 얼마", "지지난 달 식비", "저번 주 카페", "올해 얼마"):
+        assert parser.parse(text).other_period, text
+    for text in ("이번 달 식비 얼마 썼어?", "지난 달 주거 얼마?", "월급 얼마 들어왔어?"):
+        assert not parser.parse(text).other_period, text
 
 
 def test_korean_units_and_clock():

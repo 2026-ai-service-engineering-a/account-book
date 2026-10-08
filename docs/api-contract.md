@@ -146,6 +146,8 @@ X-Agent-Run-Id: 01J9X...
 | `PATCH` | `/v1/transactions/{id}` | `update_transaction` | 임계값 이상 |
 | `DELETE` | `/v1/transactions/{id}` | `delete_transaction` | **항상** |
 | `GET` | `/v1/summary` | `summarize_spending` | — |
+| `GET` | `/v1/stats/frequency` | `count_frequency` | — |
+| `GET` | `/v1/stats/compare` | `compare_periods` | — |
 | `GET` | `/v1/reports/monthly` | — (화면) | — |
 | `GET` | `/v1/reports/pace` | — (화면) | — |
 | `GET` | `/v1/budgets/status` | `get_budget_status` | — |
@@ -167,9 +169,28 @@ X-Agent-Run-Id: 01J9X...
 에이전트가 합산하게 두지 않는다. LLM에게 산수를 시키지 않는다는 원칙(README 1장)이
 계약 수준에서 지켜져야 하는 자리다.
 
-- `summary`의 걸름은 거래 목록과 같다(`period`·`direction`·`category_id`·`q`) — 목록과 합계가 다른 거래를 세지 않는다.
+- `summary`의 걸름은 거래 목록과 같다(`period` 또는 `from`·`to`, `direction`·`category_id`·`q`) — 목록과 합계가 다른 거래를 세지 않는다.
 - 화면용 `reports/monthly`는 합계·지난달 대비·카테고리별 증감·최근 여섯 달을, `reports/pace`는 한 카테고리의
   날짜별 누적과 말일 예상·넘는 날을 낸다. "그날"은 사용자 타임존의 날이다.
+
+### 기간 집계는 이름이 아니라 경계로 받는다
+
+`stats/*`는 기간을 `from`·`to`로 받는다. 오프셋이 붙은 ISO 8601 시각이고 `[from, to)`다.
+"저번 주"·"최근 3일"을 날짜로 푸는 일은 부르는 쪽(`agent`)이 사용자 타임존으로
+한다([ai/chat-analytics.md 5장](ai/chat-analytics.md#5-기간--llm에게-날짜를-계산시키지-않는다)).
+기간 이름도 `period=YYYY-MM`도 받지 않는다.
+
+- 오프셋이 없는 시각, `from >= to`는 `422 validation_error`다. 쿼리 문자열에서 `+09:00`의 `+`는
+  `%2B`로 보낸다 — 그대로 보내면 공백이 되어 422가 난다.
+- `frequency`의 걸름은 `summary`와 같다(`direction`·`category_id`·`q`) — 목록이 보여주는 거래와
+  센 거래가 같다. `direction`의 기본만 `expense`다. 수입과 섞으면 회당 평균이 뜻을 잃는다.
+- `frequency`는 `count`, `day_count`(거래가 있던 사용자 타임존의 날 수), `avg_gap_days`(그 날들
+  사이 평균 간격, 소수 한 자리), `avg_amount`(회당 평균, 원 단위 반올림)를 낸다. 날이 둘
+  미만이면 `avg_gap_days`가, 0건이면 `avg_amount`도 `null`이다 — 0건은 "평균 0원"이 아니다.
+- `compare`는 `a_from`·`a_to`·`b_from`·`b_to`와 `category_id`를 받아 지출 카테고리별 `a`·`b` 합,
+  `delta`(b - a), `percent`(a 대비 절댓값, a가 0이면 `null`)를 `b`가 큰 순서로 낸다. 둘 다 0인
+  카테고리는 빠지지만 `category_id`로 집어 물으면 0이어도 한 줄이 온다.
+- "지난달보다 늘었나"를 같은 날까지로 견줄지는 부르는 쪽이 `a`의 끝을 잘라서 정한다.
 
 ### 예산은 바꿀 때까지 이어진다
 
@@ -186,7 +207,9 @@ X-Agent-Run-Id: 01J9X...
 `GET /v1/transactions`는 기본 50건, 최대 200건을 넘기지 않는다. 커서로 넘긴다.
 에이전트가 3년치 거래를 통째로 받아 컨텍스트에 밀어 넣는 일을 계약이 막는다.
 
-- 기간은 `period=YYYY-MM` — 사용자 타임존의 달이다. 경계는 `api`가 계산한다. 없으면 기간 없이 최근 것부터.
+- 기간은 `period=YYYY-MM`(사용자 타임존의 달, 경계는 `api`가 계산한다)이나 `from`·`to`(`[from, to)`, 오프셋이
+  붙은 시각) 중 하나다. 둘을 함께 보내면 422다. 없으면 기간 없이 최근 것부터. 화면은 달을, `agent`는
+  경계를 쓴다 — "이번 주"는 달로 표현되지 않는다.
 - 그 밖의 걸름: `direction`, `category_id`, `q`(가맹점·메모에 든 글자).
 - 커서는 불투명한 문자열이다. 안은 (`occurred_at`, `id`) 키셋이라 앞쪽에 거래가 끼어들어도 다음 쪽이
   밀리거나 겹치지 않는다. 못 읽는 커서는 첫 쪽부터 다시 준다.

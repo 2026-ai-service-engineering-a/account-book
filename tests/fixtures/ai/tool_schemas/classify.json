@@ -1,0 +1,28 @@
+[
+  {
+    "name": "suggest_category",
+    "description": "가맹점·메모로 카테고리 후보와 근거 거래, 그 방향의 카테고리 사전을 낸다.\n이미 기록된 거래를 찾거나 세는 데는 쓰지 않는다 — 새 기록의 카테고리를 고를 때만.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "merchant": {
+          "type": "string"
+        },
+        "memo": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "expense",
+            "income"
+          ]
+        }
+      },
+      "required": [
+        "merchant"
+      ],
+      "additionalProperties": false
+    }
+  }
+]

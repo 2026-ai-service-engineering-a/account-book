@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import ROUND_HALF_UP, Decimal
 from types import TracebackType
 from typing import Self
 from zoneinfo import ZoneInfo
 
 from api.application.dto import (
+    Frequency,
     IdempotencyRecord,
     StoredReply,
     Totals,
@@ -124,6 +126,21 @@ class FakeStats:
             Money.total(t.amount for t in rows if t.direction is Direction.INCOME),
         )
 
+    def frequency(self, query: TransactionQuery) -> Frequency:
+        rows = [
+            t
+            for t in self._rows(query.start, query.end)
+            if (query.direction is None or t.direction is query.direction)
+            and (query.category_id is None or t.category_id == query.category_id)
+            and (not query.text or query.text in t.merchant or query.text in t.memo)
+        ]
+        days = sorted({t.occurred_at.astimezone(SEOUL).date() for t in rows})
+        span = (days[-1] - days[0]).days if days else 0
+        gap = float(_half_up(Decimal(span) / (len(days) - 1), "0.1")) if len(days) > 1 else None
+        total = Money.total(t.amount for t in rows)
+        average = Money(int(_half_up(Decimal(total.amount) / len(rows), "1"))) if rows else None
+        return Frequency(len(rows), len(days), gap, average)
+
     def spent_by_category(self, start: datetime, end: datetime) -> dict[CategoryId, Money]:
         out: dict[CategoryId, Money] = {}
         for t in self._rows(start, end):
@@ -142,6 +159,11 @@ class FakeStats:
 
     def first_occurred_at(self) -> datetime | None:
         return min((t.occurred_at for t in self._transactions.rows.values()), default=None)
+
+
+def _half_up(value: Decimal, places: str) -> Decimal:
+    """Postgres의 round()처럼 .5를 0에서 멀어지는 쪽으로. 파이썬 round()는 짝수로 간다."""
+    return value.quantize(Decimal(places), rounding=ROUND_HALF_UP)
 
 
 class FakeBudgets:

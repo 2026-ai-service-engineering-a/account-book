@@ -18,3 +18,4 @@ class ParsedUtterance:
     merchant: str
     is_question: bool
     previous_month: bool
+    other_period: bool  # 이번 달·지난달 밖의 기간을 말했나 — 대역은 그 기간을 못 읽는다

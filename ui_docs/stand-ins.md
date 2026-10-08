@@ -8,8 +8,8 @@
 | 자리 | 진짜 | 대역이 서는 때 |
 |---|---|---|
 | api 자리(거래·카탈로그·집계·예산) | `Http*Gateway` → `api` | `API_BASE_URL`이 비었을 때 — 테스트, api 없이 화면만 볼 때 |
-| AI 자리(기록, 카테고리 고르기) | `Agent*` → `agent` | `AGENT_BASE_URL`이 비었을 때 — 키 없이 볼 때 |
-| 나머지 AI 자리(채팅, 리포트 문장) | 아직 없다 | 언제나 |
+| AI 자리(기록, 카테고리 고르기, 채팅의 질문) | `Agent*` → `agent` | `AGENT_BASE_URL`이 비었을 때 — 키 없이 볼 때 |
+| 나머지 AI 자리(채팅의 기록 문장, 리포트 문장) | 아직 없다 | 언제나 |
 
 ui 테스트는 언제나 대역으로 돈다. 개발용 `.env`에 주소가 있어도 부르지 않는다.
 
@@ -36,7 +36,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 | 포트 | 대신하는 판단 | 지금 서 있는 대역 | 진짜가 올 곳 |
 |---|---|---|---|
-| `ChatAgent` | 자연어 한 줄 → 거래 제안이나 답 | `ScriptedChatAgent` — 정해진 모양만 알아듣는다 | `agent`의 `POST /chat` SSE |
+| `ChatAgent` | 자연어 한 줄 → 거래 제안이나 답 | `ScriptedChatAgent` — 정해진 모양만 알아듣는다 | **질문 쪽이 붙었다.** `RoutedChatAgent`가 금액이 있고 묻는 말이 아닌 한 줄은 기록으로 보고 대역에, 나머지는 질문으로 보고 `AgentChatAgent` → `agent`의 `POST /chat` SSE에 보낸다([../docs/ai/chat-analytics.md](../docs/ai/chat-analytics.md)). 기록 쪽은 아직 대역 |
 | `CategorySuggester` | 가맹점·메모 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | **붙었다.** `AgentCategorySuggester` → `agent`의 `POST /classify`([pages/transaction-form.md 4.1](pages/transaction-form.md#41-카테고리는-ai로-고르기를-누를-때만-고른다)) |
 | `ReportNarrator` | 리포트의 "눈에 띈 것" 문장 | `ScriptedReportNarrator` — 규칙 문구 | 아직 안 정했다([pages/reports.md 3.2](pages/reports.md#32-눈에-띈-것은-문장으로-낸다)) |
 | `CaptureReader` | 카드 문자나 말로 쓴 한 줄 → 거래 칸 (기록) | `ScriptedCaptureReader` — 승인 문자 한 모양과 채팅 대역의 귀 | **붙었다.** `AgentCaptureReader` → `agent`의 `POST /capture`([pages/transaction-form.md 4.5](pages/transaction-form.md#45-agent와-주고받는-것--post-capture)) |
@@ -51,6 +51,9 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 - 기록 — 금액이 든 한 줄. `어제 점심 김밥천국 8500원 카드로`, `이마트 3만원 현금`
 - 질문 — `얼마`·`보여줘`·`?`가 든 한 줄. `이번 달 식비 얼마 썼어?`, `지난달 카페에 얼마 썼어?`
+  기간은 이번 달과 지난달만 읽고, 답에 읽은 기간을 날짜로 밝힌다 — `이번 달(10/1~10/8)`.
+  `8월`·`지지난 달`·`저번 주`처럼 그 밖의 기간을 말하면 못 읽는다고 답한다. 이번 달로 바꿔
+  답하지 않는다 — 틀린 기간의 숫자는 그럴듯해서 사용자가 알아채지 못한다.
   금액은 `5천원`·`1만5천원`처럼 써도 되고, 시각은 `오후 3시`·`3시 반`, 가맹점은 `카페에서`처럼
   장소 조사가 붙은 낱말을 먼저 본다. 말하지 않은 날짜·결제수단은 채우지 않는다.
 - 카드 문자 — `신한카드(1234)승인 8,500원 09/16 12:31 김밥천국 누적…` 모양 하나. 누적·잔액
