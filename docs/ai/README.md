@@ -13,17 +13,22 @@
 
 ---
 
-## 1. 세 기능
+## 1. 네 기능
 
 | # | 기능 | 사람이 하던 판단 | 도는 곳 | 문서 |
 |---|---|---|---|---|
 | 1 | 카테고리 고르기 | 드롭다운에서 카테고리 선택 | `api` 검색 + `agent` 판단 | [category-suggestion-rag.md](category-suggestion-rag.md) |
 | 2 | 대화로 묻는 통계 | 화면·필터를 옮겨 다니며 세기 | `agent` 대화 루프 | [chat-analytics.md](chat-analytics.md) |
 | 3 | 상황에 맞는 통계 | 고정 차트를 눈으로 훑기 | `agent` 계획 루프 | [agentic-reports.md](agentic-reports.md) |
+| 4 | 문서 Q&A | 법령을 검색해 조문을 찾아 읽기 | `api` 검색 + `agent` 생성 | [document-rag.md](document-rag.md) |
 
-셋은 난이도 순이 아니라 **자유도 순**이다. 1번은 답이 카테고리 목록 안에 있고, 2번은 답이
+1~3은 난이도 순이 아니라 **자유도 순**이다. 1번은 답이 카테고리 목록 안에 있고, 2번은 답이
 도구 조합 안에 있고, 3번은 무엇을 볼지까지 AI가 정한다. 자유도가 올라갈수록 검증이
 빡빡해진다. 문서가 길어지는 이유도 거기 있다.
+
+4번은 이 축에서 1번 옆이다 — 답이 검색이 좁혀 놓은 조각 안에 있다. 다른 점은 답이 숫자나
+목록의 값이 아니라 **문서의 문장**이라는 것이다. 그래서 검증이 "숫자가 DB에서 왔나"가 아니라
+"주장이 인용한 조각에 있나"가 된다. 전통적인 RAG를 단계마다 재며 만드는 자리이기도 하다(이슈 #11).
 
 ### 가로지르는 문서
 
@@ -198,6 +203,7 @@ AI 기능은 도구·엔드포인트·테이블·환경변수를 늘린다. **�
 | 도구 | 하는 일 | 권한 | 기능 |
 |---|---|---|---|
 | `detect_outliers` | 평소와 다른 지출 골라내기 | 읽기 — 자동 | 3 |
+| `search_documents` | 질문에 맞는 문서 조각과 경로·시행일자 찾기 | 읽기 — 자동 | 4 |
 
 `count_frequency`·`compare_periods`는 README 4장에 옮겼다. 엔드포인트와 함께 옮긴다 —
 README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 본다.
@@ -210,11 +216,20 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 | 메서드 | 경로 | 대응 도구 | 기능 |
 |---|---|---|---|
 | `GET` | `/v1/stats/outliers` | `detect_outliers` | 3 |
+| `POST` | `/v1/documents` | — (문서 넣기) | 4 |
+| `GET` | `/v1/documents` | — (화면) | 4 |
+| `GET` | `/v1/documents/{id}/chunks` | — (화면·평가) | 4 |
+| `POST` | `/v1/documents/search` | `search_documents` | 4 |
+
+기능 4의 검색은 기능 1의 `POST /v1/categories/suggest`와 같은 모양이다 — `agent`가 질문을
+임베딩해 벡터를 보내고, `api`는 유사도로 조각을 고른다. 조각의 임베딩은 기능 1의 색인 엔드포인트
+둘(`/v1/embeddings/pending`·`PUT /v1/embeddings/{text_hash}`)로 채운다. 늘어나는 색인 엔드포인트는 없다
+([document-rag.md 7.1](document-rag.md#71-지금-정하는-것)).
 
 기능 1의 색인 엔드포인트 둘과 기능 2의 `/v1/stats/frequency`·`/v1/stats/compare`는 계약에
 옮겼다(api-contract 6장).
 
-`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)다. 기록의 `POST /capture`, 기능 1의
+`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)와 `POST /ask`(기능 4)다. 기록의 `POST /capture`, 기능 1의
 `POST /classify`, 기능 2의 `POST /chat`(SSE)은 이미 붙었다 — `/chat`의 정본은
 [../../ui_docs/pages/chat.md 4.1](../../ui_docs/pages/chat.md#41-sse-이벤트가-화면으로), 나머지 둘은
 [../../ui_docs/pages/transaction-form.md 4.5](../../ui_docs/pages/transaction-form.md#45-agent와-주고받는-것--post-capture)와
@@ -227,7 +242,15 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 
 ### 7.3 테이블 (README 7장)
 
-기능 1의 `text_embeddings`·`category_rules`는 README 7장에 옮겼다. 남은 것이 없다.
+기능 1의 `text_embeddings`·`category_rules`는 README 7장에 옮겼다.
+
+| 테이블 | 핵심 컬럼 | 기능 |
+|---|---|---|
+| `documents` | id, 제목(법령명), 출처, 법령일련번호, 시행일자, 원문, 넣은 시각 | 4 |
+| `document_chunks` | id, document_id, 청킹 설정 이름, 경로(법령·조·항·호), 원문, 임베딩할 글의 해시, 순서 | 4 |
+
+조각의 벡터는 따로 두지 않는다. 임베딩할 글의 해시로 `text_embeddings`를 같이 쓴다.
+청킹 설정 이름이 컬럼인 이유는 설정끼리 견주기 위해서다([document-rag.md 8장](document-rag.md#8-만드는-순서)).
 
 ### 7.4 환경변수 (.env.sample)
 
@@ -238,6 +261,11 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 
 ```
 INSIGHT_MAX_TOOL_CALLS=6    # 리포트 한 번에 허용하는 집계 호출 수
+
+CHUNK_SIZE=600              # 조각 길이 상한(글자). 시작값 — 재서 정한다(document-rag.md 7.2)
+CHUNK_OVERLAP=0             # 조각 사이 겹침(글자). 시작값
+DOC_TOP_K=5                 # 생성에 넘기는 조각 수. 시작값
+DOC_MIN_SIMILARITY=0.6      # 상위 조각의 유사도가 이 아래면 모른다고 답한다. 시작값
 
 MCP_ENABLED=false           # 외부 AI 서비스 통로. 기본은 닫혀 있다
 MCP_TRANSPORT=stdio         # stdio는 노출 표면이 0이다
