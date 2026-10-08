@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Integer, case, cast, extract, func, select
+from sqlalchemy import Date, Integer, Numeric, case, cast, distinct, extract, func, select
 from sqlalchemy.orm import Session
 
-from api.application.dto import Totals, TransactionQuery
+from api.application.dto import Frequency, Totals, TransactionQuery
 from api.domain.values import CategoryId, Money
 
 from .rows import TransactionRow
@@ -31,6 +31,24 @@ class SqlStatsRepository:
         )
         row = self._session.execute(select(expense, income).where(*filter_conditions(query))).one()
         return Totals(expense=Money(int(row[0])), income=Money(int(row[1])))
+
+    def frequency(self, query: TransactionQuery) -> Frequency:
+        # 날은 사용자 타임존의 날이다. 자정 넘어 긁은 카드는 다음 날로 센다
+        day = cast(func.timezone(self._zone_name, TransactionRow.occurred_at), Date)
+        day_count = func.count(distinct(day))
+        # 거래가 있던 날 사이의 평균 간격 — 같은 날 여러 건이 간격을 줄이지 않게 날로 잰다
+        span = cast(func.max(day) - func.min(day), Numeric)
+        gap = func.round(span / func.nullif(day_count - 1, 0), 1)
+        average = func.round(func.avg(TransactionRow.amount))
+        row = self._session.execute(
+            select(func.count(), day_count, gap, average).where(*filter_conditions(query))
+        ).one()
+        return Frequency(
+            count=int(row[0]),
+            day_count=int(row[1]),
+            avg_gap_days=float(row[2]) if row[2] is not None else None,
+            avg_amount=Money(int(row[3])) if row[3] is not None else None,
+        )
 
     def spent_by_category(self, start: datetime, end: datetime) -> dict[CategoryId, Money]:
         statement = (

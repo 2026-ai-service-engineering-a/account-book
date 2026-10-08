@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime
 
 import pytest
 
-from api.application.dto import Totals, TransactionQuery
+from api.application.dto import Frequency, Totals, TransactionQuery
 from api.application.ports import StatsRepository
-from api.domain.values import CategoryId, Money, Period
+from api.domain.values import CategoryId, Direction, Money, Period
 from api.infrastructure.db.reference_seeder import seed_reference
 from api.infrastructure.db.sql_unit_of_work import SqlUnitOfWork
 from tests.api.conftest import SEOUL
@@ -57,3 +58,43 @@ def test_first_occurred_at(uow):
     uow.transactions.add(tx(5))
     uow.transactions.add(tx(1))
     assert uow.stats.first_occurred_at() == datetime(2026, 9, 1, 1, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        TransactionQuery(),
+        TransactionQuery(text="스타"),
+        TransactionQuery(text="메모만"),
+        TransactionQuery(category_id=CategoryId("food"), direction=Direction.EXPENSE),
+        TransactionQuery(direction=Direction.INCOME),
+        TransactionQuery(start=datetime(2026, 9, 1, 2, tzinfo=UTC)),
+    ],
+)
+def test_frequency_counts_what_the_list_shows(uow, query):
+    for n in range(3):
+        uow.transactions.add(tx(n))
+    uow.transactions.add(tx(10, merchant="스타벅스", category="cafe"))
+    uow.transactions.add(tx(11, merchant="편의점", memo="메모만"))
+    uow.transactions.add(replace(tx(12, category="salary"), direction=Direction.INCOME))
+    listed = uow.transactions.search(replace(query, limit=200)).items
+    assert uow.stats.frequency(query).count == len(listed) > 0
+
+
+def test_frequency_days_are_the_users_days(uow):
+    uow.transactions.add(tx(0))  # 서울 9/1 09시
+    uow.transactions.add(tx(16))  # 서울 9/2 01시 — UTC로는 아직 9/1
+    uow.transactions.add(tx(20))  # 서울 9/2 05시 — 같은 날 두 번째
+    uow.transactions.add(tx(64))  # 서울 9/4 01시
+    found = uow.stats.frequency(TransactionQuery())
+    assert (found.count, found.day_count, found.avg_gap_days) == (4, 3, 1.5)
+
+
+def test_frequency_rounds_half_away_from_zero(uow):
+    uow.transactions.add(tx(0))  # 1000원
+    uow.transactions.add(tx(1))  # 1001원 — 평균 1000.5
+    assert uow.stats.frequency(TransactionQuery()) == Frequency(2, 1, None, Money(1001))
+
+
+def test_frequency_of_nothing(uow):
+    assert uow.stats.frequency(TransactionQuery()) == Frequency(0, 0, None, None)
