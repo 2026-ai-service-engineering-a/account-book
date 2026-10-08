@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime, timedelta
 
 from agent.application.dto import CitationVerdict, LoopOutcome, StopReason, ToolStep
@@ -45,7 +45,7 @@ def answer_text(outcome: LoopOutcome, today: date) -> str:
     if outcome.stop is not StopReason.ANSWERED:
         return "\n\n".join(p for p in (PARTIAL, *tables, docs.found_lines(documents)) if p)
     sentence = outcome.text.strip()
-    if sentence and not _verified(sentence, documents, numbers_from_tools(outcome.steps, today)):
+    if sentence and not verified(sentence, outcome.steps, today):
         sentence = ""  # 지어낸 숫자나 인용이 섞였다 — 문장을 버리고 표만 낸다
     refs = docs.refs_in(sentence)
     found = docs.source_lines(refs, documents) if refs else docs.found_lines(documents)
@@ -55,11 +55,15 @@ def answer_text(outcome: LoopOutcome, today: date) -> str:
     return "\n\n".join(parts) or UNVERIFIED
 
 
-def _verified(sentence: str, documents: Mapping[str, docs.Chunk], allowed: set[str]) -> bool:
-    """숫자는 도구의 것이거나 인용한 조각의 것. 조각을 인용하지 않았으면 도구의 숫자만."""
+def verified(sentence: str, steps: Sequence[ToolStep], today: date) -> bool:
+    """숫자는 도구의 것이거나 인용한 조각의 것. 조각을 인용하지 않았으면 도구의 숫자만.
+
+    평가(make eval-chat)의 숫자 일치율도 이것으로 잰다 — 화면이 거르는 것과 같게.
+    """
+    allowed = numbers_from_tools(steps, today)
     refs = docs.refs_in(sentence)
     plain = docs.without_refs(sentence)
-    verdict = check_citations(plain, refs, docs.sources(documents), allowed)
+    verdict = check_citations(plain, refs, docs.sources(docs.documents_in(steps)), allowed)
     if verdict is CitationVerdict.MISSING:
         return not unsupported(plain, allowed)
     return verdict is CitationVerdict.OK
