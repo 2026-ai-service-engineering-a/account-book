@@ -6,6 +6,8 @@ from .agent_run_row import AgentRunRow
 from .budget_row import BudgetRow
 from .category_row import CategoryRow
 from .category_rule_row import CategoryRuleRow
+from .document_chunk_row import DocumentChunkRow
+from .document_row import DocumentRow
 from .idempotency_key_row import IdempotencyKeyRow
 from .text_embedding_row import TextEmbeddingRow
 from .tool_call_row import ToolCallRow
@@ -17,6 +19,8 @@ __all__ = [
     "BudgetRow",
     "CategoryRow",
     "CategoryRuleRow",
+    "DocumentChunkRow",
+    "DocumentRow",
     "IdempotencyKeyRow",
     "TextEmbeddingRow",
     "ToolCallRow",

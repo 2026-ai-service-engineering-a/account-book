@@ -242,15 +242,8 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 
 ### 7.3 테이블 (README 7장)
 
-기능 1의 `text_embeddings`·`category_rules`는 README 7장에 옮겼다.
-
-| 테이블 | 핵심 컬럼 | 기능 |
-|---|---|---|
-| `documents` | id, 제목(법령명), 출처, 법령일련번호, 시행일자, 원문, 넣은 시각 | 4 |
-| `document_chunks` | id, document_id, 청킹 설정 이름, 경로(법령·조·항·호), 원문, 임베딩할 글의 해시, 순서 | 4 |
-
-조각의 벡터는 따로 두지 않는다. 임베딩할 글의 해시로 `text_embeddings`를 같이 쓴다.
-청킹 설정 이름이 컬럼인 이유는 설정끼리 견주기 위해서다([document-rag.md 8장](document-rag.md#8-만드는-순서)).
+기능 1의 `text_embeddings`·`category_rules`와 기능 4의 `documents`·`document_chunks`는 README 7장에
+옮겼다. 남은 것이 없다. 조각의 벡터는 따로 두지 않는다 — `text_hash`로 `text_embeddings`를 같이 쓴다.
 
 ### 7.4 환경변수 (.env.sample)
 

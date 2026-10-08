@@ -169,12 +169,19 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 | `idempotency_keys` | key, request_hash, response, status_code, created_at |
 | `text_embeddings` | model, text_hash, vector, updated_at |
 | `category_rules` | id, merchant_pattern, category_id, source(seed/user), hit_count |
+| `documents` | id(법령명), title, source, mst(법령일련번호), effective_date, body — 받은 원문 그대로 |
+| `document_chunks` | id, document_id, strategy, heading, body(원문), search_text, text_hash, position |
 
 `text_embeddings`는 거래가 아니라 색인 텍스트(가맹점 + 메모)에 벡터를 붙인다. 같은 가게 백 건이
 벡터 하나를 나눠 쓴다([docs/ai/category-suggestion-rag.md 4.2](docs/ai/category-suggestion-rag.md#42-어디에-두나)).
 스키마는 `src/api/infrastructure/db/`에 있다 — 테이블 하나에 매핑 하나(`rows/`), 마이그레이션은
 Alembic(`migrations/`, [docs/development-rules.md 6.6](docs/development-rules.md#66-마이그레이션--alembic-만들고-나서-읽는다)).
-DB 이미지는 `pgvector/pgvector`이고, 첫 마이그레이션이 확장을 켠다.
+DB 이미지는 `pgvector/pgvector`이고, 첫 마이그레이션이 확장을 켠다. 문서 조각의 키워드 검색에 쓰는
+`pg_trgm`은 다섯째 마이그레이션이 켠다.
+
+`document_chunks`는 청킹 전략마다 같은 문서의 조각을 따로 둔다 — 전략끼리 견주려고
+([docs/ai/document-rag.md 7.2](docs/ai/document-rag.md#72-재서-정하는-것)). 화면의 인용은 `body`(원문),
+찾는 것은 개정 꼬리표를 뺀 `search_text`다.
 
 금액은 정수 최소단위(원)로 저장한다. 부동소수점은 쓰지 않는다.
 시간은 전부 `TIMESTAMPTZ`에 UTC로 저장하고, "이번 달" 같은 경계는 사용자 타임존으로 계산한다.
