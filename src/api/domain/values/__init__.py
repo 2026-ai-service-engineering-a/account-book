@@ -5,6 +5,7 @@ from .embedding_dimensions import EMBEDDING_DIMENSIONS
 from .money import Money
 from .period import Period
 from .source import Source
+from .time_range import TimeRange
 from .transaction_id import TransactionId
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "Money",
     "Period",
     "Source",
+    "TimeRange",
     "TransactionId",
 ]

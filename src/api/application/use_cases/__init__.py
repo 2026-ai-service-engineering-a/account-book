@@ -1,4 +1,6 @@
 from .build_monthly_report import BuildMonthlyReport
+from .compare_periods import ComparePeriods
+from .count_frequency import CountFrequency
 from .create_transaction import CreateTransaction
 from .delete_transaction import DeleteTransaction
 from .get_transaction import GetTransaction
@@ -16,6 +18,8 @@ from .update_transaction import UpdateTransaction
 
 __all__ = [
     "BuildMonthlyReport",
+    "ComparePeriods",
+    "CountFrequency",
     "CreateTransaction",
     "DeleteTransaction",
     "GetTransaction",

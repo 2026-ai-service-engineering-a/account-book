@@ -8,6 +8,7 @@ from typing import Self
 from zoneinfo import ZoneInfo
 
 from api.application.dto import (
+    Frequency,
     IdempotencyRecord,
     StoredReply,
     Totals,
@@ -123,6 +124,20 @@ class FakeStats:
             Money.total(t.amount for t in rows if t.direction is Direction.EXPENSE),
             Money.total(t.amount for t in rows if t.direction is Direction.INCOME),
         )
+
+    def frequency(self, query: TransactionQuery) -> Frequency:
+        rows = [
+            t
+            for t in self._rows(query.start, query.end)
+            if (query.direction is None or t.direction is query.direction)
+            and (query.category_id is None or t.category_id == query.category_id)
+            and (not query.text or query.text in t.merchant or query.text in t.memo)
+        ]
+        days = sorted({t.occurred_at.astimezone(SEOUL).date() for t in rows})
+        gap = round((days[-1] - days[0]).days / (len(days) - 1), 1) if len(days) > 1 else None
+        total = Money.total(t.amount for t in rows)
+        average = Money(round(total.amount / len(rows))) if rows else None
+        return Frequency(len(rows), len(days), gap, average)
 
     def spent_by_category(self, start: datetime, end: datetime) -> dict[CategoryId, Money]:
         out: dict[CategoryId, Money] = {}
