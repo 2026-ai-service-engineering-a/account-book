@@ -57,10 +57,13 @@ class AgentDocumentGateway:
         self,
         query: str,
         strategy: ChunkStrategy,
-        k: int = 5,
+        k: int | None = None,
         mode: SearchMode = SearchMode.KEYWORD,
     ) -> DocumentResults:
-        body = {"q": query, "k": k, "strategy": strategy.value, "mode": mode.value}
+        # k를 비우면 agent의 DOC_TOP_K를 쓴다 — 기본값은 agent 한 곳에 있다
+        body: dict[str, object] = {"q": query, "strategy": strategy.value, "mode": mode.value}
+        if k is not None:
+            body["k"] = k
         try:
             async with httpx.AsyncClient(
                 base_url=self._base_url, timeout=self._timeout, transport=self._transport

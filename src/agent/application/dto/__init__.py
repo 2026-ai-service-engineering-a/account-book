@@ -16,6 +16,7 @@ from .model_usage import ModelUsage
 from .pending_text import PendingText
 from .prompt import Prompt
 from .retrieval import Retrieval
+from .retrieval_defaults import RetrievalDefaults
 from .retrieved_chunk import RetrievedChunk
 from .search_result import SearchResult
 from .search_strategy import SearchStrategy
@@ -48,6 +49,7 @@ __all__ = [
     "PendingText",
     "Prompt",
     "Retrieval",
+    "RetrievalDefaults",
     "RetrievedChunk",
     "SearchResult",
     "SearchStrategy",

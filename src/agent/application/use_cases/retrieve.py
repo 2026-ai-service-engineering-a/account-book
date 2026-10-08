@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 
-from agent.application.dto import DocumentQuery, Retrieval
+from agent.application.dto import DocumentQuery, Retrieval, RetrievalDefaults
 from agent.application.errors import ModelUnavailable
 from agent.application.ports import Embedder, LedgerApi
 from agent.domain.values import ChunkStrategy, SearchMode
@@ -21,17 +21,28 @@ class Retrieve:
     """
 
     def __init__(
-        self, ledger: LedgerApi, embedder: Embedder | None, index: SyncIndex | None
+        self,
+        ledger: LedgerApi,
+        embedder: Embedder | None,
+        index: SyncIndex | None,
+        defaults: RetrievalDefaults | None = None,
     ) -> None:
         self._ledger = ledger
         self._embedder = embedder
         self._index = index
+        self._defaults = defaults or RetrievalDefaults()
 
     async def __call__(
-        self, question: str, strategy: ChunkStrategy, k: int, mode: SearchMode
+        self,
+        question: str,
+        strategy: ChunkStrategy | None = None,
+        k: int | None = None,
+        mode: SearchMode | None = None,
     ) -> Retrieval:
-        """api에 닿지 못하면 `LedgerUnavailable`."""
-        query = DocumentQuery(" ".join(question.split()), strategy, k)
+        """정하지 않은 것은 기본값(DOC_*)으로. api에 닿지 못하면 `LedgerUnavailable`."""
+        strategy = strategy or self._defaults.strategy
+        mode = mode or self._defaults.mode
+        query = DocumentQuery(" ".join(question.split()), strategy, k or self._defaults.k)
         if mode is SearchMode.KEYWORD:
             return Retrieval(mode, False, await self._ledger.search_documents(query))
         if self._embedder is None:  # EMBEDDING_MODEL이 비었다 — 벡터 단계를 끈 구성

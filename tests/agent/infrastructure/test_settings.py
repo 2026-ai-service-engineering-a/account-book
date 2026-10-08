@@ -71,3 +71,15 @@ def test_reads_env_file_and_ignores_other_services(tmp_path):
     env.write_text("GEMINI_API_KEY=g-key\nAGENT_TIMEOUT_SECONDS=4\nUI_PORT=8080\n")
     settings = Settings(_env_file=env)
     assert settings.agent_timeout_seconds == 4
+
+
+def test_document_retrieval_defaults_were_measured(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "g-key")
+    settings = Settings(_env_file=None)
+    assert (settings.doc_chunk_strategy, settings.doc_search_mode, settings.doc_top_k) == (
+        "paragraph_item",
+        "hybrid",
+        8,
+    )
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, doc_search_mode="bm25")  # 일부러 틀린 값

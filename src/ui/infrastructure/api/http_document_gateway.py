@@ -25,6 +25,9 @@ class _HitItem(TypedDict):
 _HITS = TypeAdapter(list[_HitItem])
 
 
+_K = 5  # agent 없이 낱말로 찾을 때의 조각 수
+
+
 class HttpDocumentGateway:
     """문서 조각 찾기 — api의 `GET /v1/documents/search`."""
 
@@ -35,11 +38,11 @@ class HttpDocumentGateway:
         self,
         query: str,
         strategy: ChunkStrategy,
-        k: int = 5,
+        k: int | None = None,
         mode: SearchMode = SearchMode.KEYWORD,
     ) -> DocumentResults:
         """낱말로만 찾는다 — 뜻으로 찾으려면 질문을 임베딩할 agent가 있어야 한다."""
-        hits = await self._keyword(query, strategy, k)
+        hits = await self._keyword(query, strategy, k or _K)
         return DocumentResults(hits, SearchMode.KEYWORD, fell_back=mode is not SearchMode.KEYWORD)
 
     async def _keyword(

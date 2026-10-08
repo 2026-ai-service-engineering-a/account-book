@@ -4,6 +4,8 @@ from ui.application.dto import ChunkStrategy, DocumentHit, DocumentResults, Sear
 
 from .document_samples import SAMPLES
 
+_K = 5  # agent 없이 낱말로 찾을 때의 조각 수
+
 
 class MemoryDocumentGateway:
     """문서 검색의 대역 — 조문 네 줄을 글자 세 개짜리 조각의 겹침으로 찾는다(pg_trgm 흉내).
@@ -15,11 +17,11 @@ class MemoryDocumentGateway:
         self,
         query: str,
         strategy: ChunkStrategy,
-        k: int = 5,
+        k: int | None = None,
         mode: SearchMode = SearchMode.KEYWORD,
     ) -> DocumentResults:
         """낱말로만 찾는다 — 뜻으로 찾으려면 질문을 임베딩할 agent가 있어야 한다."""
-        hits = await self._keyword(query, strategy, k)
+        hits = await self._keyword(query, strategy, k or _K)
         return DocumentResults(hits, SearchMode.KEYWORD, fell_back=mode is not SearchMode.KEYWORD)
 
     async def _keyword(

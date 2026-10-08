@@ -14,9 +14,9 @@ def test_results_quote_the_text_with_the_effective_date(client):
     assert '<option value="paragraph_item" selected>' in page.text
 
 
-def test_unknown_strategy_falls_back_to_paragraph(client):
+def test_unknown_strategy_falls_back_to_the_measured_default(client):
     page = client.get("/documents", params={"q": "체력단련장", "strategy": "whole"})
-    assert '<option value="paragraph" selected>' in page.text
+    assert '<option value="paragraph_item" selected>' in page.text
 
 
 def test_without_an_agent_there_is_no_mode_to_choose(client):
@@ -37,6 +37,6 @@ def test_with_an_agent_the_page_says_ai_and_offers_modes():
         _env_file=None, agent_base_url="http://127.0.0.1:9", agent_timeout_seconds=0.1
     )
     client = TestClient(create_app(settings, clock=FixedClock(), seeded=False))
-    page = client.get("/documents", params={"q": "체력단련장", "mode": "hybrid"})
+    page = client.get("/documents", params={"q": "체력단련장"})  # 방법을 고르지 않으면 하이브리드
     assert "AI 검색" in page.text and '<option value="hybrid" selected>' in page.text
     assert "낱말로 찾았어요" in page.text and "제121조의2" in page.text

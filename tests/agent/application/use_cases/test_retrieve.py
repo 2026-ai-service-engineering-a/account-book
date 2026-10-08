@@ -66,3 +66,15 @@ def test_an_embedding_outage_falls_back_instead_of_failing():
     found, embedder = ledger((PendingText("h1", "조문 글"),)), FakeEmbedder(fail=True)
     result = run(Retrieve(found, embedder, SyncIndex(found, embedder)), SearchMode.VECTOR)
     assert (result.mode, result.fell_back, result.chunks) == (SearchMode.KEYWORD, True, (CHUNK,))
+
+
+def test_what_the_caller_leaves_out_comes_from_the_measured_defaults():
+    found, embedder = ledger(), FakeEmbedder()
+    result = asyncio.run(Retrieve(found, embedder, None)("노트북 취소"))
+    query = asked(found)
+    assert (query.strategy, query.mode, query.k) == (
+        ChunkStrategy.PARAGRAPH_ITEM,
+        SearchMode.HYBRID,
+        8,
+    )
+    assert result.mode is SearchMode.HYBRID

@@ -250,15 +250,14 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 
 기능 1의 변수(`EMBEDDING_MODEL`·`EMBEDDING_DIMENSIONS`·`RAG_TOP_K`·`RAG_VOTE_TEMPERATURE`·
 `CLASSIFY_MIN_CONFIDENCE`·`CLASSIFY_ABSTAIN_BELOW`)는 `.env.sample`에 옮겼다.
+기능 4의 `DOC_CHUNK_STRATEGY`·`DOC_SEARCH_MODE`·`DOC_TOP_K`도 옮겼다(document-rag.md 6.3에서 재서 골랐다).
+계획에 있던 `CHUNK_SIZE`·`CHUNK_OVERLAP`은 없앴다 — 길이 상한과 겹침 대신 청킹 전략 셋을 견줬다.
 `EMBEDDING_MODEL`은 비어 있어도 뜬다 — 시크릿이 아니라 기능 스위치라서, 비면 벡터 단계를
 건너뛰고 규칙·이력으로만 고른다.
 
 ```
 INSIGHT_MAX_TOOL_CALLS=6    # 리포트 한 번에 허용하는 집계 호출 수
 
-CHUNK_SIZE=600              # 조각 길이 상한(글자). 시작값 — 재서 정한다(document-rag.md 7.2)
-CHUNK_OVERLAP=0             # 조각 사이 겹침(글자). 시작값
-DOC_TOP_K=5                 # 생성에 넘기는 조각 수. 시작값
 DOC_MIN_SIMILARITY=0.6      # 상위 조각의 유사도가 이 아래면 모른다고 답한다. 시작값
 
 MCP_ENABLED=false           # 외부 AI 서비스 통로. 기본은 닫혀 있다

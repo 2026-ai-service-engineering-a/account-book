@@ -18,7 +18,10 @@ async def retrieve(body: RetrieveRequest, services: ServicesDep) -> RetrieveResp
     """문서 조각을 찾는다 — 질문을 임베딩해 api에 묻는다. 생성 모델은 부르지 않는다."""
     started = time.perf_counter()
     found = await services.retrieve(
-        body.q, ChunkStrategy(body.strategy), body.k, SearchMode(body.mode)
+        body.q,
+        ChunkStrategy(body.strategy) if body.strategy else None,
+        body.k,
+        SearchMode(body.mode) if body.mode else None,
     )
     # 질문 원문은 남기지 않는다(development-rules 6.4)
     _log.info(
