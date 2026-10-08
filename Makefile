@@ -17,7 +17,7 @@ MOCK_PORT ?= 8081
 UI_PORT ?= 8080
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up dev prod down shell mock ui agent seed demo psql review check lint format type test test-db eval eval-chat all
+.PHONY: help env build up dev prod down shell mock ui agent seed demo docs psql review check lint format type test test-db eval eval-chat all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -71,6 +71,9 @@ seed:  ## 기준 데이터(카테고리·결제수단)를 넣는다 — 몇 번�
 
 demo:  ## 거래가 하나도 없으면 여섯 달치 예시를 넣는다 — 개발용 구성은 뜰 때 알아서 한다
 	$(COMPOSE) exec -T api python -m api.seed --demo
+
+docs:  ## 문서 Q&A의 자료(법령 아홉 조문)를 세 전략의 조각으로 넣는다 — 몇 번을 쳐도 같다
+	$(COMPOSE) exec -T api python -m api.load_documents tests/fixtures/ai/documents/laws
 
 psql:  ## DB에 붙는다 — 표를 눈으로 볼 때 (\dt, \d text_embeddings)
 	$(COMPOSE) exec db sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
