@@ -114,6 +114,7 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 | `compare_periods` | 두 기간의 카테고리별 합계와 증감 | 읽기 — 자동 |
 | `get_budget_status` | 예산 대비 소진율, 잔여일 기준 페이스 | 읽기 — 자동 |
 | `suggest_category` | 가맹점·메모 → 카테고리 후보 + 신뢰도 + 근거 거래 | 읽기 — 자동 |
+| `search_documents` | 카드·할부·전자금융·연말정산 조문 조각 찾기 — 인용할 ref와 법령명·자리·시행일 | 읽기 — 자동 |
 | `create_transaction` | 거래 1건 기록 | 쓰기 — **확인 필요** |
 | `update_transaction` | 금액·카테고리·메모 수정 | 쓰기 — **확인 필요** |
 | `delete_transaction` | 거래 삭제 | 쓰기 — **항상 확인** |

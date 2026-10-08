@@ -23,14 +23,19 @@ def test_query_mode_has_no_write_tool():
     assert all(t.permission is Permission.READ for t in Mode.QUERY.tools)
 
 
-def test_query_mode_is_the_five_from_chat_analytics():
+def test_query_mode_is_the_five_from_chat_analytics_and_document_search():
     assert {t.value for t in Mode.QUERY.tools} == {
         "summarize_spending",
         "count_frequency",
         "compare_periods",
         "get_budget_status",
         "search_transactions",
+        "search_documents",
     }
+
+
+def test_only_the_query_mode_searches_documents():
+    assert [m for m in Mode if ToolName.SEARCH_DOCUMENTS in m.tools] == [Mode.QUERY]
 
 
 def test_classify_mode_only_suggests():

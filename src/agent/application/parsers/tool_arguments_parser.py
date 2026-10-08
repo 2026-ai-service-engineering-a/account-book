@@ -16,11 +16,13 @@ from agent.domain.tools import (
     ComparePeriodsInput,
     CountFrequencyInput,
     GetBudgetStatusInput,
+    SearchDocumentsInput,
     SearchTransactionsInput,
     SuggestCategoryInput,
     SummarizeSpendingInput,
     ToolName,
 )
+from agent.domain.tools.search_documents_input import QUERY_LIMIT
 from agent.domain.values import CategoryId, Direction, PeriodName, PeriodSpec
 from agent.domain.values.period_spec import MAX_DAYS
 
@@ -31,6 +33,7 @@ type ToolInput = (
     | ComparePeriodsInput
     | GetBudgetStatusInput
     | SuggestCategoryInput
+    | SearchDocumentsInput
 )
 
 _MONTH = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$")
@@ -43,6 +46,7 @@ _KEYS: Mapping[ToolName, set[str]] = {
     ToolName.COMPARE_PERIODS: {"a", "b", "category_id"},
     ToolName.GET_BUDGET_STATUS: {"period", "category_id"},
     ToolName.SUGGEST_CATEGORY: {"merchant", "memo", "direction"},
+    ToolName.SEARCH_DOCUMENTS: {"query"},
 }
 
 
@@ -85,6 +89,8 @@ def _build(name: ToolName, raw: Mapping[str, object]) -> ToolInput:
             return ComparePeriodsInput(_period(raw, "a"), _period(raw, "b"), _category(raw))
         case ToolName.GET_BUDGET_STATUS:
             return GetBudgetStatusInput(_period(raw, "period"), _category(raw))
+        case ToolName.SEARCH_DOCUMENTS:
+            return SearchDocumentsInput(" ".join(_text(raw, "query", QUERY_LIMIT).split()))
         case _:
             return SuggestCategoryInput(
                 _text(raw, "merchant"),
@@ -158,13 +164,13 @@ def _category(raw: Mapping[str, object]) -> CategoryId | None:
     return CategoryId(text) if text else None
 
 
-def _text(raw: Mapping[str, object], key: str) -> str:
+def _text(raw: Mapping[str, object], key: str, limit: int = _TEXT_LIMIT) -> str:
     value = raw.get(key, "")
     if value is None:
         return ""
     if not isinstance(value, str):
         raise InvalidToolArguments(key, "문자열이어야 한다")
-    return value.strip()[:_TEXT_LIMIT]
+    return value.strip()[:limit]
 
 
 def _direction(raw: Mapping[str, object]) -> Direction | None:

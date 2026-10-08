@@ -18,6 +18,7 @@ class ToolName(StrEnum):
     COMPARE_PERIODS = "compare_periods"
     GET_BUDGET_STATUS = "get_budget_status"
     SUGGEST_CATEGORY = "suggest_category"
+    SEARCH_DOCUMENTS = "search_documents"
     CREATE_TRANSACTION = "create_transaction"
     UPDATE_TRANSACTION = "update_transaction"
     DELETE_TRANSACTION = "delete_transaction"

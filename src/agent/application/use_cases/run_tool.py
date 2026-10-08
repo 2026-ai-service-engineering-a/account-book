@@ -14,8 +14,10 @@ from agent.domain.tools import (
     CategorySuggestion,
     ComparePeriodsInput,
     CountFrequencyInput,
+    DocumentLine,
     EvidenceLine,
     GetBudgetStatusInput,
+    SearchDocumentsInput,
     SearchTransactionsInput,
     SuggestCategoryInput,
     SuggestedCategory,
@@ -24,6 +26,7 @@ from agent.domain.tools import (
 )
 from agent.domain.values import Amount, TimeRange
 
+from .retrieve import Retrieve
 from .tool_payload import fit, plain
 
 _MAX_CHANGES = 30  # compare_periods의 카테고리 상한(ai/tools.md 4.1)
@@ -38,12 +41,18 @@ class RunTool:
     실패도 봉투다(ok: false). 예외를 위로 던지지 않는다 — 모델이 읽고 다음 수를 고칠 수
     있어야 한다(ai/tools.md 5장). 재시도하지 않는다. LLM을 부르지 않는다.
     `tools`는 그 자리(모드)에서 쓸 수 있는 도구다. 목록 밖의 이름은 부르지 않는다.
+    search_documents는 /retrieve와 같은 찾기(`retrieve`)를 쓴다 — 임베딩은 하되 생성은 없다.
     """
 
     def __init__(
-        self, ledger: LedgerApi, tools: Collection[ToolName], timer: Callable[[], float]
+        self,
+        ledger: LedgerApi,
+        retrieve: Retrieve,
+        tools: Collection[ToolName],
+        timer: Callable[[], float],
     ) -> None:
         self._ledger = ledger
+        self._retrieve = retrieve
         self._tools = frozenset(tools)
         self._timer = timer  # 초 단위 단조 시계 — elapsed_ms를 잰다
 
@@ -91,6 +100,8 @@ class RunTool:
                 return _rows({"budgets": plain(lines)}, "budgets", {"period": period})
             case SuggestCategoryInput():
                 return await self._suggest(arguments)
+            case SearchDocumentsInput():
+                return await self._documents(arguments)
 
     async def _search(
         self, arguments: SearchTransactionsInput, today: date, zone: tzinfo
@@ -133,6 +144,20 @@ class RunTool:
         data = plain(suggestion)
         assert isinstance(data, dict)
         return _rows(data, "candidates", {})
+
+    async def _documents(self, arguments: SearchDocumentsInput) -> _Outcome:
+        found = await self._retrieve(arguments.query)
+        lines = [
+            DocumentLine(DocumentLine.ref_for(c.id), c.title, c.heading, c.effective_date, c.body)
+            for c in found.chunks
+        ]
+        data: dict[str, object] = {"chunks": plain(lines)}
+        trimmed = fit(data, "chunks")
+        rows = data["chunks"]
+        count = len(rows) if isinstance(rows, list) else 0
+        notes = [f"{count}조각까지만 보여줬다." if trimmed else ""]
+        notes.append("임베딩을 못 해 낱말로만 찾았다." if found.fell_back else "")
+        return data, ToolMeta(count, trimmed, 0, {}, " ".join(filter(None, notes)))
 
 
 def _single(found: object, periods: dict[str, TimeRange]) -> _Outcome:

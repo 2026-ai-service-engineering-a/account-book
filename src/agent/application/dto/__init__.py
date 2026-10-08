@@ -4,6 +4,7 @@ from .capture_extraction import CaptureExtraction
 from .category_entry import CategoryEntry
 from .category_pick import CategoryPick
 from .category_query import CategoryQuery
+from .citation_verdict import CitationVerdict
 from .classify_thresholds import ClassifyThresholds
 from .document_answer import DocumentAnswer
 from .document_answer_draft import DocumentAnswerDraft
@@ -40,6 +41,7 @@ __all__ = [
     "CategoryEntry",
     "CategoryPick",
     "CategoryQuery",
+    "CitationVerdict",
     "ClassifyThresholds",
     "DocumentAnswer",
     "DocumentAnswerDraft",

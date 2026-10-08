@@ -16,10 +16,10 @@ from agent.application.dto import (
     ToolCall,
 )
 from agent.application.errors import LedgerUnavailable, MalformedOutput, ModelUnavailable
-from agent.application.use_cases import AnswerQuestion
+from agent.application.use_cases import AnswerQuestion, Retrieve
 from agent.domain.tools import READ_TOOLS, CategoryLine, Frequency, Mode, Permission
 from agent.domain.values import Amount, CategoryId
-from tests.agent.conftest import SEOUL, FakeLedger, FakeModel
+from tests.agent.conftest import SEOUL, FakeLedger, FakeModel, chunk
 
 TODAY = date(2026, 10, 8)
 LIMITS = LoopLimits(max_steps=8, max_cost_usd=0.5, wall_seconds=20)
@@ -62,7 +62,9 @@ def ask(
     async def pause(seconds: float) -> None:
         pauses.append(seconds)
 
-    loop = AnswerQuestion(model, ledger, limits, clock or Clock(), pause)
+    loop = AnswerQuestion(
+        model, ledger, Retrieve(ledger, None, None), limits, clock or Clock(), pause
+    )
 
     async def go() -> list[LoopEvent]:
         return [e async for e in loop("저번 주에 카페 몇 번 갔어?", TODAY, SEOUL)]
@@ -90,6 +92,16 @@ def test_pick_a_tool_read_the_result_answer():
     assert [t.role for t in second.turns] == ["user", "assistant", "tool"]
     assert json.loads(second.turns[2].text)["call_id"] == "c0"
     assert outcome.usage == ModelUsage(250, 30, 0.0)
+
+
+def test_documents_are_one_more_tool_with_the_same_events():
+    withdraw = chunk("8/1/1", "제8조 ① 1.", "계약서를 받은 날부터 7일")
+    ledger = FakeLedger(replies={"categories": DICTIONARY, "search_documents": (withdraw,)})
+    found: tuple[str, dict[str, object]] = ("search_documents", {"query": "할부 철회 기간"})
+    events, outcome, _, _ = ask([calls(found), says("7일이에요.")], ledger)
+    assert [e.tool for e in events[:-1]] == ["search_documents"]  # 새 이벤트는 없다
+    (step,) = outcome.steps
+    assert step.result.ok and step.result.data["chunks"][0]["heading"] == "제8조 ① 1."  # type: ignore[index]
 
 
 def test_only_read_tools_are_offered():

@@ -32,6 +32,11 @@ def test_query_mode_has_no_write_tools():
     assert not writes & set(BY_KEY["insight"].tools)
 
 
+def test_only_the_query_seat_searches_documents():
+    # document-rag.md 5.5: search_documents는 query 모드에만
+    assert [s.key for s in SEATS if "search_documents" in s.tools] == ["query"]
+
+
 @pytest.mark.parametrize(
     ("key", "path"),
     [(seat.key, path) for seat in SEATS for _, path in seat.screens],

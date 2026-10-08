@@ -53,3 +53,13 @@ def test_numbers_in_a_text_see_fractions_as_their_parts():
     found = numbers_in("대중교통이용분 \N{MULTIPLICATION SIGN} 100분의 40, 연 250만원")
     assert {"100", "40", "250"} <= found
     assert unsupported("40%예요.", found) == []
+
+
+def test_document_chunks_lend_no_numbers_until_cited():
+    chunk = {"ref": "d1a2b3c", "title": "조세특례제한법", "heading": "제126조의2 ② 2.",
+             "effective_date": "2025-01-01", "body": "대중교통이용분의 100분의 40"}  # fmt: skip
+    found = ToolStep(
+        ToolCall("c2", "search_documents", {"query": "대중교통 공제율"}),
+        ToolResult("c2", {"chunks": [chunk]}, ToolMeta(1, False, 3, {})),
+    )
+    assert unsupported("40%예요.", numbers_from_tools([STEP, found], TODAY)) == ["40"]

@@ -72,9 +72,9 @@ def create_app(
                 timeout=settings.agent_timeout_seconds,
             )
     classify = ClassifyCategory(ledger, model, thresholds, embedder)
-    answer = AnswerQuestion(model, ledger, limits, time.perf_counter)
     index = SyncIndex(ledger, embedder) if embedder else None
     retrieve = Retrieve(ledger, embedder, index, defaults)
+    answer = AnswerQuestion(model, ledger, retrieve, limits, time.perf_counter)
     return build_web_app(
         Services(
             read_capture=ReadCapture(model, classify),

@@ -9,6 +9,7 @@ _LABELS = {
     "compare_periods": "견주는 중…",
     "get_budget_status": "예산을 보는 중…",
     "suggest_category": "카테고리를 고르는 중…",
+    "search_documents": "조문을 찾는 중…",
     "create_transaction": "기록을 준비하는 중…",
     "update_transaction": "기록을 고치는 중…",
     "delete_transaction": "기록을 지우는 중…",
