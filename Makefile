@@ -17,7 +17,7 @@ MOCK_PORT ?= 8081
 UI_PORT ?= 8080
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up dev prod down shell mock ui agent seed demo docs psql review check lint format type test test-db eval eval-chat all
+.PHONY: help env build up dev prod down shell mock ui agent seed demo docs psql review check lint format type test test-db measure-docs eval eval-chat all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -105,6 +105,9 @@ test:  ## 단위 테스트
 # DB가 필요한 테스트. 테스트마다 빈 DB를 만들고 지운다 — 개발용 DB의 데이터는 그대로다.
 test-db:  ## DB 통합 테스트 — 실제 Postgres + pgvector. make dev로 db가 떠 있어야 한다
 	$(EXEC) pytest -m integration -q tests/api
+
+measure-docs:  ## 문서 키워드 검색의 recall@5를 전략별로 — 모델 없음. make dev로 db가 떠 있어야 한다
+	$(EXEC) pytest -m integration -s -q tests/api/application/use_cases/test_search_documents_recall.py
 
 # 실제 모델을 부른다 — 돈이 들고 점수가 매번 조금씩 다르다. CI에 넣지 않는다.
 # agent 컨테이너 안에서 돈다. 키와 api 주소(ui의 대역)가 거기 있다.
