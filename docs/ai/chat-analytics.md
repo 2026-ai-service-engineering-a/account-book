@@ -77,11 +77,11 @@ sequenceDiagram
 
     B->>U: "저번 주에 카페 몇 번 갔어?"
     U->>AG: POST /chat (SSE 시작)
-    AG-->>U: SSE tool — "세는 중…"
     Note over AG: LLM 1회 — 도구와 인자를 고른다
+    AG-->>U: SSE tool — "세는 중…"
     AG->>AG: period 이름 → 실제 날짜 (코드)
     AG->>API: GET /v1/stats/frequency?from=...&to=...&category_id=cafe
-    API-->>AG: { count: 7, days: 5, avg_gap_days: 1.4, avg_amount: 5200 }
+    API-->>AG: { count: 7, day_count: 5, avg_gap_days: 1.4, avg_amount: 5200 }
     Note over AG: LLM 1회 — 해석 한 줄만
     AG-->>U: SSE message — 표 + 한 줄 + 목록 링크
 ```
@@ -107,12 +107,17 @@ LLM 호출은 **두 번**이다. 첫 번째가 도구와 인자를 정하고, �
 | 이름 | 경계 |
 |---|---|
 | `today` · `yesterday` | 사용자 타임존의 하루 |
-| `this_week` | 이번 주 월요일 00:00 ~ 지금 |
+| `this_week` | 이번 주 월요일 00:00 ~ 오늘 끝(내일 00:00) |
 | `last_week` | 지난주 월요일 00:00 ~ 일요일 24:00 |
 | `this_month` · `last_month` | 달 경계 |
-| `this_year` | 1월 1일 ~ 지금 |
-| `last_n_days` | `n`일 전 00:00 ~ 지금. `n`은 1~365 |
+| `this_year` | 1월 1일 ~ 오늘 끝 |
+| `last_n_days` | 오늘을 포함한 `n`일 — `n-1`일 전 00:00 ~ 오늘 끝. `n`은 1~365 |
 | `month` | `YYYY-MM`을 같이 받는다 |
+| `range` | 질문에 적힌 두 날짜(`YYYY-MM-DD`). 끝 날짜도 들어간다 |
+
+경계 계산은 오늘 **날짜**와 타임존만 받는 순수 계산이라 "지금"을 쓰지 않는다. 진행 중인
+기간의 끝은 오늘의 끝이다 — 오늘 남은 시간의 거래는 아직 없다. "최근 3일"은 그저께·어제·
+오늘이다. "3일 전 00:00부터"로 세면 나흘이 된다.
 
 주의 시작은 월요일이고, **"저번 주"에 오늘은 들어가지 않는다.** 이런 결정은 문서에
 적혀 있어야 한다 — 코드에만 있으면 두 사람이 다르게 기억한다.

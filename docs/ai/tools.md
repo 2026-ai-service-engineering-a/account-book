@@ -20,26 +20,35 @@
 도구는 함수가 아니라 **스키마 둘과 설명 하나**다.
 
 ```python
-# src/agent/domain/tools/count_frequency.py
-class CountFrequencyInput(BaseModel):
-    period: PeriodName  # 이름만. 날짜 계산은 코드가 한다
+# src/agent/domain/tools/count_frequency_input.py
+@dataclass(frozen=True, slots=True)
+class CountFrequencyInput:
+    period: PeriodSpec  # 이름과 그 이름이 요구하는 값만. 날짜 계산은 코드가 한다
     category_id: CategoryId | None = None
-    merchant: str | None = None
+    merchant: str = ""
+    direction: Direction = Direction.EXPENSE
 
 
-class CountFrequencyOutput(BaseModel):
+# src/agent/domain/tools/frequency.py
+@dataclass(frozen=True, slots=True)
+class Frequency:
     count: int
     day_count: int
-    avg_gap_days: float
-    avg_amount: Money
+    avg_gap_days: float | None
+    avg_amount: Amount | None
 ```
+
+모델에게 주는 입력 JSON Schema와 설명은 `domain/tools/catalog.py`에 딕셔너리로 둔다.
+`domain`은 프레임워크를 모르므로([../development-rules.md 2.2](../development-rules.md#22-의존-규칙--화살표는-안쪽으로만))
+Pydantic을 쓰지 않는다. 모델이 낸 인자를 입력으로 바꾸고 검사하는 일은 `application`의
+파서(`parse_tool_arguments`)가 한다 — 기록의 `CAPTURE_SCHEMA`와 같은 방식이다.
 
 | 부분 | 규칙 |
 |---|---|
 | 이름 | `동사_목적어`. `get_data` 같은 이름은 모델도 어느 자리에 쓸지 모른다 |
 | 설명 | **모델이 읽는 문서다.** 한 줄로 무엇을, 한 줄로 **언제 쓰지 말아야 하는지** |
-| 입력 | Pydantic. 원시 타입을 그대로 받지 않는다([../development-rules.md 5.3](../development-rules.md#53-원시-타입을-그대로-쓰지-않는다)) |
-| 출력 | Pydantic. `dict`를 반환하는 도구를 만들지 않는다 |
+| 입력 | frozen dataclass + JSON Schema 딕셔너리. 원시 타입을 그대로 받지 않는다([../development-rules.md 5.3](../development-rules.md#53-원시-타입을-그대로-쓰지-않는다)) |
+| 출력 | frozen dataclass. `dict`를 반환하는 도구를 만들지 않는다 — 봉투에 넣을 때만 JSON 모양으로 바꾼다 |
 | 권한 | 읽기 · 쓰기(확인 필요) · 쓰기(항상 확인) 셋 중 하나 |
 
 설명의 둘째 줄이 첫째 줄보다 중요하다.
@@ -74,9 +83,15 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
   "call_id": "call_3",
   "ok": true,
   "data": { "count": 7, "day_count": 5, "avg_gap_days": 1.4 },
-  "meta": { "row_count": 7, "truncated": false, "elapsed_ms": 38 }
+  "meta": { "row_count": 1, "truncated": false, "elapsed_ms": 38,
+            "periods": { "period": { "from": "2026-09-28T00:00:00+09:00",
+                                     "to": "2026-10-05T00:00:00+09:00" } } }
 }
 ```
+
+`meta.periods`는 기간 이름을 풀어 실제로 조회한 경계다. 답에 "저번 주(9/28~10/4)"처럼
+해석한 기간을 밝히는 근거가 된다([chat-analytics.md 5장](chat-analytics.md#5-기간--llm에게-날짜를-계산시키지-않는다)).
+잘렸거나 기간을 맞췄으면 `meta.note`에 그 사실을 문장으로 적는다.
 
 `call_id`가 왜 필요한가 — 세 군데서 쓴다. 감사 로그(`tool_calls`)의 키가 되고, 차트 스펙이
 데이터를 참조하는 이름이 되고([agentic-reports.md 5장](agentic-reports.md#5-차트-스펙--그림은-선언으로-온다)),
@@ -104,9 +119,9 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 | 도구 | 인자 | 돌려주는 것 | 상한 |
 |---|---|---|---|
 | `search_transactions` | 기간, 카테고리, 가맹점, 방향 | 거래 목록 | 20행(최대 50) |
-| `summarize_spending` | 기간, 카테고리, 가맹점 | 지출·수입 합, 카테고리별 합 | 카테고리 30개 |
+| `summarize_spending` | 기간, 카테고리, 가맹점 | 지출·수입 합 | — |
 | `count_frequency` | 기간, 카테고리, 가맹점 | 건수, 날 수, 평균 간격, 회당 평균 | — |
-| `compare_periods` | 기간 둘, 카테고리 | 카테고리별 합과 증감 | 카테고리 30개 |
+| `compare_periods` | 기간 둘, 카테고리 | 카테고리별 합과 증감. b가 진행 중이면 a를 같은 날 수로 자른다 | 카테고리 30개 |
 | `detect_outliers` | 기간 | 평소 범위를 벗어난 건 | 5건 |
 | `get_budget_status` | 기간 | 카테고리별 소진율·페이스 | — |
 | `suggest_category` | 가맹점, 메모, 방향 | 후보 + 근거 거래 + 그 방향의 카테고리 사전 | 근거 8건 |
@@ -165,7 +180,7 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 | 모드 | 쓰는 곳 | 주는 도구 | 쓰기 |
 |---|---|---|---|
 | `classify` | 기능 1의 AI 버튼 | `suggest_category` | 없다 |
-| `query` | 기능 2의 대화 조회 | 읽기 6개 | **없다** |
+| `query` | 기능 2의 대화 조회 | 읽기 5개(`suggest_category`·`detect_outliers` 빼고) | **없다** |
 | `insight` | 기능 3의 리포트 | 집계 5개 | 없다 |
 | `capture` | 대화로 기록할 때, 폼의 한 줄로 채우기 | `suggest_category`, `search_transactions` + 쓰기 넷 | 확인 게이트 |
 | `mcp` | 외부 AI 서비스 | 읽기 전부 | 제안까지만([mcp.md 4장](mcp.md#4-쓰기--제안까지만-간다)) |
