@@ -26,7 +26,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 ---
 
-## 1. AI가 들어갈 자리는 넷이다
+## 1. AI가 들어갈 자리는 다섯이다
 
 사람이 손으로 하던 판단 한 가지씩을 대신하는 자리다. 모두 Protocol 하나와 각본 대역
 하나로 되어 있다. 대역은 키 없이 돌고, **스스로 대역이라고 말한다.**
@@ -40,6 +40,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | `CategorySuggester` | 가맹점·메모 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | **붙었다.** `AgentCategorySuggester` → `agent`의 `POST /classify`([pages/transaction-form.md 4.1](pages/transaction-form.md#41-카테고리는-ai로-고르기를-누를-때만-고른다)) |
 | `ReportNarrator` | 리포트의 "눈에 띈 것" 문장 | `ScriptedReportNarrator` — 규칙 문구 | 아직 안 정했다([pages/reports.md 3.2](pages/reports.md#32-눈에-띈-것은-문장으로-낸다)) |
 | `CaptureReader` | 카드 문자나 말로 쓴 한 줄 → 거래 칸 (기록) | `ScriptedCaptureReader` — 승인 문자 한 모양과 채팅 대역의 귀 | **붙었다.** `AgentCaptureReader` → `agent`의 `POST /capture`([pages/transaction-form.md 4.5](pages/transaction-form.md#45-agent와-주고받는-것--post-capture)) |
+| `DocumentAnswerer` | 법령 질문 → 조문을 인용한 답 | `ScriptedDocumentAnswerer` — 낱말로 찾은 조문만 보이고 답 문장은 만들지 않는다 | **붙었다.** `AgentDocumentAnswerer` → `agent`의 `POST /ask`([pages/documents.md](pages/documents.md)) |
 
 포트는 `src/ui/application/ports/`, 대역은 `src/ui/infrastructure/scripted/`에 있다.
 

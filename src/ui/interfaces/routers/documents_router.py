@@ -23,6 +23,7 @@ async def documents_page(
     q: Annotated[str, Query(max_length=_QUERY_LIMIT)] = "",
     strategy: str = ChunkStrategy.PARAGRAPH_ITEM.value,
     mode: str = "",
+    action: str = "search",
 ) -> HTMLResponse:
     """GET 폼 하나 — 주소에 질문이 남아 결과를 공유하고 되돌아올 수 있다.
 
@@ -35,7 +36,12 @@ async def documents_page(
     if by_agent and mode in SearchMode:
         how = SearchMode(mode)
     query = " ".join(q.split())
-    found = await services.documents.search(query, chosen, None, how) if query else None
+    asking = action == "ask" and bool(query)
+    # 묻기는 찾는 방법을 agent의 기본값(DOC_*)에 맡긴다 — 답의 품질이 그 값으로 재어졌다
+    answer = await services.answerer.ask(query) if asking else None
+    found = (
+        await services.documents.search(query, chosen, None, how) if query and not asking else None
+    )
     context = {
         "section": "documents",
         "query": query,
@@ -46,5 +52,6 @@ async def documents_page(
         "by_agent": services.documents_by_agent,
         "hits": found.hits if found else (),
         "fell_back": found.fell_back if found else False,
+        "answer": answer,
     }
     return render(request, "documents.html", context)

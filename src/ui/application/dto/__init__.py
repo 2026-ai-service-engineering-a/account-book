@@ -1,4 +1,5 @@
 from .account import Account
+from .answer_status import AnswerStatus
 from .budget_status import BudgetStatus
 from .category import Category
 from .category_change import CategoryChange
@@ -6,6 +7,7 @@ from .category_suggestion import CategorySuggestion
 from .chat_event import ChatEvent, ChatEventKind
 from .chunk_strategy import ChunkStrategy
 from .direction import Direction
+from .document_answer import DocumentAnswer
 from .document_hit import DocumentHit
 from .document_results import DocumentResults
 from .message_reading import MessageReading
@@ -24,6 +26,7 @@ from .transaction_page import TransactionPage
 
 __all__ = [
     "Account",
+    "AnswerStatus",
     "BudgetStatus",
     "Category",
     "CategoryChange",
@@ -32,6 +35,7 @@ __all__ = [
     "ChatEventKind",
     "ChunkStrategy",
     "Direction",
+    "DocumentAnswer",
     "DocumentHit",
     "DocumentResults",
     "MessageReading",

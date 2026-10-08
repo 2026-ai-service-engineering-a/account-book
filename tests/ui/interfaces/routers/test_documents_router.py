@@ -40,3 +40,38 @@ def test_with_an_agent_the_page_says_ai_and_offers_modes():
     page = client.get("/documents", params={"q": "체력단련장"})  # 방법을 고르지 않으면 하이브리드
     assert "AI 검색" in page.text and '<option value="hybrid" selected>' in page.text
     assert "낱말로 찾았어요" in page.text and "제121조의2" in page.text
+
+
+def test_asking_without_an_agent_shows_the_found_clauses_folded(client):
+    page = client.get("/documents", params={"q": "체력단련장", "action": "ask"})
+    assert "답 대신 찾은 조문을 보여 드려요." in page.text and "각본 대역" in page.text
+    assert "<details" in page.text and "법률 자문이 아닙니다" in page.text
+
+
+def test_a_cited_answer_shows_its_sources_to_unfold(client):
+    import dataclasses
+    from datetime import date
+
+    from ui.application.dto import AnswerStatus, ChunkStrategy, DocumentAnswer, DocumentHit
+
+    hit = DocumentHit(
+        "paragraph_item:할부거래에 관한 법률/제8조/1/1",
+        "할부거래에 관한 법률",
+        date(2026, 9, 8),
+        ChunkStrategy.PARAGRAPH_ITEM,
+        "제8조(청약의 철회) ① 1.",
+        "- 1. 계약서를 받은 날부터 7일",
+        0.03,
+    )
+
+    class Answered:
+        async def ask(self, question: str) -> DocumentAnswer:
+            return DocumentAnswer(
+                AnswerStatus.ANSWERED, "7일 안에 철회할 수 있어요.", (hit,), (hit,)
+            )
+
+    app = client.app
+    app.state.services = dataclasses.replace(app.state.services, answerer=Answered())
+    page = client.get("/documents", params={"q": "노트북 취소", "action": "ask"})
+    assert "AI 답" in page.text and "7일 안에 철회할 수 있어요." in page.text
+    assert "할부거래에 관한 법률 제8조(청약의 철회) ① 1. · 시행 2026-09-08" in page.text

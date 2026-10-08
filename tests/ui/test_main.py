@@ -6,6 +6,7 @@ from tests.ui.conftest import FixedClock
 from ui.infrastructure.agent import (
     AgentCaptureReader,
     AgentCategorySuggester,
+    AgentDocumentAnswerer,
     AgentDocumentGateway,
     RoutedChatAgent,
 )
@@ -17,7 +18,11 @@ from ui.infrastructure.api import (
     HttpTransactionGateway,
 )
 from ui.infrastructure.memory import MemoryDocumentGateway
-from ui.infrastructure.scripted import ScriptedCaptureReader, ScriptedChatAgent
+from ui.infrastructure.scripted import (
+    ScriptedCaptureReader,
+    ScriptedChatAgent,
+    ScriptedDocumentAnswerer,
+)
 from ui.infrastructure.settings import Settings
 from ui.main import create_app
 
@@ -35,6 +40,7 @@ def test_agent_address_brings_the_real_reader():
     assert isinstance(services.suggester, AgentCategorySuggester)
     assert isinstance(services.chat, RoutedChatAgent)  # 질문만 agent로, 기록은 대역으로
     assert isinstance(services.documents, AgentDocumentGateway) and services.documents_by_agent
+    assert isinstance(services.answerer, AgentDocumentAnswerer)
     assert services.live_seats == {"capture", "classify", "query"}
 
 
@@ -70,3 +76,4 @@ def test_without_an_agent_the_chat_is_the_scripted_stand_in():
 def test_without_an_api_documents_have_a_small_stand_in():
     services = create_app(Settings(_env_file=None), clock=FixedClock(), seeded=False).state.services
     assert isinstance(services.documents, MemoryDocumentGateway)
+    assert isinstance(services.answerer, ScriptedDocumentAnswerer)
