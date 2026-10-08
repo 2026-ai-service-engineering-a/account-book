@@ -156,7 +156,7 @@ X-Agent-Run-Id: 01J9X...
 | `GET` | `/v1/categories` | — (화면) | — |
 | `GET` | `/v1/accounts` | — (화면) | — |
 | `GET` | `/v1/documents/search` | — (화면) | — |
-| `POST` | `/v1/documents/search` | — (agent 검색) | — |
+| `POST` | `/v1/documents/search` | `search_documents` | — |
 | `GET` | `/v1/embeddings/pending` | — (색인) | — |
 | `PUT` | `/v1/embeddings/{text_hash}` | — (색인) | — |
 | `GET` | `/v1/healthz` | — | — |

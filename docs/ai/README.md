@@ -203,9 +203,8 @@ AI 기능은 도구·엔드포인트·테이블·환경변수를 늘린다. **�
 | 도구 | 하는 일 | 권한 | 기능 |
 |---|---|---|---|
 | `detect_outliers` | 평소와 다른 지출 골라내기 | 읽기 — 자동 | 3 |
-| `search_documents` | 질문에 맞는 문서 조각과 경로·시행일자 찾기 | 읽기 — 자동 | 4 |
 
-`count_frequency`·`compare_periods`는 README 4장에 옮겼다. 엔드포인트와 함께 옮긴다 —
+`count_frequency`·`compare_periods`, 기능 4의 `search_documents`는 README 4장에 옮겼다. 엔드포인트와 함께 옮긴다 —
 README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 본다.
 
 `suggest_category`는 이미 있다. 기능 1은 도구를 늘리지 않고 그 도구가 돌려주는 것을
@@ -222,7 +221,7 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 
 기능 4의 검색 `GET`·`POST /v1/documents/search`는 계약에 옮겼다(api-contract 6장). `POST`는 기능 1의
 `POST /v1/categories/suggest`와 같은 모양이다 — `agent`가 질문을 임베딩해 벡터를 보내고, `api`는
-유사도로 조각을 고른다. 대응 도구 `search_documents`는 doc-tool에서 붙는다. 조각의 임베딩은 기능 1의 색인 엔드포인트
+유사도로 조각을 고른다. 대응 도구는 `search_documents`다(doc-tool, [document-rag.md 5.5](document-rag.md#55-채팅의-도구--search_documents)). 조각의 임베딩은 기능 1의 색인 엔드포인트
 둘(`/v1/embeddings/pending`·`PUT /v1/embeddings/{text_hash}`)로 채운다. 늘어나는 색인 엔드포인트는 없다
 ([document-rag.md 7.1](document-rag.md#71-지금-정하는-것)).
 

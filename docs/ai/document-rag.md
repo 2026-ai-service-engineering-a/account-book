@@ -393,7 +393,7 @@ feature 넷이다. 앞의 것이 뒤의 것의 재료가 되고, **생성 LLM은
 | 1 | `doc-store` — **끝남** | `api` + `db` + `ui` | `documents`·`document_chunks`(마이그레이션 0005, pg_trgm). 청킹 셋을 순수 함수로, 세 전략의 조각을 다 넣는 `make docs`. 키워드 검색 `GET /v1/documents/search`(pg_trgm)와 문서 화면. 전략별 recall@5(6.2). 문서 넣기·목록 엔드포인트는 화면에서 올리기를 미뤄 만들지 않았다 | 없음 |
 | 2 | `doc-index` — **끝남** | `agent` + `api` + `ui` | 조각의 `search_text`가 `/v1/embeddings/pending`으로 기능 1과 같은 `text_embeddings`·색인 워커에 들어간다. `POST /v1/documents/search`(`keyword`·`vector`·`hybrid` — RRF). `agent`의 `POST /retrieve`, 문서 화면의 "AI 검색". 청킹 3 × 방법 3 × k 3 표(6.3). 기본값은 사람이 고른다 | 임베딩만 |
 | 3 | `doc-qa` — **끝남** | `agent` + `ui` | `agent`의 `POST /ask` — 하이브리드로 찾고, 조각을 짧은 id와 데이터 마커로 감싸 `complete_json` 한 번, 인용·숫자 검증, 어떤 실패든 찾은 조각만. ui의 `DocumentAnswerer`(각본 대역·agent), 문서 화면의 묻기 — 답과 근거, 원문 펼치기. 정답 세트 35건(6.1). `make eval-qa` — 같은 모델로 기준선과 RAG를 나란히 | 생성 |
-| 4 | `doc-tool` | `agent` | `search_documents` 읽기 도구를 query 모드에. 모드별 스키마 스냅샷이 바뀐다. 대화 통계 평가 세트에 문서 질문을 몇 건 더한다 | 없음(기존 루프) |
+| 4 | `doc-tool` — **끝남** | `agent` + `ui` | `search_documents` 읽기 도구를 query 모드에만(5.5). 찾기는 `Retrieve` 그대로, 조각마다 `ref`. 채팅 답의 인용은 `citation_check`로 검증하고 출처 줄은 코드가 붙인다. 새 SSE 이벤트는 없다. 대화 통계 평가 세트에 문서 5 · 엮는 질문 3 — 곱한 숫자가 화면에 없어야 통과 | 없음(기존 루프) |
 
 - 청킹 설정은 `doc-store`에서 여럿을 만들 수 있게 한다. 무엇을 쓸지는 `doc-index`의 평가가 정한다.
   설정 하나만 만들면 견줄 수 없다.
