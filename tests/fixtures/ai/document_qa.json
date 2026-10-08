@@ -1,110 +1,40 @@
 {
-  "about": "문서 Q&A 평가 세트의 시드(docs/ai/document-rag.md 6장). 자료는 tests/fixtures/ai/documents/laws/의 법령 아홉 조문이다. 정답은 조각 id가 아니라 법령·조·항·호 경로로 적는다 — 청킹을 바꿔도 라벨이 그대로다. paragraph는 항 번호(①=1, <16>=16), item은 호 번호, subitem은 목. kind: answer(답이 있다) · partial(일부만 있다 — 있는 만큼 답하고 나머지는 모른다고 해야 맞다) · none(없다 — abstain이 맞다). 질문은 조문의 낱말이 아니라 가계부를 보던 사람의 말로 쓴다.",
+  "about": "문서 Q&A 평가 세트 35건 — 답 있음 25 · 일부만 5 · 없음 5(docs/ai/document-rag.md 6장). 자료는 tests/fixtures/ai/documents/laws/의 법령 아홉 조문이다. 정답은 조각 id가 아니라 법령·조·항·호 경로로 적는다 — 청킹을 바꿔도 라벨이 그대로다. paragraph는 항 번호(①=1, <16>=16), item은 호 번호, subitem은 목. kind: answer(답이 있다) · partial(일부만 있다 — 있는 만큼 답하고 나머지는 모른다고 해야 맞다) · none(없다 — abstain이 맞다). 질문은 조문의 낱말이 아니라 가계부를 보던 사람의 말로 쓴다.",
   "cases": [
-    {
-      "id": "q01",
-      "kind": "answer",
-      "question": "이번 달 카드값이 많이 나왔는데, 연말정산에서 카드 쓴 걸 공제받으려면 일 년에 얼마 넘게 써야 돼?",
-      "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 1}],
-      "answer_note": "총급여액의 100분의 25(최저사용금액)를 넘는 사용분부터"
-    },
-    {
-      "id": "q02",
-      "kind": "answer",
-      "question": "출퇴근 버스랑 지하철을 카드로 찍는데, 교통비는 공제를 더 해 준다며?",
-      "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 2, "item": "2"}],
-      "answer_note": "대중교통이용분은 100분의 40"
-    },
-    {
-      "id": "q03",
-      "kind": "answer",
-      "question": "올해 병원비를 카드로 꽤 냈는데 연말정산에서 돌려받는 게 있어?",
-      "evidence": [{"law": "소득세법", "article": "제59조의4", "paragraph": 2}],
-      "answer_note": "의료비 세액공제 — 100분의 15(경우에 따라 100분의 20 등)"
-    },
-    {
-      "id": "q04",
-      "kind": "answer",
-      "question": "헬스장 회비를 카드로 냈는데 이것도 문화체육 쪽으로 공제돼?",
-      "evidence": [
-        {"law": "조세특례제한법 시행령", "article": "제121조의2", "paragraph": 16},
-        {"law": "조세특례제한법", "article": "제126조의2", "paragraph": 2, "item": "3", "subitem": "다"}
-      ],
-      "answer_note": "체육시설은 수영장과 체력단련장 — 체력단련장 이용료는 체육시설이용분. 개인강습비 등은 빠진다(제121조의2 <17>)"
-    },
-    {
-      "id": "q05",
-      "kind": "answer",
-      "question": "아파트 관리비도 카드로 내면 카드 공제 금액에 들어가?",
-      "evidence": [{"law": "조세특례제한법 시행령", "article": "제121조의2", "paragraph": 6, "item": "3"}],
-      "answer_note": "들어가지 않는다 — 아파트관리비는 신용카드등사용금액에서 빠진다"
-    },
-    {
-      "id": "q06",
-      "kind": "answer",
-      "question": "카드를 잃어버렸는데 분실 신고하기 전에 누가 긁은 건 내가 다 물어야 해?",
-      "evidence": [
-        {"law": "여신전문금융업법", "article": "제16조", "paragraph": 2},
-        {"law": "여신전문금융업법", "article": "제16조", "paragraph": 3}
-      ],
-      "answer_note": "신고 전 사용도 대통령령으로 정하는 기간 범위에서 카드사가 책임진다. 다만 회원이 책임지도록 한 계약이 있으면 그에 따르되, 고의·과실이 없으면 그렇지 않다"
-    },
-    {
-      "id": "q07",
-      "kind": "answer",
-      "question": "가게에서 카드로 하면 수수료 붙는다고 돈을 더 달래. 이래도 되는 거야?",
-      "evidence": [
-        {"law": "여신전문금융업법", "article": "제19조", "paragraph": 4},
-        {"law": "여신전문금융업법", "article": "제19조", "paragraph": 1}
-      ],
-      "answer_note": "안 된다 — 가맹점수수료를 회원이 부담하게 할 수 없고, 카드로 거래한다는 이유로 불리하게 대우할 수 없다"
-    },
-    {
-      "id": "q08",
-      "kind": "answer",
-      "question": "할부로 산 노트북, 마음이 바뀌었는데 며칠 안에 취소할 수 있어?",
-      "evidence": [{"law": "할부거래에 관한 법률", "article": "제8조", "paragraph": 1, "item": "1"}],
-      "answer_note": "계약서를 받은 날(물건이 늦게 왔으면 받은 날)부터 7일. 철회 의사를 적은 서면을 보낸다(③)"
-    },
-    {
-      "id": "q09",
-      "kind": "answer",
-      "question": "할부로 주문한 물건이 아직 안 왔는데 이번 달 할부금 안 내도 돼?",
-      "evidence": [{"law": "할부거래에 관한 법률", "article": "제16조", "paragraph": 1, "item": "3"}],
-      "answer_note": "공급 시기까지 오지 않았으면 할부금 지급을 거절할 수 있다(항변권)"
-    },
-    {
-      "id": "q10",
-      "kind": "answer",
-      "question": "이체가 잘못된 것 같아서 은행에 고쳐 달라고 했어. 은행은 언제까지 답을 줘야 해?",
-      "evidence": [{"law": "전자금융거래법", "article": "제8조", "paragraph": 2}],
-      "answer_note": "정정요구를 받은 날부터 2주 이내에 원인과 처리 결과를 알려야 한다"
-    },
-    {
-      "id": "q11",
-      "kind": "partial",
-      "question": "문자에 온 링크를 눌렀다가 계좌에서 돈이 빠져나갔어. 은행이 물어줘?",
-      "evidence": [
-        {"law": "전자금융거래법", "article": "제9조", "paragraph": 1, "item": "3"},
-        {"law": "전자금융거래법", "article": "제9조", "paragraph": 2}
-      ],
-      "answer_note": "부정한 방법으로 얻은 접근매체로 생긴 사고는 금융회사가 배상 책임을 지는 것이 원칙이고, 이용자의 고의·중대한 과실이 약관에 정한 범위에 있으면 이용자가 부담할 수 있다",
-      "missing": "이 사례가 고의·중대한 과실에 해당하는지는 조문으로 판단할 수 없다 — 원칙과 예외까지만 답한다"
-    },
-    {
-      "id": "q12",
-      "kind": "partial",
-      "question": "넷플릭스 구독료랑 아파트 관리비를 카드로 냈는데, 둘 다 카드 공제 받을 수 있어?",
-      "evidence": [{"law": "조세특례제한법 시행령", "article": "제121조의2", "paragraph": 6, "item": "3"}],
-      "answer_note": "아파트관리비는 빠진다",
-      "missing": "구독료는 아홉 조문에 따로 적혀 있지 않다 — 모른다고 답해야 맞다"
-    },
-    {
-      "id": "q13",
-      "kind": "none",
-      "question": "카드 포인트가 쌓여 있는데 언제 없어지는 거야?",
-      "evidence": [],
-      "missing": "포인트 소멸은 아홉 조문에 없다"
-    }
+    {"id": "q01", "kind": "answer", "question": "이번 달 카드값이 많이 나왔는데, 연말정산에서 카드 쓴 걸 공제받으려면 일 년에 얼마 넘게 써야 돼?", "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 1}], "answer_note": "총급여액의 100분의 25(최저사용금액)를 넘는 사용분부터"},
+    {"id": "q02", "kind": "answer", "question": "출퇴근 버스랑 지하철을 카드로 찍는데, 교통비는 공제를 더 해 준다며?", "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 2, "item": "2"}], "answer_note": "대중교통이용분은 100분의 40"},
+    {"id": "q03", "kind": "answer", "question": "올해 병원비를 카드로 꽤 냈는데 연말정산에서 돌려받는 게 있어?", "evidence": [{"law": "소득세법", "article": "제59조의4", "paragraph": 2}], "answer_note": "의료비 세액공제 — 100분의 15(경우에 따라 100분의 20 등)"},
+    {"id": "q04", "kind": "answer", "question": "헬스장 회비를 카드로 냈는데 이것도 문화체육 쪽으로 공제돼?", "evidence": [{"law": "조세특례제한법 시행령", "article": "제121조의2", "paragraph": 16}, {"law": "조세특례제한법", "article": "제126조의2", "paragraph": 2, "item": "3", "subitem": "다"}], "answer_note": "체육시설은 수영장과 체력단련장 — 체력단련장 이용료는 체육시설이용분. 개인강습비 등은 빠진다(제121조의2 <17>)"},
+    {"id": "q05", "kind": "answer", "question": "아파트 관리비도 카드로 내면 카드 공제 금액에 들어가?", "evidence": [{"law": "조세특례제한법 시행령", "article": "제121조의2", "paragraph": 6, "item": "3"}], "answer_note": "들어가지 않는다 — 아파트관리비는 신용카드등사용금액에서 빠진다"},
+    {"id": "q06", "kind": "answer", "question": "카드를 잃어버렸는데 분실 신고하기 전에 누가 긁은 건 내가 다 물어야 해?", "evidence": [{"law": "여신전문금융업법", "article": "제16조", "paragraph": 2}, {"law": "여신전문금융업법", "article": "제16조", "paragraph": 3}], "answer_note": "신고 전 사용도 대통령령으로 정하는 기간 범위에서 카드사가 책임진다. 다만 회원이 책임지도록 한 계약이 있으면 그에 따르되, 고의·과실이 없으면 그렇지 않다"},
+    {"id": "q07", "kind": "answer", "question": "가게에서 카드로 하면 수수료 붙는다고 돈을 더 달래. 이래도 되는 거야?", "evidence": [{"law": "여신전문금융업법", "article": "제19조", "paragraph": 4}, {"law": "여신전문금융업법", "article": "제19조", "paragraph": 1}], "answer_note": "안 된다 — 가맹점수수료를 회원이 부담하게 할 수 없고, 카드로 거래한다는 이유로 불리하게 대우할 수 없다"},
+    {"id": "q08", "kind": "answer", "question": "할부로 산 노트북, 마음이 바뀌었는데 며칠 안에 취소할 수 있어?", "evidence": [{"law": "할부거래에 관한 법률", "article": "제8조", "paragraph": 1, "item": "1"}], "answer_note": "계약서를 받은 날(물건이 늦게 왔으면 받은 날)부터 7일. 철회 의사를 적은 서면을 보낸다(③)"},
+    {"id": "q09", "kind": "answer", "question": "할부로 주문한 물건이 아직 안 왔는데 이번 달 할부금 안 내도 돼?", "evidence": [{"law": "할부거래에 관한 법률", "article": "제16조", "paragraph": 1, "item": "3"}], "answer_note": "공급 시기까지 오지 않았으면 할부금 지급을 거절할 수 있다(항변권)"},
+    {"id": "q10", "kind": "answer", "question": "이체가 잘못된 것 같아서 은행에 고쳐 달라고 했어. 은행은 언제까지 답을 줘야 해?", "evidence": [{"law": "전자금융거래법", "article": "제8조", "paragraph": 2}], "answer_note": "정정요구를 받은 날부터 2주 이내에 원인과 처리 결과를 알려야 한다"},
+    {"id": "q14", "kind": "answer", "question": "시장에서 장 본 것도 카드 공제를 더 해 줘?", "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 2, "item": "1"}], "answer_note": "전통시장사용분은 100분의 40"},
+    {"id": "q15", "kind": "answer", "question": "체크카드로 쓴 건 공제율이 몇 프로야?", "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 2, "item": "4"}], "answer_note": "직불카드등사용분은 100분의 30"},
+    {"id": "q16", "kind": "answer", "question": "카드 공제는 일 년에 최대 얼마까지 받을 수 있어?", "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 10}], "answer_note": "연 250만원, 총급여 7천만원 이하는 연 300만원이 한도"},
+    {"id": "q17", "kind": "answer", "question": "해외여행 가서 카드 쓴 것도 연말정산 카드 공제에 들어가?", "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 1}], "answer_note": "들어가지 않는다 — 국외에서 사용한 금액은 연간합계액에서 빠진다"},
+    {"id": "q18", "kind": "answer", "question": "영화 보고 미술관 간 데 쓴 돈도 공제를 따로 쳐 줘?", "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 2, "item": "3", "subitem": "나"}], "answer_note": "문화체육관광부장관이 지정한 박물관·미술관·영화상영관 입장료는 문화체육사용분(100분의 30)"},
+    {"id": "q19", "kind": "answer", "question": "상품권을 카드로 사면 그것도 카드 공제 금액에 들어가?", "evidence": [{"law": "조세특례제한법 시행령", "article": "제121조의2", "paragraph": 6, "item": "4"}], "answer_note": "들어가지 않는다 — 상품권 등 유가증권 구입비는 빠진다"},
+    {"id": "q20", "kind": "answer", "question": "헬스장 PT 비용도 체육시설 공제를 받을 수 있어?", "evidence": [{"law": "조세특례제한법 시행령", "article": "제121조의2", "paragraph": 17}], "answer_note": "개인강습비는 체육시설이용분에 들어가지 않는다"},
+    {"id": "q21", "kind": "answer", "question": "중고차를 카드로 샀는데 그것도 공제에 들어가?", "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 4}, {"law": "조세특례제한법 시행령", "article": "제121조의2", "paragraph": 15}], "answer_note": "중고자동차는 구입금액의 100분의 10을 신용카드등사용금액에 넣는다"},
+    {"id": "q22", "kind": "answer", "question": "보장성 보험료 낸 것도 연말정산에서 돌려받아?", "evidence": [{"law": "소득세법", "article": "제59조의4", "paragraph": 1}], "answer_note": "보장성보험료는 100분의 12 세액공제(장애인전용은 다르다)"},
+    {"id": "q23", "kind": "answer", "question": "연말정산 때 공제 신청을 하나도 안 하면 그냥 얼마 빼 줘?", "evidence": [{"law": "소득세법", "article": "제59조의4", "paragraph": 9, "item": "1"}], "answer_note": "근로소득자는 표준세액공제 연 13만원"},
+    {"id": "q24", "kind": "answer", "question": "카드가 복제돼서 누가 결제했으면 그 돈은 누가 물어?", "evidence": [{"law": "여신전문금융업법", "article": "제16조", "paragraph": 5, "item": "1"}], "answer_note": "위조·변조된 카드의 사용은 카드사가 책임진다"},
+    {"id": "q25", "kind": "answer", "question": "명세서에 모르는 결제가 있어서 카드사에 이의 제기했어. 그 돈 일단 내야 해?", "evidence": [{"law": "여신전문금융업법", "article": "제16조", "paragraph": 10}], "answer_note": "조사를 마칠 때까지 카드사는 그 금액을 받을 수 없다"},
+    {"id": "q26", "kind": "answer", "question": "가게에서 카드는 안 되고 현금만 된대. 이래도 되는 거야?", "evidence": [{"law": "여신전문금융업법", "article": "제19조", "paragraph": 1}], "answer_note": "신용카드로 거래한다는 이유로 결제를 거절할 수 없다"},
+    {"id": "q27", "kind": "answer", "question": "할부 취소하려면 어떻게 알려야 해? 전화로 말해도 돼?", "evidence": [{"law": "할부거래에 관한 법률", "article": "제8조", "paragraph": 3}], "answer_note": "기간 안에 철회 의사를 적은 서면을 보내야 한다"},
+    {"id": "q28", "kind": "answer", "question": "할부금 안 내겠다고 했는데 카드사가 아무 답이 없어. 그럼 어떻게 돼?", "evidence": [{"law": "할부거래에 관한 법률", "article": "제16조", "paragraph": 6}], "answer_note": "정한 기간 안에 통지하지 않으면 지급 거절을 받아들인 것으로 본다"},
+    {"id": "q11", "kind": "partial", "question": "문자에 온 링크를 눌렀다가 계좌에서 돈이 빠져나갔어. 은행이 물어줘?", "evidence": [{"law": "전자금융거래법", "article": "제9조", "paragraph": 1, "item": "3"}, {"law": "전자금융거래법", "article": "제9조", "paragraph": 2}], "answer_note": "부정한 방법으로 얻은 접근매체로 생긴 사고는 금융회사가 배상 책임을 지는 것이 원칙이고, 이용자의 고의·중대한 과실이 약관에 정한 범위에 있으면 이용자가 부담할 수 있다", "missing": "이 사례가 고의·중대한 과실에 해당하는지는 조문으로 판단할 수 없다 — 원칙과 예외까지만 답한다"},
+    {"id": "q12", "kind": "partial", "question": "넷플릭스 구독료랑 아파트 관리비를 카드로 냈는데, 둘 다 카드 공제 받을 수 있어?", "evidence": [{"law": "조세특례제한법 시행령", "article": "제121조의2", "paragraph": 6, "item": "3"}], "answer_note": "아파트관리비는 빠진다", "missing": "구독료는 아홉 조문에 따로 적혀 있지 않다 — 모른다고 답해야 맞다"},
+    {"id": "q29", "kind": "partial", "question": "할부로 산 옷을 한 번 입어 봤는데 철회할 수 있어?", "evidence": [{"law": "할부거래에 관한 법률", "article": "제8조", "paragraph": 2, "item": "2"}], "answer_note": "사용·소비로 가치가 현저히 낮아질 우려가 있는 대통령령의 재화를 사용했으면 철회할 수 없다", "missing": "옷이 그 재화에 드는지는 대통령령이라 아홉 조문에 없다"},
+    {"id": "q30", "kind": "partial", "question": "분실 신고하기 전에 긁힌 돈, 며칠 전 것까지 카드사가 책임져?", "evidence": [{"law": "여신전문금융업법", "article": "제16조", "paragraph": 2}], "answer_note": "통지 전 사용도 대통령령으로 정하는 기간의 범위에서 카드사가 책임진다", "missing": "그 기간(며칠)은 대통령령이라 아홉 조문에 없다"},
+    {"id": "q31", "kind": "partial", "question": "출퇴근 택시비도 대중교통 공제율로 쳐 줘?", "evidence": [{"law": "조세특례제한법", "article": "제126조의2", "paragraph": 2, "item": "2"}], "answer_note": "대중교통이용분은 「대중교통의 육성 및 이용촉진에 관한 법률」의 대중교통수단 이용분이다", "missing": "택시가 그 대중교통수단인지는 그 법률이라 아홉 조문에 없다"},
+    {"id": "q13", "kind": "none", "question": "카드 포인트가 쌓여 있는데 언제 없어지는 거야?", "evidence": [], "missing": "포인트 소멸은 아홉 조문에 없다"},
+    {"id": "q32", "kind": "none", "question": "카드 연회비는 해지하면 돌려받을 수 있어?", "evidence": [], "missing": "연회비 반환은 아홉 조문에 없다"},
+    {"id": "q33", "kind": "none", "question": "해외에서 카드 쓰면 수수료가 얼마나 붙어?", "evidence": [], "missing": "해외 결제 수수료는 아홉 조문에 없다"},
+    {"id": "q34", "kind": "none", "question": "카드 한도를 올리려면 어떻게 해야 해?", "evidence": [], "missing": "한도 상향은 아홉 조문에 없다"},
+    {"id": "q35", "kind": "none", "question": "적금 이자에도 세금이 붙어?", "evidence": [], "missing": "이자소득 과세는 아홉 조문에 없다"}
   ]
 }
