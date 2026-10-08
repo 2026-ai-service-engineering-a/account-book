@@ -20,6 +20,7 @@ from agent.application.dto import (
 from agent.application.errors import ModelUnavailable
 from agent.domain.tools import (
     BudgetLine,
+    CategoryLine,
     CategoryShift,
     Frequency,
     SpendingTotals,
@@ -162,6 +163,9 @@ class FakeLedger:
         self, month: date, category_id: CategoryId | None
     ) -> tuple[BudgetLine, ...]:
         return self._reply("budget_status", tuple, month, category_id)
+
+    async def categories(self) -> tuple[CategoryLine, ...]:
+        return self._reply("categories", tuple)
 
     def _reply[T](self, method: str, kind: type[T], *args: object) -> T:
         self.calls.append((method, args))

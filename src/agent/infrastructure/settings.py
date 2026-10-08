@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr = SecretStr("")
     # LLM 호출 한 번의 상한. 스키마를 못 맞추면 한 번 더 부르니, 요청 하나는 이것의 두 배까지 간다.
     agent_timeout_seconds: float = 10.0
+    # 대화 루프의 상한(docs/ai/agent-loop.md 8장). 넘으면 끊고 그때까지의 답을 낸다.
+    agent_max_steps: int = 8  # LLM 호출 수
+    agent_max_cost_usd: float = 0.50  # 요청 하나가 쓸 수 있는 돈
 
     # api의 주소. 지금은 compose가 ui 안의 api 대역(http://ui:8080)으로 덮어쓴다.
     api_base_url: str = "http://api:8000"

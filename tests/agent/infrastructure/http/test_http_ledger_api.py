@@ -134,3 +134,10 @@ def test_server_errors_and_unreadable_4xx_are_not_rejections(status, body):
     with pytest.raises(LedgerUnavailable) as error:
         asyncio.run(api(handler).summary(TransactionFilter(WEEK)))
     assert not isinstance(error.value, LedgerRejected)
+
+
+def test_categories_are_the_whole_dictionary():
+    handler, seen = recorder(body=[{"id": "salary", "name": "급여", "direction": "income"}])
+    (line,) = asyncio.run(api(handler).categories())
+    assert seen[0].url.path == "/v1/categories" and not seen[0].url.params
+    assert line.id == "salary"
