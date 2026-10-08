@@ -3,7 +3,14 @@ from __future__ import annotations
 from datetime import date
 from typing import Protocol
 
-from agent.application.dto import CategoryQuery, PendingText, SearchResult, TransactionFilter
+from agent.application.dto import (
+    CategoryQuery,
+    DocumentQuery,
+    PendingText,
+    RetrievedChunk,
+    SearchResult,
+    TransactionFilter,
+)
 from agent.domain.tools import (
     BudgetLine,
     CategoryLine,
@@ -48,4 +55,8 @@ class LedgerApi(Protocol):
 
     async def categories(self) -> tuple[CategoryLine, ...]:
         """카테고리 사전 — 지출·수입 전부. 도구가 아니라 루프가 인자를 검사하는 데 쓴다."""
+        ...
+
+    async def search_documents(self, query: DocumentQuery) -> tuple[RetrievedChunk, ...]:
+        """문서 조각 찾기 — 점수 높은 순으로 k개. 벡터를 실으면 api가 코사인·RRF로 찾는다."""
         ...

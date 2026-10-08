@@ -10,9 +10,16 @@ import time
 
 from fastapi import FastAPI
 
-from agent.application.dto import ClassifyThresholds, LoopLimits
+from agent.application.dto import ClassifyThresholds, LoopLimits, RetrievalDefaults
 from agent.application.ports import Embedder, LanguageModel, LedgerApi
-from agent.application.use_cases import AnswerQuestion, ClassifyCategory, ReadCapture
+from agent.application.use_cases import (
+    AnswerQuestion,
+    ClassifyCategory,
+    ReadCapture,
+    Retrieve,
+    SyncIndex,
+)
+from agent.domain.values import ChunkStrategy, SearchMode
 from agent.infrastructure.http import HttpLedgerApi
 from agent.infrastructure.llm import LitellmEmbedder, LitellmLanguageModel
 from agent.infrastructure.settings import Settings
@@ -36,7 +43,7 @@ def create_app(
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     # litellm은 호출마다 INFO 두 줄을 찍는다. 우리 로그(capture done …)가 그 사이에 묻힌다.
     logging.getLogger("LiteLLM").setLevel(logging.WARNING)
-    thresholds, limits = _DEFAULT_THRESHOLDS, _DEFAULT_LIMITS
+    thresholds, limits, defaults = _DEFAULT_THRESHOLDS, _DEFAULT_LIMITS, RetrievalDefaults()
     if model is None or ledger is None:
         settings = settings or Settings()
         thresholds = ClassifyThresholds(
@@ -44,6 +51,11 @@ def create_app(
         )
         limits = LoopLimits(
             settings.agent_max_steps, settings.agent_max_cost_usd, _CHAT_WALL_SECONDS
+        )
+        defaults = RetrievalDefaults(
+            ChunkStrategy(settings.doc_chunk_strategy),
+            SearchMode(settings.doc_search_mode),
+            settings.doc_top_k,
         )
         model = model or LitellmLanguageModel(
             settings.agent_model, settings.api_key(), timeout=settings.agent_timeout_seconds
@@ -60,6 +72,13 @@ def create_app(
             )
     classify = ClassifyCategory(ledger, model, thresholds, embedder)
     answer = AnswerQuestion(model, ledger, limits, time.perf_counter)
+    index = SyncIndex(ledger, embedder) if embedder else None
+    retrieve = Retrieve(ledger, embedder, index, defaults)
     return build_web_app(
-        Services(read_capture=ReadCapture(model, classify), classify=classify, answer=answer)
+        Services(
+            read_capture=ReadCapture(model, classify),
+            classify=classify,
+            answer=answer,
+            retrieve=retrieve,
+        )
     )

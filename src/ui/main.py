@@ -30,6 +30,7 @@ from ui.infrastructure.agent import (
     AgentCaptureReader,
     AgentCategorySuggester,
     AgentChatAgent,
+    AgentDocumentGateway,
     RoutedChatAgent,
 )
 from ui.infrastructure.api import (
@@ -104,6 +105,7 @@ def create_app(
             demo=demo,
             capture=_capture_reader(settings, capture_delay),
             live_seats=_LIVE if settings.agent_base_url else frozenset(),
+            documents_by_agent=bool(settings.agent_base_url),
         )
     )
 
@@ -140,10 +142,20 @@ def _memory_ledger(zone: ZoneInfo, clock: Clock, seeded: bool) -> _Ledger:
 
 
 def _documents(settings: Settings) -> DocumentGateway:
-    """문서 검색. api가 없으면 조문 네 줄짜리 대역이 선다."""
-    if not settings.api_base_url:
-        return MemoryDocumentGateway()
-    return HttpDocumentGateway(ApiClient(settings.api_base_url, timeout=_API_TIMEOUT))
+    """문서 검색. api가 없으면 조문 네 줄짜리 대역이, agent가 있으면 agent의 /retrieve가 선다.
+
+    agent가 죽으면 낱말 검색(api나 대역)으로 물러선다.
+    """
+    keyword: DocumentGateway = (
+        HttpDocumentGateway(ApiClient(settings.api_base_url, timeout=_API_TIMEOUT))
+        if settings.api_base_url
+        else MemoryDocumentGateway()
+    )
+    if not settings.agent_base_url:
+        return keyword
+    # 처음 한 번은 색인 안 된 조각을 임베딩하느라 길다(조각 이백여 개, 묶음 셋)
+    timeout = settings.agent_timeout_seconds * 3 + 2
+    return AgentDocumentGateway(settings.agent_base_url, timeout, keyword)
 
 
 def _capture_reader(settings: Settings, delay: float) -> CaptureReader:

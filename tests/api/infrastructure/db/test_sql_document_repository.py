@@ -55,3 +55,39 @@ def test_keyword_search_with_pg_trgm(migrated):
     assert hits[0].score > hits[-1].score and len(hits) == 5
     assert hits[0].title == "조세특례제한법 시행령"
     assert none == ()  # 그 전략의 조각은 넣지 않았다
+
+
+def test_pending_chunk_texts_until_embedded(migrated):
+    document = parse_law(LAW.read_text(encoding="utf-8"))
+    chunks = chunk_law(document, ChunkStrategy.PARAGRAPH)
+    sessions = SqlUnitOfWork.factory(migrated)
+    with SqlUnitOfWork(sessions) as uow:
+        uow.documents.replace(document, chunks)
+        uow.commit()
+    with SqlUnitOfWork(sessions) as uow:
+        pending = uow.documents.pending("m@768", 100)
+        assert {p.text_hash for p in pending} == {c.text_hash for c in chunks}
+        uow.index.put_embedding("m@768", pending[0].text_hash, tuple([0.1] * 768))
+        uow.commit()
+    with SqlUnitOfWork(sessions) as uow:
+        assert len(uow.documents.pending("m@768", 100)) == len(chunks) - 1
+
+
+def test_nearest_by_cosine_through_text_embeddings(migrated):
+    document = parse_law(LAW.read_text(encoding="utf-8"))
+    chunks = chunk_law(document, ChunkStrategy.PARAGRAPH)
+    sessions = SqlUnitOfWork.factory(migrated)
+
+    def unit(i: int) -> tuple[float, ...]:
+        return tuple(1.0 if j == i else 0.0 for j in range(768))
+
+    with SqlUnitOfWork(sessions) as uow:
+        uow.documents.replace(document, chunks)
+        for i, chunk in enumerate(chunks):
+            uow.index.put_embedding("m@768", chunk.text_hash, unit(i))
+        uow.commit()
+    with SqlUnitOfWork(sessions) as uow:
+        hits = uow.documents.nearest(unit(3), "m@768", ChunkStrategy.PARAGRAPH, 2)
+        other = uow.documents.nearest(unit(3), "other@768", ChunkStrategy.PARAGRAPH, 2)
+    assert hits[0].chunk.id == chunks[3].id and hits[0].score == pytest.approx(1.0)
+    assert hits[1].score == pytest.approx(0.0) and other == ()

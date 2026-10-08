@@ -219,18 +219,18 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 | `POST` | `/v1/documents` | — (문서 넣기) | 4 |
 | `GET` | `/v1/documents` | — (화면) | 4 |
 | `GET` | `/v1/documents/{id}/chunks` | — (화면·평가) | 4 |
-| `POST` | `/v1/documents/search` | `search_documents` | 4 |
 
-기능 4의 키워드 검색 `GET /v1/documents/search`는 계약에 옮겼다(api-contract 6장). 남은 줄의 벡터 검색은
-기능 1의 `POST /v1/categories/suggest`와 같은 모양이다 — `agent`가 질문을
-임베딩해 벡터를 보내고, `api`는 유사도로 조각을 고른다. 조각의 임베딩은 기능 1의 색인 엔드포인트
+기능 4의 검색 `GET`·`POST /v1/documents/search`는 계약에 옮겼다(api-contract 6장). `POST`는 기능 1의
+`POST /v1/categories/suggest`와 같은 모양이다 — `agent`가 질문을 임베딩해 벡터를 보내고, `api`는
+유사도로 조각을 고른다. 대응 도구 `search_documents`는 doc-tool에서 붙는다. 조각의 임베딩은 기능 1의 색인 엔드포인트
 둘(`/v1/embeddings/pending`·`PUT /v1/embeddings/{text_hash}`)로 채운다. 늘어나는 색인 엔드포인트는 없다
 ([document-rag.md 7.1](document-rag.md#71-지금-정하는-것)).
 
 기능 1의 색인 엔드포인트 둘과 기능 2의 `/v1/stats/frequency`·`/v1/stats/compare`는 계약에
 옮겼다(api-contract 6장).
 
-`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)와 `POST /ask`(기능 4)다. 기록의 `POST /capture`, 기능 1의
+`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)와 `POST /ask`(기능 4)다. 기능 4의 찾기
+`POST /retrieve`는 붙었다 — 정본은 [../../ui_docs/pages/documents.md](../../ui_docs/pages/documents.md). 기록의 `POST /capture`, 기능 1의
 `POST /classify`, 기능 2의 `POST /chat`(SSE)은 이미 붙었다 — `/chat`의 정본은
 [../../ui_docs/pages/chat.md 4.1](../../ui_docs/pages/chat.md#41-sse-이벤트가-화면으로), 나머지 둘은
 [../../ui_docs/pages/transaction-form.md 4.5](../../ui_docs/pages/transaction-form.md#45-agent와-주고받는-것--post-capture)와
@@ -250,15 +250,14 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 
 기능 1의 변수(`EMBEDDING_MODEL`·`EMBEDDING_DIMENSIONS`·`RAG_TOP_K`·`RAG_VOTE_TEMPERATURE`·
 `CLASSIFY_MIN_CONFIDENCE`·`CLASSIFY_ABSTAIN_BELOW`)는 `.env.sample`에 옮겼다.
+기능 4의 `DOC_CHUNK_STRATEGY`·`DOC_SEARCH_MODE`·`DOC_TOP_K`도 옮겼다(document-rag.md 6.3에서 재서 골랐다).
+계획에 있던 `CHUNK_SIZE`·`CHUNK_OVERLAP`은 없앴다 — 길이 상한과 겹침 대신 청킹 전략 셋을 견줬다.
 `EMBEDDING_MODEL`은 비어 있어도 뜬다 — 시크릿이 아니라 기능 스위치라서, 비면 벡터 단계를
 건너뛰고 규칙·이력으로만 고른다.
 
 ```
 INSIGHT_MAX_TOOL_CALLS=6    # 리포트 한 번에 허용하는 집계 호출 수
 
-CHUNK_SIZE=600              # 조각 길이 상한(글자). 시작값 — 재서 정한다(document-rag.md 7.2)
-CHUNK_OVERLAP=0             # 조각 사이 겹침(글자). 시작값
-DOC_TOP_K=5                 # 생성에 넘기는 조각 수. 시작값
 DOC_MIN_SIMILARITY=0.6      # 상위 조각의 유사도가 이 아래면 모른다고 답한다. 시작값
 
 MCP_ENABLED=false           # 외부 AI 서비스 통로. 기본은 닫혀 있다

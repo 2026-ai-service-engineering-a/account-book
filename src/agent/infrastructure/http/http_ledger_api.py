@@ -5,7 +5,14 @@ from datetime import date
 import httpx
 from pydantic import BaseModel, ValidationError
 
-from agent.application.dto import CategoryQuery, PendingText, SearchResult, TransactionFilter
+from agent.application.dto import (
+    CategoryQuery,
+    DocumentQuery,
+    PendingText,
+    RetrievedChunk,
+    SearchResult,
+    TransactionFilter,
+)
 from agent.application.errors import LedgerRejected, LedgerUnavailable
 from agent.domain.tools import (
     BudgetLine,
@@ -20,6 +27,7 @@ from agent.domain.values import CategoryId, Direction, TimeRange
 from .budget_status_reply import BudgetStatusReply
 from .categories_reply import CategoriesReply
 from .compare_reply import CompareReply
+from .document_hits_reply import DocumentHitsReply
 from .error_reply import ErrorReply
 from .frequency_reply import FrequencyReply
 from .pending_reply import PendingReply
@@ -115,6 +123,18 @@ class HttpLedgerApi:
     async def categories(self) -> tuple[CategoryLine, ...]:
         response = await self._send("GET", "/v1/categories")
         return self._parse(CategoriesReply, response).lines()
+
+    async def search_documents(self, query: DocumentQuery) -> tuple[RetrievedChunk, ...]:
+        body: dict[str, object] = {
+            "q": query.text,
+            "k": query.k,
+            "strategy": query.strategy.value,
+            "mode": query.mode.value,
+            "embedding_model": query.embedding_model,
+            "query_vector": list(query.query_vector) if query.query_vector else None,
+        }
+        response = await self._send("POST", "/v1/documents/search", json=body)
+        return self._parse(DocumentHitsReply, response).chunks()
 
     async def _send(
         self,

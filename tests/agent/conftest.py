@@ -8,10 +8,12 @@ from agent.application.dto import (
     Candidate,
     CategoryEntry,
     CategoryQuery,
+    DocumentQuery,
     Evidence,
     ModelReply,
     PendingText,
     Prompt,
+    RetrievedChunk,
     SearchResult,
     SearchStrategy,
     ToolPrompt,
@@ -166,6 +168,9 @@ class FakeLedger:
 
     async def categories(self) -> tuple[CategoryLine, ...]:
         return self._reply("categories", tuple)
+
+    async def search_documents(self, query: DocumentQuery) -> tuple[RetrievedChunk, ...]:
+        return self._reply("search_documents", tuple, query)
 
     def _reply[T](self, method: str, kind: type[T], *args: object) -> T:
         self.calls.append((method, args))

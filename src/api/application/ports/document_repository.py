@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Protocol
 
-from api.application.dto import ChunkHit
+from api.application.dto import ChunkHit, IndexText
 from api.domain.entities import Document, DocumentChunk
 from api.domain.values import ChunkStrategy
 
@@ -17,4 +17,14 @@ class DocumentRepository(Protocol):
 
     def search(self, query: str, strategy: ChunkStrategy, k: int) -> tuple[ChunkHit, ...]:
         """한 전략의 조각 중 키워드가 가장 비슷한 k개, 점수 높은 순. 임계값으로 거르지 않는다."""
+        ...
+
+    def pending(self, model: str, limit: int) -> tuple[IndexText, ...]:
+        """그 모델의 벡터가 아직 없는 조각의 찾는 글. 같은 글은 하나로 — 해시가 같다."""
+        ...
+
+    def nearest(
+        self, vector: tuple[float, ...], model: str, strategy: ChunkStrategy, k: int
+    ) -> tuple[ChunkHit, ...]:
+        """한 전략의 조각 중 질문 벡터와 코사인이 가장 가까운 k개. 그 모델의 벡터가 있는 조각만."""
         ...

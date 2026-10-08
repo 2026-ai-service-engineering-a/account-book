@@ -203,7 +203,7 @@ class FakeUnitOfWork:
         self.stats = FakeStats(self.transactions)
         self.budgets = FakeBudgets()
         self.index = FakeIndex(self.transactions)
-        self.documents = FakeDocuments()
+        self.documents = FakeDocuments(self.index)
         self.commits = 0
 
     def __call__(self) -> FakeUnitOfWork:
