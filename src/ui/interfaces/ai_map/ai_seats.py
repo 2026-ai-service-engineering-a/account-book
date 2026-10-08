@@ -35,7 +35,7 @@ SEATS: tuple[AiSeat, ...] = (
         doc="docs/ai/agent-loop.md 3장 · tools.md 6장",
         live=(
             "한 줄로 채우기는 agent의 POST /capture가 LLM으로 읽는다. 날짜 계산과 가맹점 검사는"
-            " 코드가 한다. 채팅은 아직 각본 대역"
+            " 코드가 한다. 채팅의 기록 문장은 아직 각본 대역"
         ),
     ),
     AiSeat(
@@ -83,6 +83,11 @@ SEATS: tuple[AiSeat, ...] = (
         stand_in="ScriptedChatAgent",
         stand_in_does="'얼마'·'?'가 든 질문에 리포트 합계로 답한다",
         doc="docs/ai/chat-analytics.md",
+        live=(
+            "채팅의 질문(금액이 없는 한 줄)은 agent의 POST /chat이 받는다. LLM이 읽기 도구를"
+            " 고르고, 기간은 코드가 날짜로 푼다. 숫자는 api가 내고, 답의 숫자가 도구에서 온 것이"
+            " 아니면 해석 줄을 버리고 표만 보인다"
+        ),
     ),
     AiSeat(
         key="insight",

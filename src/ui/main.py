@@ -19,12 +19,18 @@ from ui.application.ports import (
     CaptureReader,
     CatalogGateway,
     CategorySuggester,
+    ChatAgent,
     Clock,
     DemoData,
     ReportGateway,
     TransactionGateway,
 )
-from ui.infrastructure.agent import AgentCaptureReader, AgentCategorySuggester
+from ui.infrastructure.agent import (
+    AgentCaptureReader,
+    AgentCategorySuggester,
+    AgentChatAgent,
+    RoutedChatAgent,
+)
 from ui.infrastructure.api import (
     ApiClient,
     HttpBudgetGateway,
@@ -53,7 +59,7 @@ from ui.interfaces.services import Services
 from ui.interfaces.web_app import build_web_app
 
 # agent가 붙으면 진짜가 서는 자리(ai_map의 key)
-_LIVE = frozenset({"capture", "classify"})
+_LIVE = frozenset({"capture", "classify", "query"})
 # api 호출 하나의 상한. 화면 한 장이 기다리는 시간이라 짧게 둔다 — 집계도 DB가 하니 금방이다.
 _API_TIMEOUT = 5.0
 
@@ -70,8 +76,8 @@ def create_app(
     clock = clock or SystemClock(zone)
     ledger = _api_ledger(settings) if settings.api_base_url else _memory_ledger(zone, clock, seeded)
     transactions, reports, budgets, catalog, demo = ledger
-    # 채팅은 아직 각본 대역이라 각본 대역끼리 짝을 짓는다. 폼의 AI 버튼만 진짜 agent를 부른다.
-    chat = ScriptedChatAgent(
+    # 채팅의 기록 쪽은 아직 각본 대역이다. 질문 쪽만 agent가 있으면 agent가 받는다.
+    scripted = ScriptedChatAgent(
         transactions,
         reports,
         budgets,
@@ -80,6 +86,7 @@ def create_app(
         clock,
         token_delay=token_delay,
     )
+    chat = _chat_agent(settings, clock, scripted)
     return build_web_app(
         Services(
             transactions=transactions,
@@ -142,3 +149,13 @@ def _category_suggester(settings: Settings) -> CategorySuggester:
     # 검색 → (애매하면) LLM 한 번. 스키마를 못 맞추면 한 번 더 부르는 것까지 기다린다.
     timeout = settings.agent_timeout_seconds * 2 + 2
     return AgentCategorySuggester(settings.agent_base_url, timeout)
+
+
+def _chat_agent(settings: Settings, clock: Clock, scripted: ChatAgent) -> ChatAgent:
+    if not settings.agent_base_url:
+        return scripted
+    # 이벤트 사이 한 번의 읽기 상한. 도구 고르기 LLM 한 번과 스키마 재시도까지 기다린다.
+    # 실행 전체는 agent가 벽시계(대화 20초)로 끊는다.
+    timeout = settings.agent_timeout_seconds * 2 + 2
+    questions = AgentChatAgent(settings.agent_base_url, settings.user_timezone, clock, timeout)
+    return RoutedChatAgent(questions, scripted)

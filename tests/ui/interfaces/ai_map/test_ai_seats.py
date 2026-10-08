@@ -48,5 +48,5 @@ def test_cited_doc_exists(seat):
     assert Path(seat.doc.split()[0]).is_file()
 
 
-def test_capture_and_classify_have_a_real_agent():
-    assert {s.key for s in SEATS if s.live} == {"capture", "classify"}
+def test_capture_classify_and_query_have_a_real_agent():
+    assert {s.key for s in SEATS if s.live} == {"capture", "classify", "query"}
