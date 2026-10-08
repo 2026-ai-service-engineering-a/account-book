@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from agent.application.dto import ToolCall, ToolError, ToolMeta, ToolResult, ToolStep
-from agent.application.use_cases.number_check import numbers_from_tools, unsupported
+from agent.application.use_cases.number_check import numbers_from_tools, numbers_in, unsupported
 from agent.domain.values import TimeRange
 from tests.agent.conftest import SEOUL
 
@@ -47,3 +47,19 @@ def test_signs_are_dropped_so_a_decrease_can_be_told():
 def test_failed_steps_lend_no_numbers():
     failed = ToolStep(STEP.call, ToolResult("c1", error=ToolError("not_found", False, "x")))
     assert unsupported("7번이에요.", numbers_from_tools([failed], TODAY)) == ["7"]
+
+
+def test_numbers_in_a_text_see_fractions_as_their_parts():
+    found = numbers_in("대중교통이용분 \N{MULTIPLICATION SIGN} 100분의 40, 연 250만원")
+    assert {"100", "40", "250"} <= found
+    assert unsupported("40%예요.", found) == []
+
+
+def test_document_chunks_lend_no_numbers_until_cited():
+    chunk = {"ref": "d1a2b3c", "title": "조세특례제한법", "heading": "제126조의2 ② 2.",
+             "effective_date": "2025-01-01", "body": "대중교통이용분의 100분의 40"}  # fmt: skip
+    found = ToolStep(
+        ToolCall("c2", "search_documents", {"query": "대중교통 공제율"}),
+        ToolResult("c2", {"chunks": [chunk]}, ToolMeta(1, False, 3, {})),
+    )
+    assert unsupported("40%예요.", numbers_from_tools([STEP, found], TODAY)) == ["40"]

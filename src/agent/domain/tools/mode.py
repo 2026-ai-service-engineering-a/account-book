@@ -16,7 +16,7 @@ class Mode(StrEnum):
     """
 
     CLASSIFY = "classify"  # 기능 1의 AI 버튼
-    QUERY = "query"  # 기능 2의 대화 조회 — 쓰기 도구가 없다
+    QUERY = "query"  # 기능 2의 대화 조회와 기능 4의 조문 찾기 — 쓰기 도구가 없다
 
     @property
     def tools(self) -> tuple[ToolName, ...]:
@@ -35,5 +35,6 @@ _TOOLS = {
         ToolName.COMPARE_PERIODS,
         ToolName.GET_BUDGET_STATUS,
         ToolName.SEARCH_TRANSACTIONS,
+        ToolName.SEARCH_DOCUMENTS,
     ),
 }

@@ -22,6 +22,8 @@ from ui.application.ports import (
     ChatAgent,
     Clock,
     DemoData,
+    DocumentAnswerer,
+    DocumentGateway,
     ReportGateway,
     TransactionGateway,
 )
@@ -29,12 +31,15 @@ from ui.infrastructure.agent import (
     AgentCaptureReader,
     AgentCategorySuggester,
     AgentChatAgent,
+    AgentDocumentAnswerer,
+    AgentDocumentGateway,
     RoutedChatAgent,
 )
 from ui.infrastructure.api import (
     ApiClient,
     HttpBudgetGateway,
     HttpCatalogGateway,
+    HttpDocumentGateway,
     HttpReportGateway,
     HttpTransactionGateway,
 )
@@ -42,6 +47,7 @@ from ui.infrastructure.memory import (
     MemoryBudgetGateway,
     MemoryCatalogGateway,
     MemoryDemoData,
+    MemoryDocumentGateway,
     MemoryReportGateway,
     MemoryStore,
     MemoryTransactionGateway,
@@ -51,6 +57,7 @@ from ui.infrastructure.scripted import (
     ScriptedCaptureReader,
     ScriptedCategorySuggester,
     ScriptedChatAgent,
+    ScriptedDocumentAnswerer,
     ScriptedReportNarrator,
 )
 from ui.infrastructure.settings import Settings
@@ -87,12 +94,15 @@ def create_app(
         token_delay=token_delay,
     )
     chat = _chat_agent(settings, clock, scripted)
+    documents = _documents(settings)
     return build_web_app(
         Services(
             transactions=transactions,
             reports=reports,
             budgets=budgets,
             catalog=catalog,
+            documents=documents,
+            answerer=_answerer(settings, documents),
             suggester=_category_suggester(settings),
             chat=chat,
             narrator=ScriptedReportNarrator(),
@@ -100,6 +110,7 @@ def create_app(
             demo=demo,
             capture=_capture_reader(settings, capture_delay),
             live_seats=_LIVE if settings.agent_base_url else frozenset(),
+            documents_by_agent=bool(settings.agent_base_url),
         )
     )
 
@@ -133,6 +144,33 @@ def _memory_ledger(zone: ZoneInfo, clock: Clock, seeded: bool) -> _Ledger:
         MemoryCatalogGateway(store),
         MemoryDemoData(store, clock),
     )
+
+
+def _documents(settings: Settings) -> DocumentGateway:
+    """문서 검색. api가 없으면 조문 네 줄짜리 대역이, agent가 있으면 agent의 /retrieve가 선다.
+
+    agent가 죽으면 낱말 검색(api나 대역)으로 물러선다.
+    """
+    keyword: DocumentGateway = (
+        HttpDocumentGateway(ApiClient(settings.api_base_url, timeout=_API_TIMEOUT))
+        if settings.api_base_url
+        else MemoryDocumentGateway()
+    )
+    if not settings.agent_base_url:
+        return keyword
+    # 처음 한 번은 색인 안 된 조각을 임베딩하느라 길다(조각 이백여 개, 묶음 셋)
+    timeout = settings.agent_timeout_seconds * 3 + 2
+    return AgentDocumentGateway(settings.agent_base_url, timeout, keyword)
+
+
+def _answerer(settings: Settings, documents: DocumentGateway) -> DocumentAnswerer:
+    """문서 Q&A. agent가 없으면 찾은 조문만 보이는 각본 대역이, 있으면 agent의 /ask가 선다."""
+    scripted = ScriptedDocumentAnswerer(documents)
+    if not settings.agent_base_url:
+        return scripted
+    # 찾기(임베딩) 한 번과 생성 한 번. 처음 한 번은 색인 안 된 조각까지 임베딩한다
+    timeout = settings.agent_timeout_seconds * 4 + 2
+    return AgentDocumentAnswerer(settings.agent_base_url, timeout, scripted)
 
 
 def _capture_reader(settings: Settings, delay: float) -> CaptureReader:

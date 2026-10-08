@@ -1,9 +1,14 @@
+from .answer_status import AnswerStatus
 from .candidate import Candidate
 from .capture_extraction import CaptureExtraction
 from .category_entry import CategoryEntry
 from .category_pick import CategoryPick
 from .category_query import CategoryQuery
+from .citation_verdict import CitationVerdict
 from .classify_thresholds import ClassifyThresholds
+from .document_answer import DocumentAnswer
+from .document_answer_draft import DocumentAnswerDraft
+from .document_query import DocumentQuery
 from .evidence import Evidence
 from .extraction_kind import ExtractionKind
 from .loop_event import LoopEvent
@@ -14,6 +19,9 @@ from .model_reply import ModelReply
 from .model_usage import ModelUsage
 from .pending_text import PendingText
 from .prompt import Prompt
+from .retrieval import Retrieval
+from .retrieval_defaults import RetrievalDefaults
+from .retrieved_chunk import RetrievedChunk
 from .search_result import SearchResult
 from .search_strategy import SearchStrategy
 from .stop_reason import StopReason
@@ -27,12 +35,17 @@ from .transaction_filter import TransactionFilter
 from .turn import Turn, TurnRole
 
 __all__ = [
+    "AnswerStatus",
     "Candidate",
     "CaptureExtraction",
     "CategoryEntry",
     "CategoryPick",
     "CategoryQuery",
+    "CitationVerdict",
     "ClassifyThresholds",
+    "DocumentAnswer",
+    "DocumentAnswerDraft",
+    "DocumentQuery",
     "Evidence",
     "ExtractionKind",
     "LoopEvent",
@@ -43,6 +56,9 @@ __all__ = [
     "ModelUsage",
     "PendingText",
     "Prompt",
+    "Retrieval",
+    "RetrievalDefaults",
+    "RetrievedChunk",
     "SearchResult",
     "SearchStrategy",
     "StopReason",

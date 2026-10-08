@@ -27,6 +27,7 @@ from api.application.use_cases import (
     PutEmbedding,
     ReadBudgetStatuses,
     ReadPace,
+    SearchDocuments,
     SearchTransactions,
     SetBudget,
     SuggestCategory,
@@ -85,5 +86,6 @@ def create_app(
             ),
             pending=ListPendingTexts(unit_of_work),
             put_embedding=PutEmbedding(),
+            search_documents=SearchDocuments(unit_of_work),
         )
     )

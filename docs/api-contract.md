@@ -155,12 +155,15 @@ X-Agent-Run-Id: 01J9X...
 | `POST` | `/v1/categories/suggest` | `suggest_category` | — |
 | `GET` | `/v1/categories` | — (화면) | — |
 | `GET` | `/v1/accounts` | — (화면) | — |
+| `GET` | `/v1/documents/search` | — (화면) | — |
+| `POST` | `/v1/documents/search` | `search_documents` | — |
 | `GET` | `/v1/embeddings/pending` | — (색인) | — |
 | `PUT` | `/v1/embeddings/{text_hash}` | — (색인) | — |
 | `GET` | `/v1/healthz` | — | — |
 
 색인 둘은 도구가 아니다. `agent`가 카테고리를 고르기 전에 색인 안 된 텍스트를 당겨 가
-임베딩하고 돌려주는 길이다. `api`는 임베딩 제공자를 모르고, `agent`를 부르지도 않는다
+임베딩하고 돌려주는 길이다. 문서 조각의 찾는 글도 같은 길로 색인된다 — `pending`은 거래의 색인 텍스트를
+먼저, 남는 자리를 문서 조각으로 채운다. 벡터는 둘 다 `text_embeddings`에 있다. `api`는 임베딩 제공자를 모르고, `agent`를 부르지도 않는다
 ([ai/category-suggestion-rag.md 4.3](ai/category-suggestion-rag.md#43-누가-벡터를-채우나)).
 
 ### 집계는 서버가 한다
@@ -191,6 +194,28 @@ X-Agent-Run-Id: 01J9X...
   `delta`(b - a), `percent`(a 대비 절댓값, a가 0이면 `null`)를 `b`가 큰 순서로 낸다. 둘 다 0인
   카테고리는 빠지지만 `category_id`로 집어 물으면 0이어도 한 줄이 온다.
 - "지난달보다 늘었나"를 같은 날까지로 견줄지는 부르는 쪽이 `a`의 끝을 잘라서 정한다.
+
+### 문서 검색 — 키워드·벡터·하이브리드
+
+문서 조각을 찾는다(기능 4, [ai/document-rag.md](ai/document-rag.md)). 길이 둘이다.
+
+- `GET /v1/documents/search?q=&k=&strategy=` — 키워드만. `agent`가 없을 때 화면이 바로 부른다.
+- `POST /v1/documents/search` — 본문 `{q, k, strategy, mode, embedding_model, query_vector}`.
+  `mode`는 `keyword`(기본) · `vector` · `hybrid`. 벡터와 하이브리드는 `agent`가 질문을 임베딩해
+  `query_vector`(768차원)와 모델 이름을 싣는다 — 없거나 차원이 다르면 `422 validation_error`.
+
+| `mode` | 순위 | 점수 |
+|---|---|---|
+| `keyword` | `pg_trgm`의 `word_similarity(q, search_text)` | 0~1 |
+| `vector` | 조각 벡터(`text_embeddings`, `text_hash`로 잇는다)와의 코사인 | 0~1 |
+| `hybrid` | 두 순위를 RRF로 합친다 — 각각 50개 후보에서 `1/(60+순위)`의 합 | RRF 점수(작다) |
+
+- 하이브리드는 **점수를 더하지 않는다.** 단위가 다른 두 점수를 더하면 뜻이 없어서 순위를 합친다.
+  후보 수가 `k`와 무관해서 `k`가 달라도 앞쪽 순위가 같다.
+- `strategy`는 청킹 전략 하나 — `fixed_500` · `paragraph`(기본) · `paragraph_item`.
+- 점수로 거르지 않는다. 순위를 재야 하고, 근거가 없다고 답할지는 생성 쪽이 정한다.
+- 줄마다 `id`·`document_id`·`title`·`effective_date`·`strategy`·`heading`·`body`·`score`. `body`는
+  원문이고, 찾는 글(`search_text`)은 내보내지 않는다.
 
 ### 예산은 바꿀 때까지 이어진다
 

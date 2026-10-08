@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Self
+from typing import Literal, Self
 
-from pydantic import SecretStr, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     embedding_dimensions: int = 768
     classify_min_confidence: float = 0.7  # 이 이상이면 LLM 없이 검색 결과를 쓴다
     classify_abstain_below: float = 0.25  # 이 아래면 LLM도 부르지 않고 사람에게 넘긴다
+
+    # 문서 찾기 — docs/ai/document-rag.md 6.3의 표를 보고 골랐다(7.2에 이유)
+    doc_chunk_strategy: Literal["fixed_500", "paragraph", "paragraph_item"] = "paragraph_item"
+    doc_search_mode: Literal["keyword", "vector", "hybrid"] = "hybrid"
+    doc_top_k: int = Field(default=8, ge=1, le=20)
 
     # .env에는 다른 서비스의 변수도 있다. agent가 쓰지 않는 것은 모른 척한다.
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

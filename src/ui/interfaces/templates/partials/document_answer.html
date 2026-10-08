@@ -1,0 +1,34 @@
+{%- from "icons.html" import icon -%}
+{#- 문서 Q&A의 답 — 답과 근거 조문, 찾은 조문 전부. 원문은 펼쳐 본다(ui_docs/pages/documents.md). -#}
+{% if answer.status == "answered" %}
+<article class="card">
+  <div class="card-content stack">
+    <div class="ai-row"><span class="ai-badge">{{ icon("sparkles") }}AI 답</span></div>
+    <p class="doc-answer">{{ answer.answer }}</p>
+    <div class="small muted">근거</div>
+    {% for c in answer.citations %}
+    <details class="doc-source">
+      <summary>{{ c.title }} {{ c.heading }} · 시행 {{ c.effective_date.isoformat() }}</summary>
+      <div class="quote doc-quote">{{ c.body }}</div>
+    </details>
+    {% endfor %}
+  </div>
+</article>
+{% elif answer.status == "abstained" %}
+<div class="alert">{{ icon("info") }}<div class="alert-title">이 조문들에는 근거가 없어요.</div>
+  <div class="alert-description">{{ answer.reason }} 가장 가까운 조문을 아래에 두었어요.</div></div>
+{% else %}
+<div class="alert alert-warning">{{ icon("alert") }}<div class="alert-title">답 대신 찾은 조문을 보여 드려요.</div>
+  <div class="alert-description">{{ answer.reason }}</div></div>
+{% endif %}
+{% if answer.chunks %}
+<div class="small muted">찾은 조문 {{ answer.chunks | length }}개</div>
+{% for c in answer.chunks %}
+<details class="doc-source">
+  <summary>{{ c.title }} {{ c.heading }}</summary>
+  <div class="quote doc-quote">{{ c.body }}</div>
+  <div class="small muted">시행 {{ c.effective_date.isoformat() }} · <code>{{ c.id }}</code></div>
+</details>
+{% endfor %}
+{% endif %}
+<p class="small muted">조문을 옮긴 것이고 법률 자문이 아닙니다. 시행일자 뒤에 법이 바뀌었을 수 있습니다.</p>

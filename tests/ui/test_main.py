@@ -6,15 +6,23 @@ from tests.ui.conftest import FixedClock
 from ui.infrastructure.agent import (
     AgentCaptureReader,
     AgentCategorySuggester,
+    AgentDocumentAnswerer,
+    AgentDocumentGateway,
     RoutedChatAgent,
 )
 from ui.infrastructure.api import (
     HttpBudgetGateway,
     HttpCatalogGateway,
+    HttpDocumentGateway,
     HttpReportGateway,
     HttpTransactionGateway,
 )
-from ui.infrastructure.scripted import ScriptedCaptureReader, ScriptedChatAgent
+from ui.infrastructure.memory import MemoryDocumentGateway
+from ui.infrastructure.scripted import (
+    ScriptedCaptureReader,
+    ScriptedChatAgent,
+    ScriptedDocumentAnswerer,
+)
 from ui.infrastructure.settings import Settings
 from ui.main import create_app
 
@@ -31,6 +39,8 @@ def test_agent_address_brings_the_real_reader():
     assert isinstance(services.capture, AgentCaptureReader)
     assert isinstance(services.suggester, AgentCategorySuggester)
     assert isinstance(services.chat, RoutedChatAgent)  # 질문만 agent로, 기록은 대역으로
+    assert isinstance(services.documents, AgentDocumentGateway) and services.documents_by_agent
+    assert isinstance(services.answerer, AgentDocumentAnswerer)
     assert services.live_seats == {"capture", "classify", "query"}
 
 
@@ -41,6 +51,7 @@ def test_api_address_brings_the_http_gateways_and_hides_the_demo_buttons():
     assert isinstance(services.reports, HttpReportGateway)
     assert isinstance(services.budgets, HttpBudgetGateway)
     assert isinstance(services.catalog, HttpCatalogGateway)
+    assert isinstance(services.documents, HttpDocumentGateway)
     assert services.demo is None  # 쓰던 가계부를 비우는 버튼은 두지 않는다
 
 
@@ -60,3 +71,9 @@ def test_seeded_flag_decides_first_screen():
 def test_without_an_agent_the_chat_is_the_scripted_stand_in():
     services = create_app(Settings(_env_file=None), clock=FixedClock(), seeded=False).state.services
     assert isinstance(services.chat, ScriptedChatAgent)
+
+
+def test_without_an_api_documents_have_a_small_stand_in():
+    services = create_app(Settings(_env_file=None), clock=FixedClock(), seeded=False).state.services
+    assert isinstance(services.documents, MemoryDocumentGateway)
+    assert isinstance(services.answerer, ScriptedDocumentAnswerer)

@@ -3,11 +3,13 @@
 from .scripted_capture_reader import ScriptedCaptureReader
 from .scripted_category_suggester import ScriptedCategorySuggester
 from .scripted_chat_agent import ScriptedChatAgent
+from .scripted_document_answerer import ScriptedDocumentAnswerer
 from .scripted_report_narrator import ScriptedReportNarrator
 
 __all__ = [
     "ScriptedCaptureReader",
     "ScriptedCategorySuggester",
     "ScriptedChatAgent",
+    "ScriptedDocumentAnswerer",
     "ScriptedReportNarrator",
 ]

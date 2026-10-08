@@ -3,6 +3,7 @@ from .catalog_repository import CatalogRepository
 from .category_index import CategoryIndex
 from .clock import Clock
 from .database_probe import DatabaseProbe
+from .document_repository import DocumentRepository
 from .idempotency_store import IdempotencyStore
 from .stats_repository import StatsRepository
 from .transaction_repository import TransactionRepository
@@ -14,6 +15,7 @@ __all__ = [
     "CategoryIndex",
     "Clock",
     "DatabaseProbe",
+    "DocumentRepository",
     "IdempotencyStore",
     "StatsRepository",
     "TransactionRepository",

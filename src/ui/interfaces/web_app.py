@@ -15,6 +15,7 @@ from .routers import (
     category_select_router,
     chat_router,
     demo_router,
+    documents_router,
     reports_router,
     transaction_form_router,
     transactions_router,
@@ -38,6 +39,7 @@ def build_web_app(services: Services) -> FastAPI:
         category_select_router,
         reports_router,
         budgets_router,
+        documents_router,
         demo_router,
         wiki_router,
     ):

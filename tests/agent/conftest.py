@@ -8,10 +8,12 @@ from agent.application.dto import (
     Candidate,
     CategoryEntry,
     CategoryQuery,
+    DocumentQuery,
     Evidence,
     ModelReply,
     PendingText,
     Prompt,
+    RetrievedChunk,
     SearchResult,
     SearchStrategy,
     ToolPrompt,
@@ -26,7 +28,7 @@ from agent.domain.tools import (
     SpendingTotals,
     TransactionList,
 )
-from agent.domain.values import CategoryId, Confidence, Money, TimeRange
+from agent.domain.values import CategoryId, ChunkStrategy, Confidence, Money, TimeRange
 
 SEOUL = ZoneInfo("Asia/Seoul")
 NOW = datetime(2026, 10, 1, 18, 0, tzinfo=SEOUL)
@@ -113,6 +115,21 @@ def search(
     )
 
 
+def chunk(
+    path: str, heading: str, body: str, title: str = "할부거래에 관한 법률"
+) -> RetrievedChunk:
+    """paragraph_item 조각 하나. `path`는 id의 법령명 뒤 — "8/1/1"."""
+    return RetrievedChunk(
+        f"paragraph_item:{title}/{path}",
+        title,
+        date(2025, 1, 1),
+        ChunkStrategy.PARAGRAPH_ITEM,
+        heading,
+        body,
+        0.5,
+    )
+
+
 class FakeLedger:
     """api 자리. 검색 답을 차례로 내고, 색인 쓰기를 기억한다."""
 
@@ -166,6 +183,9 @@ class FakeLedger:
 
     async def categories(self) -> tuple[CategoryLine, ...]:
         return self._reply("categories", tuple)
+
+    async def search_documents(self, query: DocumentQuery) -> tuple[RetrievedChunk, ...]:
+        return self._reply("search_documents", tuple, query)
 
     def _reply[T](self, method: str, kind: type[T], *args: object) -> T:
         self.calls.append((method, args))

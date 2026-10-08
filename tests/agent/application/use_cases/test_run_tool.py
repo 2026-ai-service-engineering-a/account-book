@@ -7,17 +7,18 @@ import pytest
 
 from agent.application.dto import ToolCall, ToolResult, TransactionFilter
 from agent.application.errors import LedgerRejected, LedgerUnavailable
-from agent.application.use_cases import RunTool
+from agent.application.use_cases import Retrieve, RunTool
 from agent.domain.tools import (
     READ_TOOLS,
     CategoryShift,
+    DocumentLine,
     Frequency,
     SpendingTotals,
     TransactionLine,
     TransactionList,
 )
 from agent.domain.values import Amount, CategoryId, Direction, TimeRange
-from tests.agent.conftest import SEOUL, FakeLedger, evidence, search
+from tests.agent.conftest import SEOUL, FakeEmbedder, FakeLedger, chunk, evidence, search
 
 TODAY = date(2026, 10, 8)  # 목요일
 FREQUENCY = Frequency(3, 3, 1.0, Amount(5267))
@@ -40,7 +41,7 @@ class Ticks:
 
 
 def run(ledger: FakeLedger, name: str, **arguments: object) -> ToolResult:
-    tool = RunTool(ledger, READ_TOOLS, Ticks())
+    tool = RunTool(ledger, Retrieve(ledger, FakeEmbedder(), None), READ_TOOLS, Ticks())
     return asyncio.run(tool(ToolCall("call_1", name, arguments), TODAY, SEOUL))
 
 
@@ -73,7 +74,7 @@ def test_last_week_cafe_resolves_the_period_and_calls_the_api_once():
 
 def test_a_tool_outside_the_seat_is_refused_without_calling_the_api():
     ledger = FakeLedger()
-    tool = RunTool(ledger, set(READ_TOOLS), Ticks())
+    tool = RunTool(ledger, Retrieve(ledger, None, None), set(READ_TOOLS), Ticks())
     call = ToolCall("call_9", "delete_transaction", {"transaction_id": "t1"})
     result = asyncio.run(tool(call, TODAY, SEOUL))
     assert result.error is not None and result.error.code == "validation_error"
@@ -177,3 +178,42 @@ def test_suggest_never_sends_a_vector_and_keeps_eight_pieces_of_evidence():
     assert query.embedding_model == "" and query.query_vector is None  # 임베딩도 모델 호출이다
     assert result.data is not None and len(result.data["evidence"]) == 8  # type: ignore[arg-type]
     assert result.data["candidates"][0] == {"category_id": "cafe", "confidence": 0.9}  # type: ignore[index]
+
+
+WITHDRAW = chunk("8/1/1", "제8조 ① 1.", "계약서를 받은 날부터 7일")
+
+
+def test_documents_are_found_like_retrieve_and_cited_by_short_refs():
+    ledger = FakeLedger(replies={"search_documents": (WITHDRAW,)})
+    result = run(ledger, "search_documents", query="할부 철회 기간")
+    (query,) = ledger.calls[0][1]
+    assert query.text == "할부 철회 기간"  # type: ignore[attr-defined]
+    assert query.query_vector == (8.0, 1.0)  # type: ignore[attr-defined]  # /retrieve처럼 임베딩
+    assert result.data == {
+        "chunks": [
+            {
+                "ref": DocumentLine.ref_for(WITHDRAW.id),
+                "title": "할부거래에 관한 법률",
+                "heading": "제8조 ① 1.",
+                "effective_date": "2025-01-01",
+                "body": WITHDRAW.body,
+            }
+        ]
+    }
+    assert result.meta is not None and result.meta.row_count == 1 and result.meta.note == ""
+
+
+def test_documents_say_when_the_vector_search_fell_back_to_words():
+    ledger = FakeLedger(replies={"search_documents": (WITHDRAW,)})
+    tool = RunTool(ledger, Retrieve(ledger, FakeEmbedder(fail=True), None), READ_TOOLS, Ticks())
+    call = ToolCall("call_1", "search_documents", {"query": "할부 철회"})
+    result = asyncio.run(tool(call, TODAY, SEOUL))
+    assert result.meta is not None and "낱말로만" in result.meta.note
+
+
+def test_long_documents_are_cut_to_eight_kilobytes():
+    long = [chunk(f"8/{n}", f"제8조 {n}", "가" * 900) for n in range(8)]
+    ledger = FakeLedger(replies={"search_documents": tuple(long)})
+    result = run(ledger, "search_documents", query="할부")
+    assert result.meta is not None and result.meta.truncated
+    assert 0 < result.meta.row_count < 8 and "조각까지만" in result.meta.note

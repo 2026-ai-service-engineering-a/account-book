@@ -17,7 +17,7 @@ MOCK_PORT ?= 8081
 UI_PORT ?= 8080
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up dev prod down shell mock ui agent seed demo psql review check lint format type test test-db eval eval-chat all
+.PHONY: help env build up dev prod down shell mock ui agent seed demo docs psql review check lint format type test test-db measure-docs eval eval-chat eval-docs eval-qa all
 
 help:  ## 이 목록
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*## /\t/' | expand -t 12
@@ -72,6 +72,9 @@ seed:  ## 기준 데이터(카테고리·결제수단)를 넣는다 — 몇 번�
 demo:  ## 거래가 하나도 없으면 여섯 달치 예시를 넣는다 — 개발용 구성은 뜰 때 알아서 한다
 	$(COMPOSE) exec -T api python -m api.seed --demo
 
+docs:  ## 문서 Q&A의 자료(법령 아홉 조문)를 세 전략의 조각으로 넣는다 — 몇 번을 쳐도 같다
+	$(COMPOSE) exec -T api python -m api.load_documents tests/fixtures/ai/documents/laws
+
 psql:  ## DB에 붙는다 — 표를 눈으로 볼 때 (\dt, \d text_embeddings)
 	$(COMPOSE) exec db sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
 
@@ -103,10 +106,19 @@ test:  ## 단위 테스트
 test-db:  ## DB 통합 테스트 — 실제 Postgres + pgvector. make dev로 db가 떠 있어야 한다
 	$(EXEC) pytest -m integration -q tests/api
 
+measure-docs:  ## 문서 키워드 검색의 recall@5를 전략별로 — 모델 없음. make dev로 db가 떠 있어야 한다
+	$(EXEC) pytest -m integration -s -q tests/api/application/use_cases/test_search_documents_recall.py
+
 # 실제 모델을 부른다 — 돈이 들고 점수가 매번 조금씩 다르다. CI에 넣지 않는다.
 # agent 컨테이너 안에서 돈다. 키와 api 주소(ui의 대역)가 거기 있다.
 eval:  ## 카테고리 고르기 평가 — 실제 모델. make dev로 ui·agent가 떠 있어야 한다
 	$(COMPOSE) exec -T agent pytest -m integration -s -q tests/agent/application/use_cases/test_classify_category_eval.py
+
+eval-docs:  ## 문서 찾기 평가 — 청킹 3 × 방법 3 × k 3, 실제 임베딩. make docs를 먼저
+	$(COMPOSE) exec -T agent pytest -m integration -s -q tests/agent/application/use_cases/test_retrieve_eval.py
+
+eval-qa:  ## 문서 Q&A 평가 — 같은 모델로 기준선(검색 없음)과 RAG, 질문 35건. make docs를 먼저
+	$(COMPOSE) exec -T agent pytest -m integration -s -q tests/agent/application/use_cases/test_ask_documents_eval.py
 
 eval-chat:  ## 대화 통계 평가 — 실제 모델. make dev로 api·agent가 떠 있어야 한다
 	$(COMPOSE) exec -T agent pytest -m integration -s -q tests/agent/application/use_cases/test_answer_question_eval.py

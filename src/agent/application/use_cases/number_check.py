@@ -13,17 +13,22 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from agent.application.dto import ToolStep
+from agent.domain.tools import ToolName
 
 # 천 단위 쉼표와 소수점을 품은 숫자. "5,267원", "1.4일", "88%"의 숫자 부분
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 
 
 def numbers_from_tools(steps: Iterable[ToolStep], today: date) -> set[str]:
-    """답에 써도 되는 숫자 — 성공한 봉투의 수치(부호를 뗀 것도), 해석한 기간의 날짜, 오늘."""
+    """답에 써도 되는 숫자 — 성공한 봉투의 수치(부호를 뗀 것도), 해석한 기간의 날짜, 오늘.
+
+    search_documents의 조각은 뺀다. 조문의 숫자는 그 조각을 인용했을 때만 쓸 수 있다
+    (citation_check) — 찾기만 하고 인용하지 않은 조각의 숫자가 답을 통과시키지 않게.
+    """
     allowed: set[str] = set()
     for step in steps:
         result = step.result
-        if result.data is None:
+        if result.data is None or step.call.name == ToolName.SEARCH_DOCUMENTS.value:
             continue
         _collect(result.data, allowed)
         _collect(step.call.arguments, allowed)  # "최근 3일"의 3, "8월"의 8
@@ -33,6 +38,13 @@ def numbers_from_tools(steps: Iterable[ToolStep], today: date) -> set[str]:
                 for moment in (span.start, last):
                     allowed |= _date_parts(moment)
     allowed |= _date_parts(today)
+    return allowed
+
+
+def numbers_in(text: str) -> set[str]:
+    """글에 든 숫자들 — 표기를 맞춰서. "100분의 40"은 100과 40이 되어 "40%"의 40과 맞는다."""
+    allowed: set[str] = set()
+    _collect(text, allowed)
     return allowed
 
 

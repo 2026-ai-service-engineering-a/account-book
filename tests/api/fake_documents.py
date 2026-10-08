@@ -1,0 +1,74 @@
+"""문서 저장소의 가짜 — 메모리 위의 문서와 조각."""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Sequence
+from datetime import date
+from typing import TYPE_CHECKING
+
+from api.application.dto import ChunkHit, IndexText
+from api.domain.entities import Document, DocumentChunk
+from api.domain.values import ChunkStrategy, DocumentId
+
+if TYPE_CHECKING:
+    from .fake_index import FakeIndex
+
+
+class FakeDocuments:
+    def __init__(self, index: FakeIndex | None = None) -> None:
+        self.documents: dict[DocumentId, Document] = {}
+        self.chunks: dict[str, DocumentChunk] = {}
+        self._index = index  # 벡터는 거래와 같은 자리(text_embeddings)에 있다
+
+    def pending(self, model: str, limit: int) -> tuple[IndexText, ...]:
+        vectors = self._index.vectors if self._index else {}
+        texts = {
+            c.text_hash: c.search_text
+            for c in self.chunks.values()
+            if (model, c.text_hash) not in vectors
+        }
+        return tuple(IndexText(h, t) for h, t in sorted(texts.items()))[:limit]
+
+    def replace(self, document: Document, chunks: Sequence[DocumentChunk]) -> None:
+        self.documents[document.id] = document
+        self.chunks = {k: c for k, c in self.chunks.items() if c.document_id != document.id}
+        self.chunks.update((c.id, c) for c in chunks)
+
+    def search(self, query: str, strategy: ChunkStrategy, k: int) -> tuple[ChunkHit, ...]:
+        """글자 세 개짜리 조각의 겹침으로 잰다 — pg_trgm을 거칠게 흉내 낸다."""
+        wanted = _trigrams(query)
+        hits = [
+            ChunkHit(c, len(wanted & _trigrams(c.search_text)) / (len(wanted) or 1), *self._of(c))
+            for c in self.chunks.values()
+            if c.strategy is strategy
+        ]
+        hits.sort(key=lambda h: (-h.score, h.chunk.document_id, h.chunk.position))
+        return tuple(hits[:k])
+
+    def nearest(
+        self, vector: tuple[float, ...], model: str, strategy: ChunkStrategy, k: int
+    ) -> tuple[ChunkHit, ...]:
+        vectors = self._index.vectors if self._index else {}
+        hits = [
+            ChunkHit(c, _cosine(vector, vectors[(model, c.text_hash)]), *self._of(c))
+            for c in self.chunks.values()
+            if c.strategy is strategy and (model, c.text_hash) in vectors
+        ]
+        hits.sort(key=lambda h: (-h.score, h.chunk.document_id, h.chunk.position))
+        return tuple(hits[:k])
+
+    def _of(self, chunk: DocumentChunk) -> tuple[str, date]:
+        document = self.documents[chunk.document_id]
+        return document.title, document.effective_date
+
+
+def _trigrams(text: str) -> set[str]:
+    padded = f"  {text} "
+    return {padded[i : i + 3] for i in range(len(padded) - 2)}
+
+
+def _cosine(a: tuple[float, ...], b: tuple[float, ...]) -> float:
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
+    norm = math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(y * y for y in b))
+    return dot / norm if norm else 0.0

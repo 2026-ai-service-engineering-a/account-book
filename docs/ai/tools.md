@@ -10,7 +10,7 @@
 못하는 것을 정한다.** 도구 하나를 어떤 모양으로 만드는지, 결과와 오류를 모델에게 어떻게
 보여주는지, 그리고 어느 자리에서 어느 도구까지 주는지.
 
-세 기능이 전부 같은 도구를 쓴다([README.md 1장](README.md#1-세-기능)). 기능마다 도구를
+세 기능이 전부 같은 도구를 쓴다([README.md 1장](README.md#1-네-기능)). 기능마다 도구를
 따로 만들면 같은 집계가 세 번 생긴다.
 
 ---
@@ -125,10 +125,14 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 | `detect_outliers` | 기간 | 평소 범위를 벗어난 건 | 5건 |
 | `get_budget_status` | 기간 | 카테고리별 소진율·페이스 | — |
 | `suggest_category` | 가맹점, 메모, 방향 | 후보 + 근거 거래 + 그 방향의 카테고리 사전 | 근거 8건 |
+| `search_documents` | 질문 한 문장 | 조문 조각 — `ref`, 법령명, 자리, 시행일, 본문. 찾기는 `/retrieve`와 같다 | `DOC_TOP_K`(8), 8KB |
 
 `suggest_category`가 근거까지 돌려주는 것이 기능 1의
 핵심이다([category-suggestion-rag.md 5장](category-suggestion-rag.md#5-검색--후보와-신뢰도)).
 도구 하나가 검색과 후보 산출을 함께 끝내서, `agent`는 pgvector를 모른 채로 RAG를 한다.
+
+`search_documents`의 `ref`는 모델이 답에 붙이는 인용 이름이다. 출처 줄은 코드가 `ref`로 조각을 찾아
+붙이고, 답의 숫자는 인용한 조각에 있어야 한다([document-rag.md 5.5](document-rag.md#55-채팅의-도구--search_documents)).
 
 ### 4.2 쓰기
 
@@ -180,7 +184,7 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 | 모드 | 쓰는 곳 | 주는 도구 | 쓰기 |
 |---|---|---|---|
 | `classify` | 기능 1의 AI 버튼 | `suggest_category` | 없다 |
-| `query` | 기능 2의 대화 조회 | 읽기 5개(`suggest_category`·`detect_outliers` 빼고) | **없다** |
+| `query` | 기능 2의 대화 조회, 기능 4의 조문 찾기 | 읽기 6개(`suggest_category`·`detect_outliers` 빼고) | **없다** |
 | `insight` | 기능 3의 리포트 | 집계 5개 | 없다 |
 | `capture` | 대화로 기록할 때, 폼의 한 줄로 채우기 | `suggest_category`, `search_transactions` + 쓰기 넷 | 확인 게이트 |
 | `mcp` | 외부 AI 서비스 | 읽기 전부 | 제안까지만([mcp.md 4장](mcp.md#4-쓰기--제안까지만-간다)) |

@@ -7,7 +7,14 @@ from fastapi.responses import JSONResponse
 
 from agent.application.errors import LedgerUnavailable, ModelUnavailable
 
-from .routers import capture_router, chat_router, classify_router, health_router
+from .routers import (
+    ask_router,
+    capture_router,
+    chat_router,
+    classify_router,
+    health_router,
+    retrieve_router,
+)
 from .schemas import ErrorResponse
 from .services import Services
 
@@ -18,7 +25,14 @@ def build_web_app(services: Services) -> FastAPI:
     # 헤드리스다. ui만 부르고, 계약은 화면 문서가 정본이라 문서 페이지를 열지 않는다.
     app = FastAPI(title="account-book agent", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.services = services
-    for module in (capture_router, classify_router, chat_router, health_router):
+    for module in (
+        capture_router,
+        classify_router,
+        chat_router,
+        retrieve_router,
+        ask_router,
+        health_router,
+    ):
         app.include_router(module.router)
     app.add_exception_handler(ModelUnavailable, _model_unavailable)
     app.add_exception_handler(LedgerUnavailable, _ledger_unavailable)

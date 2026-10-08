@@ -21,6 +21,7 @@ from api.application.errors import RequestInProgress
 from api.domain.entities import Account, Category, Transaction
 from api.domain.values import AccountId, CategoryId, Direction, Money, Period, TransactionId
 
+from .fake_documents import FakeDocuments
 from .fake_index import FakeIndex
 
 SEOUL = ZoneInfo("Asia/Seoul")
@@ -202,6 +203,7 @@ class FakeUnitOfWork:
         self.stats = FakeStats(self.transactions)
         self.budgets = FakeBudgets()
         self.index = FakeIndex(self.transactions)
+        self.documents = FakeDocuments(self.index)
         self.commits = 0
 
     def __call__(self) -> FakeUnitOfWork:
@@ -211,6 +213,7 @@ class FakeUnitOfWork:
         self._rows = dict(self.transactions.rows)
         self._records = dict(self.idempotency.records)
         self._budgets = dict(self.budgets.rows)
+        self._documents = (dict(self.documents.documents), dict(self.documents.chunks))
         self._committed = False
         return self
 
@@ -224,6 +227,7 @@ class FakeUnitOfWork:
             self.transactions.rows = self._rows
             self.idempotency.records = self._records
             self.budgets.rows = self._budgets
+            self.documents.documents, self.documents.chunks = self._documents
 
     def commit(self) -> None:
         self._committed = True

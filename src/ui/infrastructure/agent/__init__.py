@@ -5,6 +5,8 @@ from .agent_capture_reply import AgentCaptureReply
 from .agent_category_reply import AgentCategoryReply
 from .agent_category_suggester import AgentCategorySuggester
 from .agent_chat_agent import AgentChatAgent
+from .agent_document_answerer import AgentDocumentAnswerer
+from .agent_document_gateway import AgentDocumentGateway
 from .routed_chat_agent import RoutedChatAgent
 
 __all__ = [
@@ -13,5 +15,7 @@ __all__ = [
     "AgentCategoryReply",
     "AgentCategorySuggester",
     "AgentChatAgent",
+    "AgentDocumentAnswerer",
+    "AgentDocumentGateway",
     "RoutedChatAgent",
 ]

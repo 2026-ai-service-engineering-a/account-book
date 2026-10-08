@@ -74,8 +74,9 @@ SEATS: tuple[AiSeat, ...] = (
             "compare_periods",
             "get_budget_status",
             "search_transactions",
+            "search_documents",
         ),
-        replaces="화면과 필터를 옮겨 다니며 세기",
+        replaces="화면과 필터를 옮겨 다니며 세기, 법령 검색창에서 조문 찾기",
         screens=(("채팅 — 질문", "/"),),
         human="쓰기 도구를 아예 주지 않는다. 조회가 기록을 바꿀 길이 없다",
         fallback="스텝 상한에 닿으면 '여기까지 해봤어요'와 지금까지의 답",
@@ -86,7 +87,8 @@ SEATS: tuple[AiSeat, ...] = (
         live=(
             "채팅의 질문(금액이 없는 한 줄)은 agent의 POST /chat이 받는다. LLM이 읽기 도구를"
             " 고르고, 기간은 코드가 날짜로 푼다. 숫자는 api가 내고, 답의 숫자가 도구에서 온 것이"
-            " 아니면 해석 줄을 버리고 표만 보인다"
+            " 아니면 해석 줄을 버리고 표만 보인다. 카드·할부·연말정산 규칙을 물으면 조문을 찾아"
+            " 인용하고, 출처 줄은 코드가 붙인다"
         ),
     ),
     AiSeat(
