@@ -10,6 +10,7 @@ from .pending_text import PendingText
 from .prompt import Prompt
 from .search_result import SearchResult
 from .search_strategy import SearchStrategy
+from .transaction_filter import TransactionFilter
 
 __all__ = [
     "Candidate",
@@ -24,4 +25,5 @@ __all__ = [
     "Prompt",
     "SearchResult",
     "SearchStrategy",
+    "TransactionFilter",
 ]
