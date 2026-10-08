@@ -13,7 +13,13 @@ from agent.application.dto import (
     ToolResult,
     ToolStep,
 )
-from agent.application.use_cases.answer_text import PARTIAL, UNAVAILABLE, UNVERIFIED, answer_text
+from agent.application.use_cases.answer_text import (
+    PARTIAL,
+    UNAVAILABLE,
+    UNCITED,
+    UNVERIFIED,
+    answer_text,
+)
 from agent.domain.tools import CategoryLine
 from agent.domain.values import CategoryId, TimeRange
 from tests.agent.conftest import SEOUL
@@ -155,3 +161,55 @@ def test_a_refusal_without_tools_passes_but_a_guess_does_not():
         == "다음 달 지출은 예측할 수 없어요."
     )
     assert answer_text(outcome("다음 달엔 300,000원쯤 쓸 거예요."), TODAY) == UNVERIFIED
+
+
+CHUNK = {
+    "ref": "d4e5f60",
+    "title": "조세특례제한법",
+    "heading": "제126조의2 ② 2.",
+    "effective_date": "2025-01-01",
+    "body": "대중교통이용분의 100분의 40",
+}
+LAWS = step("search_documents", {"query": "대중교통 공제율"}, {"chunks": [CHUNK]})
+TRANSPORT = step(
+    "summarize_spending",
+    {"period": "this_month", "category_id": "transport"},
+    {"expense": won(52_000), "income": won(0)},
+    period=span(10, 1, 11, 1),
+)
+SOURCE = "출처\n[1] 조세특례제한법 제126조의2 ② 2. · 시행 2025-01-01"
+
+
+def test_a_cited_document_answer_gets_numbered_sources():
+    text = answer_text(outcome("버스·지하철은 40%를 공제해요 [d4e5f60].", LAWS), TODAY)
+    assert text == f"버스·지하철은 40%를 공제해요 [1].\n\n{SOURCE}"
+
+
+def test_my_money_and_the_rate_side_by_side_pass():
+    said = "이번 달 교통비는 52,000원이고, 대중교통은 40%를 공제해요 [d4e5f60]."
+    text = answer_text(outcome(said, TRANSPORT, LAWS), TODAY)
+    assert text.startswith("이번 달 교통비는 52,000원이고, 대중교통은 40%를 공제해요 [1].")
+    assert text.endswith(SOURCE) and "이번 달(10/1~10/8)" in text
+
+
+def test_the_multiplied_deduction_is_dropped():
+    said = "52,000원의 40%인 20,800원을 공제받아요 [d4e5f60]."
+    text = answer_text(outcome(said, TRANSPORT, LAWS), TODAY)
+    assert "20,800" not in text and "20800" not in text
+    assert text.startswith("이번 달(10/1~10/8)")  # 표와 찾은 조문만 남는다
+    assert text.endswith("찾은 조문\n- 조세특례제한법 제126조의2 ② 2. · 시행 2025-01-01")
+
+
+def test_a_rate_from_a_chunk_it_did_not_cite_is_dropped():
+    text = answer_text(outcome("대중교통은 40%를 공제해요.", LAWS), TODAY)
+    assert text.startswith(UNCITED) and "40%" not in text
+
+
+def test_an_unknown_ref_is_dropped():
+    text = answer_text(outcome("철회는 7일이에요 [d0000aa].", LAWS), TODAY)
+    assert text.startswith(UNCITED)
+
+
+def test_a_cut_run_still_shows_what_it_found():
+    text = answer_text(outcome("", LAWS, stop=StopReason.MAX_STEPS), TODAY)
+    assert text.startswith(PARTIAL) and "찾은 조문" in text

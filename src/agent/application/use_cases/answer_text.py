@@ -2,6 +2,7 @@
 
 표는 템플릿이 도구 결과로 그린다. 숫자를 모델에게 옮겨 적게 하지 않는다. 모델의 한 줄은
 숫자 검증(7.2)을 통과할 때만 붙는다. 해석한 기간은 표의 머리에 늘 날짜로 밝힌다(5장).
+조문 조각을 인용했으면 인용 검증(document-rag.md 5.3)을 거쳐 출처를 붙인다.
 """
 
 from __future__ import annotations
@@ -9,17 +10,20 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from datetime import date, datetime, timedelta
 
-from agent.application.dto import LoopOutcome, StopReason, ToolStep
+from agent.application.dto import CitationVerdict, LoopOutcome, StopReason, ToolStep
 from agent.application.errors import InvalidToolArguments
 from agent.application.parsers import parse_tool_arguments
 from agent.domain.tools import CategoryLine, ToolName
 from agent.domain.values import PeriodName, PeriodSpec, TimeRange
 
+from . import document_sources as docs
+from .citation_check import check_citations
 from .number_check import numbers_from_tools, unsupported
 
 UNAVAILABLE = "지금은 답할 수 없어요. 거래 목록에서 직접 볼 수 있어요."
 PARTIAL = "여기까지 해봤어요."
 UNVERIFIED = "기록으로 확인할 수 있는 답을 찾지 못했어요."
+UNCITED = "조문으로 확인할 수 있는 답을 만들지 못했어요."
 _ROWS = 5  # 표에 펼치는 줄 수. 나머지는 "외 n개"
 
 _NAMES = {
@@ -37,13 +41,28 @@ def answer_text(outcome: LoopOutcome, today: date) -> str:
     if outcome.stop in (StopReason.MODEL_UNAVAILABLE, StopReason.LEDGER_UNAVAILABLE):
         return UNAVAILABLE
     tables = [t for t in (_table(s, outcome.categories, today) for s in outcome.steps) if t]
+    documents = docs.documents_in(outcome.steps)
     if outcome.stop is not StopReason.ANSWERED:
-        return "\n\n".join([PARTIAL, *tables])
+        return "\n\n".join(p for p in (PARTIAL, *tables, docs.found_lines(documents)) if p)
     sentence = outcome.text.strip()
-    if sentence and unsupported(sentence, numbers_from_tools(outcome.steps, today)):
-        sentence = ""  # 지어낸 숫자가 섞였다 — 문장을 버리고 표만 낸다
-    parts = [p for p in (sentence, *tables) if p]
+    if sentence and not _verified(sentence, documents, numbers_from_tools(outcome.steps, today)):
+        sentence = ""  # 지어낸 숫자나 인용이 섞였다 — 문장을 버리고 표만 낸다
+    refs = docs.refs_in(sentence)
+    found = docs.source_lines(refs, documents) if refs else docs.found_lines(documents)
+    if not sentence and found and not tables:
+        sentence = UNCITED
+    parts = [p for p in (docs.numbered(sentence, refs), *tables, found) if p]
     return "\n\n".join(parts) or UNVERIFIED
+
+
+def _verified(sentence: str, documents: Mapping[str, docs.Chunk], allowed: set[str]) -> bool:
+    """숫자는 도구의 것이거나 인용한 조각의 것. 조각을 인용하지 않았으면 도구의 숫자만."""
+    refs = docs.refs_in(sentence)
+    plain = docs.without_refs(sentence)
+    verdict = check_citations(plain, refs, docs.sources(documents), allowed)
+    if verdict is CitationVerdict.MISSING:
+        return not unsupported(plain, allowed)
+    return verdict is CitationVerdict.OK
 
 
 def _table(step: ToolStep, categories: tuple[CategoryLine, ...], today: date) -> str:

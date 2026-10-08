@@ -374,5 +374,23 @@
       ],
       "additionalProperties": false
     }
+  },
+  {
+    "name": "search_documents",
+    "description": "카드·할부·전자금융·연말정산 법령의 조문 조각을 찾는다. 조각마다 인용할 ref가 있다.\n내 지출 숫자가 필요하면 통계 도구를 쓴다 — 조문에는 내 기록이 없다.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "찾을 내용을 한국어 한 문장으로. 사용자의 금액·가맹점은 넣지 않는다."
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "additionalProperties": false
+    }
   }
 ]
