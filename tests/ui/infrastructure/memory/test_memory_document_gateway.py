@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import asyncio
 
-from ui.application.dto import ChunkStrategy
+from ui.application.dto import ChunkStrategy, DocumentHit
 from ui.infrastructure.memory import MemoryDocumentGateway
 
 
-def search(query: str, k: int = 5):
-    return asyncio.run(MemoryDocumentGateway().search(query, ChunkStrategy.PARAGRAPH_ITEM, k))
+def search(query: str, k: int = 5) -> tuple[DocumentHit, ...]:
+    return asyncio.run(MemoryDocumentGateway().search(query, ChunkStrategy.PARAGRAPH_ITEM, k)).hits
 
 
 def test_ranks_by_shared_trigrams():

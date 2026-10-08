@@ -5,7 +5,8 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">문서</h1>
-    <p class="page-description">카드·할부·전자금융·연말정산에 관한 법령 아홉 조문에서 찾습니다. 지금은 낱말로만 찾습니다.</p>
+    <p class="page-description">카드·할부·전자금융·연말정산에 관한 법령 아홉 조문에서 찾습니다.{% if not by_agent %} 지금은 낱말로만 찾습니다.{% endif %}</p>
+    {% if by_agent %}<div class="ai-row"><span class="ai-badge">{{ icon("sparkles") }}AI 검색</span></div>{% endif %}
   </div>
 </div>
 <div class="stack">
@@ -23,6 +24,14 @@
             {% for s in strategies %}<option value="{{ s.value }}" {% if s == strategy %}selected{% endif %}>{{ s.label }}</option>{% endfor %}
           </select>
         </div>
+        {% if by_agent %}
+        <div class="field">
+          <label class="label" for="mode">찾는 방법</label>
+          <select id="mode" class="select" name="mode">
+            {% for m in modes %}<option value="{{ m.value }}" {% if m == mode %}selected{% endif %}>{{ m.label }}</option>{% endfor %}
+          </select>
+        </div>
+        {% endif %}
         <button class="btn" type="submit">{{ icon("search") }}<span>찾기</span></button>
       </div>
     </div>
@@ -34,6 +43,9 @@
   {% elif not hits %}
   <div class="alert">{{ icon("inbox") }}<div class="alert-title">찾은 조각이 없어요.</div></div>
   {% else %}
+  {% if fell_back %}
+  <div class="alert alert-warning">{{ icon("alert") }}<div class="alert-title">지금은 뜻으로 찾을 수 없어 낱말로 찾았어요.</div></div>
+  {% endif %}
   {% for hit in hits %}
   <article class="card">
     <div class="card-content stack">

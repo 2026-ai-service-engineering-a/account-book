@@ -6,6 +6,7 @@ from tests.ui.conftest import FixedClock
 from ui.infrastructure.agent import (
     AgentCaptureReader,
     AgentCategorySuggester,
+    AgentDocumentGateway,
     RoutedChatAgent,
 )
 from ui.infrastructure.api import (
@@ -33,6 +34,7 @@ def test_agent_address_brings_the_real_reader():
     assert isinstance(services.capture, AgentCaptureReader)
     assert isinstance(services.suggester, AgentCategorySuggester)
     assert isinstance(services.chat, RoutedChatAgent)  # 질문만 agent로, 기록은 대역으로
+    assert isinstance(services.documents, AgentDocumentGateway) and services.documents_by_agent
     assert services.live_seats == {"capture", "classify", "query"}
 
 

@@ -39,6 +39,8 @@ class Services:
     capture: CaptureReader | None = None
     # 각본 대역이 아니라 진짜 agent가 선 AI 자리(ai_map의 key). 위키가 "지금"을 말할 때 쓴다.
     live_seats: frozenset[str] = frozenset()
+    # 문서 화면이 agent로 찾는가 — "AI 검색" 표시와 찾는 방법 고르기가 보인다
+    documents_by_agent: bool = False
 
     def zone(self) -> tzinfo:
         """사용자 타임존. 시계가 aware를 내기로 했으니 없으면 조립이 잘못된 것이다."""

@@ -5,7 +5,7 @@ from typing import Literal, TypedDict
 
 from pydantic import TypeAdapter, ValidationError
 
-from ui.application.dto import ChunkStrategy, DocumentHit
+from ui.application.dto import ChunkStrategy, DocumentHit, DocumentResults, SearchMode
 from ui.application.errors import LedgerUnavailable
 
 from .api_client import ApiClient
@@ -32,7 +32,18 @@ class HttpDocumentGateway:
         self._client = client
 
     async def search(
-        self, query: str, strategy: ChunkStrategy, k: int = 5
+        self,
+        query: str,
+        strategy: ChunkStrategy,
+        k: int = 5,
+        mode: SearchMode = SearchMode.KEYWORD,
+    ) -> DocumentResults:
+        """낱말로만 찾는다 — 뜻으로 찾으려면 질문을 임베딩할 agent가 있어야 한다."""
+        hits = await self._keyword(query, strategy, k)
+        return DocumentResults(hits, SearchMode.KEYWORD, fell_back=mode is not SearchMode.KEYWORD)
+
+    async def _keyword(
+        self, query: str, strategy: ChunkStrategy, k: int
     ) -> tuple[DocumentHit, ...]:
         params: dict[str, str | int] = {"q": query, "k": k, "strategy": strategy.value}
         response = await self._client.request("GET", "/v1/documents/search", params=params)

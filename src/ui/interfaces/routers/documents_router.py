@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse
 
-from ui.application.dto import ChunkStrategy
+from ui.application.dto import ChunkStrategy, SearchMode
 from ui.interfaces.services import ServicesDep
 from ui.interfaces.templating import render
 
@@ -23,16 +23,30 @@ async def documents_page(
     services: ServicesDep,
     q: Annotated[str, Query(max_length=_QUERY_LIMIT)] = "",
     strategy: str = ChunkStrategy.PARAGRAPH.value,
+    mode: str = SearchMode.KEYWORD.value,
 ) -> HTMLResponse:
-    """GET 폼 하나 — 주소에 질문이 남아 결과를 공유하고 되돌아올 수 있다."""
+    """GET 폼 하나 — 주소에 질문이 남아 결과를 공유하고 되돌아올 수 있다.
+
+    찾는 방법의 기본은 낱말이다 — 지금까지의 동작. 무엇을 기본으로 할지는 재서 정한다
+    (docs/ai/document-rag.md 7.2).
+    """
     chosen = ChunkStrategy(strategy) if strategy in ChunkStrategy else ChunkStrategy.PARAGRAPH
+    how = (
+        SearchMode(mode)
+        if mode in SearchMode and services.documents_by_agent
+        else SearchMode.KEYWORD
+    )
     query = " ".join(q.split())
-    hits = await services.documents.search(query, chosen, _K) if query else ()
+    found = await services.documents.search(query, chosen, _K, how) if query else None
     context = {
         "section": "documents",
         "query": query,
         "strategy": chosen,
         "strategies": list(ChunkStrategy),
-        "hits": hits,
+        "mode": how,
+        "modes": list(SearchMode),
+        "by_agent": services.documents_by_agent,
+        "hits": found.hits if found else (),
+        "fell_back": found.fell_back if found else False,
     }
     return render(request, "documents.html", context)
