@@ -43,3 +43,16 @@ def test_pace_or_null():
 
 def test_bad_period_is_422():
     assert client().get("/v1/reports/monthly?period=2026-9").status_code == 422
+
+
+def test_summary_takes_a_range_instead_of_a_month():
+    two_days = {"from": "2026-09-01T00:00:00+09:00", "to": "2026-09-03T00:00:00+09:00"}
+    assert client().get("/v1/summary", params=two_days).json()["expense"] == 180000
+
+
+def test_summary_refuses_month_and_range_together():
+    two_days = {"from": "2026-09-01T00:00:00+09:00", "to": "2026-09-03T00:00:00+09:00"}
+    params = {"period": "2026-09", **two_days}
+    response = client().get("/v1/summary", params=params)
+    assert response.status_code == 422
+    assert set(response.json()["error"]["details"]) == {"period"}

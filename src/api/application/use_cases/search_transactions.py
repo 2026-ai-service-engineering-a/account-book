@@ -5,7 +5,8 @@ from datetime import tzinfo
 
 from api.application.dto import TransactionPage, TransactionQuery
 from api.application.ports import UnitOfWork
-from api.domain.values import CategoryId, Direction, Period
+from api.domain.rules import period_bounds
+from api.domain.values import CategoryId, Direction, Period, TimeRange
 
 # 목록은 언제나 페이지로 낸다. 에이전트가 3년치를 통째로 받아 가지 못하게(api-contract 6장)
 DEFAULT_LIMIT = 50
@@ -21,14 +22,14 @@ class SearchTransactions:
 
     def __call__(
         self,
-        period: Period | None = None,
+        period: Period | TimeRange | None = None,
         direction: Direction | None = None,
         category_id: CategoryId | None = None,
         text: str = "",
         cursor: str | None = None,
         limit: int = DEFAULT_LIMIT,
     ) -> TransactionPage:
-        start, end = period.bounds(self._zone) if period else (None, None)
+        start, end = period_bounds.bounds(period, self._zone)
         query = TransactionQuery(
             start=start,
             end=end,

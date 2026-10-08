@@ -7,14 +7,13 @@ naive 시각은 422다 — 어느 타임존의 자정인지 모르는 경계로 
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query
-from fastapi.exceptions import RequestValidationError
 from pydantic import AwareDatetime
 
-from api.domain.values import CategoryId, Direction, TimeRange
+from api.domain.values import CategoryId, Direction
+from api.interfaces.query_span import time_range
 from api.interfaces.schemas import FrequencyBody, PeriodChangeBody
 from api.interfaces.services import ServicesDep
 
@@ -32,7 +31,7 @@ def frequency(
 ) -> FrequencyBody:
     """걸름은 `/v1/summary`와 같다. 방향의 기본만 지출이다."""
     found = services.frequency(
-        _range(start, end, "to"),
+        time_range(start, end, "to"),
         direction=Direction(direction),
         category_id=CategoryId(category_id) if category_id else None,
         text=q,
@@ -51,18 +50,8 @@ def compare(
 ) -> list[PeriodChangeBody]:
     """지출 카테고리별 a 합·b 합·증감. b가 큰 순서."""
     found = services.compare(
-        _range(a_from, a_to, "a_to"),
-        _range(b_from, b_to, "b_to"),
+        time_range(a_from, a_to, "a_to"),
+        time_range(b_from, b_to, "b_to"),
         CategoryId(category_id) if category_id else None,
     )
     return [PeriodChangeBody.of(change) for change in found]
-
-
-def _range(start: datetime, end: datetime, field: str) -> TimeRange:
-    """뒤집힌 기간도 요청 모양이 틀린 것이다 — 다른 422와 같은 길로 낸다(error_translation)."""
-    try:
-        return TimeRange(start, end)
-    except ValueError as error:
-        raise RequestValidationError(
-            [{"loc": ("query", field), "msg": str(error), "type": "value_error"}]
-        ) from error

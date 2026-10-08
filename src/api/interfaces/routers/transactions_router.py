@@ -6,11 +6,13 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query, Response
 from fastapi.responses import JSONResponse
+from pydantic import AwareDatetime
 
 from api.application.dto import StoredReply
 from api.application.ports import UnitOfWork
 from api.application.use_cases.search_transactions import DEFAULT_LIMIT, MAX_LIMIT
-from api.domain.values import CategoryId, Direction, Period, TransactionId
+from api.domain.values import CategoryId, Direction, TransactionId
+from api.interfaces.query_span import period_or_range
 from api.interfaces.schemas import TransactionBody, TransactionPageBody, TransactionWrite
 from api.interfaces.services import ServicesDep
 from api.interfaces.write_headers import WriteHeadersDep
@@ -22,15 +24,20 @@ router = APIRouter(prefix="/v1/transactions")
 def search(
     services: ServicesDep,
     period: Annotated[str | None, Query(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")] = None,
+    start: Annotated[AwareDatetime | None, Query(alias="from")] = None,
+    end: Annotated[AwareDatetime | None, Query(alias="to")] = None,
     direction: Literal["expense", "income"] | None = None,
     category_id: str | None = None,
     q: Annotated[str, Query(max_length=100)] = "",
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
 ) -> TransactionPageBody:
-    """`period`(YYYY-MM)는 사용자 타임존의 달이다. 없으면 기간 없이 최근 것부터."""
+    """`period`(YYYY-MM)는 사용자 타임존의 달, `from`·`to`는 `[from, to)` 경계다. 둘 중 하나만.
+
+    둘 다 없으면 기간 없이 최근 것부터.
+    """
     page = services.search(
-        period=Period.parse(period) if period else None,
+        period=period_or_range(period, start, end),
         direction=Direction(direction) if direction else None,
         category_id=CategoryId(category_id) if category_id else None,
         text=q,
