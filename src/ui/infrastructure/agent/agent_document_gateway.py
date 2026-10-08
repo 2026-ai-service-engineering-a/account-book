@@ -3,10 +3,10 @@ from __future__ import annotations
 import dataclasses
 import logging
 from datetime import date
-from typing import Literal
+from typing import Literal, TypedDict
 
 import httpx
-from pydantic import BaseModel, ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from ui.application.dto import ChunkStrategy, DocumentHit, DocumentResults, SearchMode
 from ui.application.ports import DocumentGateway
@@ -14,7 +14,8 @@ from ui.application.ports import DocumentGateway
 _log = logging.getLogger(__name__)
 
 
-class _Chunk(BaseModel):
+# agent `POST /retrieve`의 응답 모양. 이 게이트웨이만 쓴다(development-rules 1.2의 예외).
+class _Chunk(TypedDict):
     id: str
     title: str
     effective_date: date
@@ -24,12 +25,13 @@ class _Chunk(BaseModel):
     score: float
 
 
-class _Reply(BaseModel):
-    """agent `POST /retrieve`의 응답. 이 게이트웨이만 쓴다(development-rules 1.2의 예외)."""
-
+class _Reply(TypedDict):
     mode: Literal["keyword", "vector", "hybrid"]
     fell_back: bool
     chunks: list[_Chunk]
+
+
+_REPLY = TypeAdapter(_Reply)
 
 
 class AgentDocumentGateway:
@@ -65,7 +67,7 @@ class AgentDocumentGateway:
             ) as client:
                 response = await client.post("/retrieve", json=body)
             response.raise_for_status()
-            reply = _Reply.model_validate_json(response.content)
+            reply = _REPLY.validate_json(response.content)
         except (httpx.HTTPError, ValidationError) as error:
             # 처리하는 곳이 여기라 한 번만 남긴다. 질문은 남기지 않는다(development-rules 6.4)
             _log.warning("agent retrieve failed: %s", type(error).__name__)
@@ -73,14 +75,14 @@ class AgentDocumentGateway:
             return dataclasses.replace(found, fell_back=mode is not SearchMode.KEYWORD)
         hits = tuple(
             DocumentHit(
-                id=c.id,
-                title=c.title,
-                effective_date=c.effective_date,
-                strategy=ChunkStrategy(c.strategy),
-                heading=c.heading,
-                body=c.body,
-                score=c.score,
+                id=c["id"],
+                title=c["title"],
+                effective_date=c["effective_date"],
+                strategy=ChunkStrategy(c["strategy"]),
+                heading=c["heading"],
+                body=c["body"],
+                score=c["score"],
             )
-            for c in reply.chunks
+            for c in reply["chunks"]
         )
-        return DocumentResults(hits, SearchMode(reply.mode), reply.fell_back)
+        return DocumentResults(hits, SearchMode(reply["mode"]), reply["fell_back"])

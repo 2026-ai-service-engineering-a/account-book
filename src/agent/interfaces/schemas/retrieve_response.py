@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Literal
+from typing import Literal, TypedDict
 
 from pydantic import BaseModel
 
 from agent.application.dto import Retrieval, RetrievedChunk
 
 
-class _Chunk(BaseModel):
+class _Chunk(TypedDict):
     id: str
     title: str
     effective_date: date
@@ -16,18 +16,6 @@ class _Chunk(BaseModel):
     heading: str
     body: str
     score: float
-
-    @classmethod
-    def of(cls, chunk: RetrievedChunk) -> _Chunk:
-        return cls(
-            id=chunk.id,
-            title=chunk.title,
-            effective_date=chunk.effective_date,
-            strategy=chunk.strategy.value,
-            heading=chunk.heading,
-            body=chunk.body,
-            score=chunk.score,
-        )
 
 
 class RetrieveResponse(BaseModel):
@@ -45,5 +33,17 @@ class RetrieveResponse(BaseModel):
         return cls(
             mode=retrieval.mode.value,
             fell_back=retrieval.fell_back,
-            chunks=[_Chunk.of(c) for c in retrieval.chunks],
+            chunks=[_chunk(c) for c in retrieval.chunks],
         )
+
+
+def _chunk(chunk: RetrievedChunk) -> _Chunk:
+    return {
+        "id": chunk.id,
+        "title": chunk.title,
+        "effective_date": chunk.effective_date,
+        "strategy": chunk.strategy.value,
+        "heading": chunk.heading,
+        "body": chunk.body,
+        "score": chunk.score,
+    }
