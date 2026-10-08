@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from datetime import date
 from typing import TYPE_CHECKING
@@ -45,6 +46,18 @@ class FakeDocuments:
         hits.sort(key=lambda h: (-h.score, h.chunk.document_id, h.chunk.position))
         return tuple(hits[:k])
 
+    def nearest(
+        self, vector: tuple[float, ...], model: str, strategy: ChunkStrategy, k: int
+    ) -> tuple[ChunkHit, ...]:
+        vectors = self._index.vectors if self._index else {}
+        hits = [
+            ChunkHit(c, _cosine(vector, vectors[(model, c.text_hash)]), *self._of(c))
+            for c in self.chunks.values()
+            if c.strategy is strategy and (model, c.text_hash) in vectors
+        ]
+        hits.sort(key=lambda h: (-h.score, h.chunk.document_id, h.chunk.position))
+        return tuple(hits[:k])
+
     def _of(self, chunk: DocumentChunk) -> tuple[str, date]:
         document = self.documents[chunk.document_id]
         return document.title, document.effective_date
@@ -53,3 +66,9 @@ class FakeDocuments:
 def _trigrams(text: str) -> set[str]:
     padded = f"  {text} "
     return {padded[i : i + 3] for i in range(len(padded) - 2)}
+
+
+def _cosine(a: tuple[float, ...], b: tuple[float, ...]) -> float:
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
+    norm = math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(y * y for y in b))
+    return dot / norm if norm else 0.0

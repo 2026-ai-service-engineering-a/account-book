@@ -7,6 +7,7 @@ from .document_id import DocumentId
 from .embedding_dimensions import EMBEDDING_DIMENSIONS
 from .money import Money
 from .period import Period
+from .search_mode import SearchMode
 from .source import Source
 from .time_range import TimeRange
 from .transaction_id import TransactionId
@@ -21,6 +22,7 @@ __all__ = [
     "DocumentId",
     "Money",
     "Period",
+    "SearchMode",
     "Source",
     "TimeRange",
     "TransactionId",

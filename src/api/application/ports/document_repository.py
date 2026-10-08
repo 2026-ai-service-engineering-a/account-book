@@ -22,3 +22,9 @@ class DocumentRepository(Protocol):
     def pending(self, model: str, limit: int) -> tuple[IndexText, ...]:
         """그 모델의 벡터가 아직 없는 조각의 찾는 글. 같은 글은 하나로 — 해시가 같다."""
         ...
+
+    def nearest(
+        self, vector: tuple[float, ...], model: str, strategy: ChunkStrategy, k: int
+    ) -> tuple[ChunkHit, ...]:
+        """한 전략의 조각 중 질문 벡터와 코사인이 가장 가까운 k개. 그 모델의 벡터가 있는 조각만."""
+        ...

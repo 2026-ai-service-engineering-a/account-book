@@ -71,3 +71,23 @@ def test_pending_chunk_texts_until_embedded(migrated):
         uow.commit()
     with SqlUnitOfWork(sessions) as uow:
         assert len(uow.documents.pending("m@768", 100)) == len(chunks) - 1
+
+
+def test_nearest_by_cosine_through_text_embeddings(migrated):
+    document = parse_law(LAW.read_text(encoding="utf-8"))
+    chunks = chunk_law(document, ChunkStrategy.PARAGRAPH)
+    sessions = SqlUnitOfWork.factory(migrated)
+
+    def unit(i: int) -> tuple[float, ...]:
+        return tuple(1.0 if j == i else 0.0 for j in range(768))
+
+    with SqlUnitOfWork(sessions) as uow:
+        uow.documents.replace(document, chunks)
+        for i, chunk in enumerate(chunks):
+            uow.index.put_embedding("m@768", chunk.text_hash, unit(i))
+        uow.commit()
+    with SqlUnitOfWork(sessions) as uow:
+        hits = uow.documents.nearest(unit(3), "m@768", ChunkStrategy.PARAGRAPH, 2)
+        other = uow.documents.nearest(unit(3), "other@768", ChunkStrategy.PARAGRAPH, 2)
+    assert hits[0].chunk.id == chunks[3].id and hits[0].score == pytest.approx(1.0)
+    assert hits[1].score == pytest.approx(0.0) and other == ()

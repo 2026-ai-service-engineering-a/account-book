@@ -19,3 +19,31 @@ def test_bad_queries_are_422():
     assert client.get("/v1/documents/search", params={"q": "카드", "k": 21}).status_code == 422
     bad = {"q": "카드", "strategy": "whole_doc"}
     assert client.get("/v1/documents/search", params=bad).status_code == 422
+
+
+def test_post_searches_by_mode_with_the_agents_vector():
+    from tests.api.application.use_cases.test_search_documents_modes import (
+        MODEL,
+        TARGET,
+        embedded,
+        vector_of,
+    )
+
+    uow = embedded()
+    body = {
+        "q": "노트북 취소",
+        "k": 2,
+        "mode": "vector",
+        "embedding_model": MODEL,
+        "query_vector": list(vector_of(uow, TARGET)),
+    }
+    found = client_with(uow).post("/v1/documents/search", json=body).json()
+    assert found[0]["id"] == TARGET and len(found) == 2
+
+
+def test_post_vector_without_a_vector_is_422():
+    response = client_with(library()).post(
+        "/v1/documents/search", json={"q": "카드", "mode": "hybrid"}
+    )
+    assert response.status_code == 422
+    assert "query_vector" in response.json()["error"]["details"]
