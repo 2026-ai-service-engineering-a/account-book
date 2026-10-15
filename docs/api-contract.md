@@ -148,6 +148,7 @@ X-Agent-Run-Id: 01J9X...
 | `GET` | `/v1/summary` | `summarize_spending` | — |
 | `GET` | `/v1/stats/frequency` | `count_frequency` | — |
 | `GET` | `/v1/stats/compare` | `compare_periods` | — |
+| `GET` | `/v1/stats/outliers` | `detect_outliers` | — |
 | `GET` | `/v1/reports/monthly` | — (화면) | — |
 | `GET` | `/v1/reports/pace` | — (화면) | — |
 | `GET` | `/v1/budgets/status` | `get_budget_status` | — |
@@ -195,6 +196,24 @@ X-Agent-Run-Id: 01J9X...
   `delta`(b - a), `percent`(a 대비 절댓값, a가 0이면 `null`)를 `b`가 큰 순서로 낸다. 둘 다 0인
   카테고리는 빠지지만 `category_id`로 집어 물으면 0이어도 한 줄이 온다.
 - "지난달보다 늘었나"를 같은 날까지로 견줄지는 부르는 쪽이 `a`의 끝을 잘라서 정한다.
+
+### 이상치는 api가 판정한다
+
+`outliers`는 평소 범위를 벗어난 거래를 낸다. **판정 기준은 받지 않는다** — 모델이 임계값을 말하기
+시작하면 같은 데이터가 달마다 다르게 특이해진다([ai/agentic-reports.md 3장](ai/agentic-reports.md#3-집계-도구)).
+걸름은 `frequency`와 같다(`from`·`to`, `direction` 기본 `expense`, `category_id`, `q`). 걸름은 판정할 거래를
+고를 뿐 평소를 좁히지 않는다.
+
+- **평소**는 같은 카테고리·같은 방향에서 판정 기간 시작 직전 여섯 달(사용자 타임존의 달)의 거래다.
+  판정 기간은 평소에 넣지 않는다 — 큰 한 건이 제 기준을 끌어올리지 않게.
+- **한계**는 `max(중앙값 + 3.5 × 1.4826 × MAD, 중앙값 × 2)`이고 넘은 거래만 낸다(같으면 평소). 표준편차가
+  아니라 MAD라 큰 한 건이 산포를 키워 자기를 평범하게 만들지 않는다. 두 배 바닥은 산포가 0인 구독용이다.
+  위쪽만 본다. 중앙값·MAD는 SQL(`percentile_cont`)이 원 단위로 낸다.
+- 답은 `baseline_from`·`baseline_to`, `items`(거래 + `usual_median`·`usual_upper`, 한계 대비 비율이 큰 순서,
+  최대 5건), `truncated`, `skipped`다.
+- 판정하지 않은 카테고리는 `skipped`에 이유와 함께 온다. `short_history`는 첫 거래가 평소의 시작보다 늦어
+  여섯 달이 안 됐고, `too_few`는 여섯 달은 됐지만 평소 기간의 거래가 5건 미만이다. 판정 기간에 걸름에 맞는
+  거래가 있는 카테고리만 오른다. "특이한 건이 없다"와 "판정할 수 없다"는 다른 답이다.
 
 ### 문서 검색 — 키워드·벡터·하이브리드
 

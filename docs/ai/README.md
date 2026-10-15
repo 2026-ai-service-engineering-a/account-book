@@ -200,11 +200,8 @@ AI 기능은 도구·엔드포인트·테이블·환경변수를 늘린다. **�
 
 ### 7.1 도구 (README 4장)
 
-| 도구 | 하는 일 | 권한 | 기능 |
-|---|---|---|---|
-| `detect_outliers` | 평소와 다른 지출 골라내기 | 읽기 — 자동 | 3 |
-
-`count_frequency`·`compare_periods`, 기능 4의 `search_documents`는 README 4장에 옮겼다. 엔드포인트와 함께 옮긴다 —
+남은 것이 없다. `count_frequency`·`compare_periods`, 기능 3의 `detect_outliers`, 기능 4의
+`search_documents`는 README 4장에 옮겼다. 엔드포인트와 함께 옮긴다 —
 README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 본다.
 
 `suggest_category`는 이미 있다. 기능 1은 도구를 늘리지 않고 그 도구가 돌려주는 것을
@@ -214,7 +211,6 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 
 | 메서드 | 경로 | 대응 도구 | 기능 |
 |---|---|---|---|
-| `GET` | `/v1/stats/outliers` | `detect_outliers` | 3 |
 | `POST` | `/v1/documents` | — (문서 넣기) | 4 |
 | `GET` | `/v1/documents` | — (화면) | 4 |
 | `GET` | `/v1/documents/{id}/chunks` | — (화면·평가) | 4 |
@@ -225,8 +221,8 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 둘(`/v1/embeddings/pending`·`PUT /v1/embeddings/{text_hash}`)로 채운다. 늘어나는 색인 엔드포인트는 없다
 ([document-rag.md 7.1](document-rag.md#71-지금-정하는-것)).
 
-기능 1의 색인 엔드포인트 둘과 기능 2의 `/v1/stats/frequency`·`/v1/stats/compare`는 계약에
-옮겼다(api-contract 6장).
+기능 1의 색인 엔드포인트 둘, 기능 2의 `/v1/stats/frequency`·`/v1/stats/compare`, 기능 3의
+`/v1/stats/outliers`는 계약에 옮겼다(api-contract 6장).
 
 `agent`가 새로 노출하는 것은 `POST /insights`(기능 3)다. 기능 4의 `POST /retrieve`·`POST /ask`는
 붙었다 — 정본은 [../../ui_docs/pages/documents.md](../../ui_docs/pages/documents.md). 기록의 `POST /capture`, 기능 1의
