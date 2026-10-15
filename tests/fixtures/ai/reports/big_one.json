@@ -1,0 +1,152 @@
+{
+  "about": "큰 한 건이 있는 달 — 생활에 가전 890,000원. 그 건을 집어낸다(agentic-reports 9장)",
+  "month": "2026-09",
+  "expect": {
+    "mentions": [
+      "전자랜드",
+      "890,000",
+      "890000"
+    ]
+  },
+  "replies": {
+    "summary": {
+      "expense": 1967000,
+      "income": 3200000
+    },
+    "budget_status": [
+      {
+        "category_id": "food",
+        "name": "식비",
+        "spent": 280000,
+        "limit": 300000,
+        "remaining": 20000,
+        "percent": 93,
+        "projected": null,
+        "over_on": null
+      },
+      {
+        "category_id": "transport",
+        "name": "교통",
+        "spent": 52000,
+        "limit": 100000,
+        "remaining": 48000,
+        "percent": 52,
+        "projected": null,
+        "over_on": null
+      },
+      {
+        "category_id": "living",
+        "name": "생활",
+        "spent": 1100000,
+        "limit": 250000,
+        "remaining": -850000,
+        "percent": 440,
+        "projected": null,
+        "over_on": null
+      },
+      {
+        "category_id": "cafe",
+        "name": "카페",
+        "spent": 48000,
+        "limit": null,
+        "remaining": null,
+        "percent": null,
+        "projected": null,
+        "over_on": null
+      },
+      {
+        "category_id": "housing",
+        "name": "주거",
+        "spent": 450000,
+        "limit": null,
+        "remaining": null,
+        "percent": null,
+        "projected": null,
+        "over_on": null
+      },
+      {
+        "category_id": "etc",
+        "name": "기타",
+        "spent": 17000,
+        "limit": null,
+        "remaining": null,
+        "percent": null,
+        "projected": null,
+        "over_on": null
+      }
+    ],
+    "compare": [
+      {
+        "category_id": "food",
+        "name": "식비",
+        "a": 270000,
+        "b": 280000,
+        "delta": 10000,
+        "percent": 4
+      },
+      {
+        "category_id": "housing",
+        "name": "주거",
+        "a": 450000,
+        "b": 450000,
+        "delta": 0,
+        "percent": 0
+      },
+      {
+        "category_id": "living",
+        "name": "생활",
+        "a": 205000,
+        "b": 1100000,
+        "delta": 895000,
+        "percent": 437
+      },
+      {
+        "category_id": "transport",
+        "name": "교통",
+        "a": 55000,
+        "b": 52000,
+        "delta": -3000,
+        "percent": 5
+      },
+      {
+        "category_id": "cafe",
+        "name": "카페",
+        "a": 45000,
+        "b": 48000,
+        "delta": 3000,
+        "percent": 7
+      },
+      {
+        "category_id": "etc",
+        "name": "기타",
+        "a": 17000,
+        "b": 17000,
+        "delta": 0,
+        "percent": 0
+      }
+    ],
+    "outliers": {
+      "baseline_from": "2026-03-01T00:00:00+09:00",
+      "baseline_to": "2026-09-01T00:00:00+09:00",
+      "items": [
+        {
+          "id": "t1",
+          "occurred_at": "2026-09-14T15:00:00+09:00",
+          "category_id": "living",
+          "merchant": "전자랜드",
+          "amount": 890000,
+          "usual_median": 52000,
+          "usual_upper": 89000
+        }
+      ],
+      "truncated": false,
+      "skipped": []
+    },
+    "frequency": {
+      "count": 21,
+      "day_count": 19,
+      "avg_gap_days": 1.5,
+      "avg_amount": 13333
+    }
+  }
+}
