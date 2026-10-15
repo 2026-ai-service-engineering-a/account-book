@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Integer, Numeric, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from api.infrastructure.db.base import Base
@@ -14,8 +14,15 @@ class AgentRunRow(Base):
     (development-rules 6.4)."""
 
     __tablename__ = "agent_runs"
+    __table_args__ = (
+        CheckConstraint("seat IN ('capture', 'classify', 'chat', 'ask')", name="seat"),
+        CheckConstraint("flow IN ('single', 'react', 'plan_execute')", name="flow"),
+        CheckConstraint("status IN ('done', 'failed')", name="status"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    seat: Mapped[str] = mapped_column(String(20))
+    flow: Mapped[str] = mapped_column(String(20))
     utterance: Mapped[str] = mapped_column(Text)
     model: Mapped[str] = mapped_column(String(100))
     steps: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
@@ -24,4 +31,6 @@ class AgentRunRow(Base):
         Numeric(10, 6), default=Decimal(0), server_default="0"
     )
     status: Mapped[str] = mapped_column(String(20))
+    # 자리마다 값이 다르다(answered·refused·abstained…). 목록을 못 박지 않는다
+    stop_reason: Mapped[str] = mapped_column(String(30))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

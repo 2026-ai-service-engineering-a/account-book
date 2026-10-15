@@ -24,6 +24,10 @@ class LitellmLanguageModel:
         self._api_key = api_key
         self._timeout = timeout
 
+    @property
+    def model(self) -> str:
+        return self._model
+
     async def complete_json(self, prompt: Prompt) -> Mapping[str, object]:
         try:
             response = await litellm.acompletion(

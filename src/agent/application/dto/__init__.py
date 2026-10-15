@@ -22,10 +22,13 @@ from .prompt import Prompt
 from .retrieval import Retrieval
 from .retrieval_defaults import RetrievalDefaults
 from .retrieved_chunk import RetrievedChunk
+from .run_record import RunRecord
+from .run_seat import RunSeat
 from .search_result import SearchResult
 from .search_strategy import SearchStrategy
 from .stop_reason import StopReason
 from .tool_call import ToolCall
+from .tool_call_record import ToolCallRecord
 from .tool_error import ToolError
 from .tool_meta import ToolMeta
 from .tool_prompt import ToolPrompt
@@ -59,10 +62,13 @@ __all__ = [
     "Retrieval",
     "RetrievalDefaults",
     "RetrievedChunk",
+    "RunRecord",
+    "RunSeat",
     "SearchResult",
     "SearchStrategy",
     "StopReason",
     "ToolCall",
+    "ToolCallRecord",
     "ToolError",
     "ToolMeta",
     "ToolPrompt",

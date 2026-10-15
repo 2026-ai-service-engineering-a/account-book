@@ -1,0 +1,41 @@
+from __future__ import annotations
+
+import pytest
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+
+from api.application.dto import ToolCallRecord
+from api.infrastructure.db.rows import AgentRunRow, ToolCallRow
+from api.infrastructure.db.sql_unit_of_work import SqlUnitOfWork
+from tests.api.application.dto.test_run_record import run_record
+
+pytestmark = pytest.mark.integration
+
+
+def test_puts_the_run_and_its_calls_in_one_transaction(migrated):
+    calls = (
+        ToolCallRecord("c1", "summarize_spending", {"q": "카페"}, {"ok": True}),
+        ToolCallRecord("c2__thought__" + "x" * 200, "summarize_spending", {"q": "카페"}, None),
+    )
+    sessions = SqlUnitOfWork.factory(migrated)
+    with SqlUnitOfWork(sessions) as uow:
+        uow.runs.add(run_record("r1", tool_calls=calls))
+        uow.commit()
+    with migrated.connect() as connection:
+        run = connection.execute(select(AgentRunRow.seat, AgentRunRow.stop_reason)).one()
+        rows = connection.execute(
+            select(ToolCallRow.call_id, ToolCallRow.result).order_by(ToolCallRow.id)
+        ).all()
+    assert tuple(run) == ("chat", "answered")
+    # 제공자의 call_id는 길다 — Gemini는 생각 서명을 붙인다
+    assert [tuple(r) for r in rows] == [("c1", {"ok": True}), ("c2__thought__" + "x" * 200, None)]
+
+
+def test_the_same_run_twice_is_refused(migrated):
+    sessions = SqlUnitOfWork.factory(migrated)
+    with SqlUnitOfWork(sessions) as uow:
+        uow.runs.add(run_record("r1"))
+        uow.commit()
+    with pytest.raises(IntegrityError), SqlUnitOfWork(sessions) as uow:
+        uow.runs.add(run_record("r1"))
+        uow.commit()

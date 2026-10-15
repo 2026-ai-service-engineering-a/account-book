@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from api.application.dto import (
     Frequency,
     IdempotencyRecord,
+    RunRecord,
     StoredReply,
     Totals,
     TransactionDraft,
@@ -182,6 +183,16 @@ class FakeBudgets:
         self.rows[(category_id, str(period))] = amount
 
 
+class FakeRuns:
+    def __init__(self) -> None:
+        self.rows: dict[str, RunRecord] = {}
+
+    def add(self, run: RunRecord) -> None:
+        if run.id in self.rows:
+            raise ValueError("같은 실행이 두 번 들어왔다 — DB라면 기본 키에 걸린다")
+        self.rows[run.id] = run
+
+
 class FixedClock:
     def __init__(self, now: datetime) -> None:
         self.current = now
@@ -204,6 +215,7 @@ class FakeUnitOfWork:
         self.budgets = FakeBudgets()
         self.index = FakeIndex(self.transactions)
         self.documents = FakeDocuments(self.index)
+        self.runs = FakeRuns()
         self.commits = 0
 
     def __call__(self) -> FakeUnitOfWork:
@@ -213,6 +225,7 @@ class FakeUnitOfWork:
         self._rows = dict(self.transactions.rows)
         self._records = dict(self.idempotency.records)
         self._budgets = dict(self.budgets.rows)
+        self._runs = dict(self.runs.rows)
         self._documents = (dict(self.documents.documents), dict(self.documents.chunks))
         self._committed = False
         return self
@@ -227,6 +240,7 @@ class FakeUnitOfWork:
             self.transactions.rows = self._rows
             self.idempotency.records = self._records
             self.budgets.rows = self._budgets
+            self.runs.rows = self._runs
             self.documents.documents, self.documents.chunks = self._documents
 
     def commit(self) -> None:

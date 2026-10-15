@@ -13,7 +13,7 @@ from agent.application.dto import (
     SearchResult,
     TransactionFilter,
 )
-from agent.application.errors import LedgerRejected, LedgerUnavailable
+from agent.application.errors import LedgerUnavailable
 from agent.domain.tools import (
     BudgetLine,
     CategoryLine,
@@ -155,7 +155,7 @@ class HttpLedgerApi:
         except httpx.HTTPError as error:
             raise LedgerUnavailable(type(error).__name__) from error
         if response.is_client_error:
-            raise _rejected(response)
+            raise ErrorReply.rejection(response)
         if response.is_error:
             raise LedgerUnavailable(f"HTTP {response.status_code}")
         return response
@@ -178,12 +178,3 @@ def _filter(where: TransactionFilter) -> _Params:
     if where.direction is not None:
         params["direction"] = Direction(where.direction).value
     return params
-
-
-def _rejected(response: httpx.Response) -> LedgerUnavailable:
-    """4xx 본문의 `code`를 읽는다. 모르는 모양의 4xx는 거절이 아니라 고장이다."""
-    try:
-        error = ErrorReply.model_validate_json(response.content).error
-    except ValidationError:
-        return LedgerUnavailable(f"HTTP {response.status_code}")
-    return LedgerRejected(response.status_code, error["code"], error.get("details", {}))
