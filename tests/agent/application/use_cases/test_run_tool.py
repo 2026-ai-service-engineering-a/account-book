@@ -254,3 +254,14 @@ def test_outliers_carry_the_usual_and_what_could_not_be_judged():
     assert result.data["skipped"] == [{"category_id": "pet", "reason": "too_few"}]
     # 평소를 잰 기간도 봉투의 기간에 — 답에 그 날짜를 써도 숫자 검증을 지난다
     assert result.meta is not None and result.meta.periods["baseline"] == baseline
+
+
+def test_the_runner_never_writes():
+    # 쓰기는 확인 카드를 지나야 한다 — 실행기는 쓰기 도구가 목록에 있어도 api를 부르지 않는다
+    ledger = FakeLedger(replies={})
+    entry = {
+        "direction": "expense", "amount": 8500, "occurred_at": "2026-10-14T12:30:00+09:00",
+        "category_id": "food", "account": "card",
+    }  # fmt: skip
+    result = run(ledger, "create_transaction", **entry)
+    assert not result.ok and ledger.calls == []

@@ -14,6 +14,7 @@ from .routers import (
     classify_router,
     health_router,
     insights_router,
+    record_router,
     retrieve_router,
 )
 from .schemas import ErrorResponse
@@ -33,6 +34,7 @@ def build_web_app(services: Services) -> FastAPI:
         retrieve_router,
         ask_router,
         insights_router,
+        record_router,
         health_router,
     ):
         app.include_router(module.router)

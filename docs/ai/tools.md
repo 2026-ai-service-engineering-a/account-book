@@ -138,12 +138,16 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 
 | 도구 | 확인 | 멱등 키 |
 |---|---|---|
-| `create_transaction` | 임계값 이상 | `{run_id}:{seq}` |
+| `create_transaction` | **언제나** — `api`는 임계값 이상을 한 번 더 막는다 | `{run_id}:{seq}` |
 | `update_transaction` | 임계값 이상 | `{run_id}:{seq}` |
 | `delete_transaction` | **항상** | `{run_id}:{seq}` |
 | `set_budget` | 필요 | `{run_id}:{seq}` |
 
-쓰기 도구는 넷뿐이고, 늘릴 계획이 없다. 읽기 도구는 필요하면 는다.
+쓰기 도구는 넷뿐이고, 늘릴 계획이 없다. 읽기 도구는 필요하면 는다. v1.0의 채팅은 `create_transaction`
+하나만 쓴다 — 나머지 셋은 이름과 권한만 있다([chat-capture.md 10장](chat-capture.md#10-하지-않는-것)).
+
+`agent`는 쓰기를 **언제나** 제안으로 낸다(원칙 6). `api`의 임계값(`AGENT_CONFIRM_THRESHOLD`)은 확인 헤더가
+없는 쓰기를 한 번 더 막는 안전망이다 — `agent`가 그 아래 금액을 묻지 않고 써도 된다는 뜻이 아니다.
 
 ---
 
@@ -162,7 +166,7 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 |---|---|---|
 | `404 not_found` | `retryable: false` | 없다고 답한다. 다시 찾지 않는다 |
 | `422 validation_error` | `retryable: true` + 어느 필드가 틀렸나 | 인자를 고쳐 한 번 더 |
-| `412 confirmation_required` | 실패가 아니다 — 제안으로 바꾼다 | 루프를 멈추고 사람을 기다린다(7장) |
+| `412 confirmation_required` | 오지 않아야 한다 — 쓰기는 확인을 받고 나서 보낸다 | 확인 헤더가 빠졌다는 뜻이다. 쓰지 않고 다시 제안한다(7장) |
 | `409 budget_exceeded` | 금액과 초과분을 담아 내린다 | 확인 문구에 초과분을 넣어 **한 번 알린다.** 막지는 않는다 |
 | `409 request_in_progress` | `retryable: false` | 기다린다. 재시도가 루프 예산만 태운다 |
 | `500 internal_error` | `retryable: true` | 한 번만. 그 뒤 사람에게 넘긴다 |
@@ -186,7 +190,7 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 | `classify` | 기능 1의 AI 버튼 | `suggest_category` | 없다 |
 | `query` | 기능 2의 대화 조회, 기능 4의 조문 찾기 | 읽기 6개(`suggest_category`·`detect_outliers` 빼고) | **없다** |
 | `insight` | 기능 3의 리포트 | 집계 5개 | 없다 |
-| `capture` | 대화로 기록할 때, 폼의 한 줄로 채우기 | `suggest_category`, `search_transactions` + 쓰기 넷 | 확인 게이트 |
+| `capture` | 대화로 기록할 때 | `suggest_category`, `create_transaction` | 확인 게이트 — 쓰기는 하나다 |
 | `mcp` | 외부 AI 서비스 | 읽기 전부 | 제안까지만([mcp.md 4장](mcp.md#4-쓰기--제안까지만-간다)) |
 
 "조회를 물었는데 거래가 지워지는 일"을 막는 방법이 둘 있다. 프롬프트에 "지우지 마"를
@@ -203,10 +207,14 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 쓰기 도구는 호출 한 번이 두 박자로 갈린다.
 
 ```
-1) 도구 호출  → 제안(proposal)을 만들고 루프를 멈춘다. api를 부르지 않는다.
+1) 도구 호출  → 제안(proposal)을 만들고 멈춘다. api를 부르지 않는다.
 2) 사용자 확인 → 같은 Idempotency-Key로 api를 부른다. X-Confirmed-By를 붙인다.
 ```
 
+- 쓰기 호출은 모델이 고르지 않는다. 기록은 단발이라 코드가 읽은 칸으로 `create_transaction` 호출을 만든다
+  ([agent-loop.md 3장](agent-loop.md#3-어느-기능에-어느-흐름인가), [chat-capture.md 결정 1](chat-capture.md#3-정할-것--후보와-추천)).
+  도구 실행기는 쓰기를 부르지 않는다 — 쓰기는 확인 게이트만 지난다.
+- 제안은 감사 테이블에 `awaiting_confirmation`으로 남는다. 남지 않은 제안은 카드로 내지 않는다.
 - 확인 전에는 `api`로 아무것도 가지 않는다. 확인 카드가 뜬 시점에 DB는 그대로다
   ([../../ui_docs/pages/chat.md 5.2](../../ui_docs/pages/chat.md#52-확인이-오가는-순서)).
 - 멱등 키는 도구 계층이 `{run_id}:{seq}`로 만든다. `seq`는 그 실행에서 몇 번째 도구

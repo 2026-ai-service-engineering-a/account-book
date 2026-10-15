@@ -203,3 +203,25 @@ def test_the_data_version_is_asked_over_a_period():
     assert asyncio.run(api(handler).data_version(september)) == "3f2a"
     assert seen[0].url.path == "/v1/stats/version"
     assert seen[0].url.params["to"] == "2026-10-01T00:00:00+09:00"
+
+
+def test_a_confirmed_write_carries_the_same_key_and_who_confirmed():
+    from agent.domain.tools import CreateTransactionInput
+    from agent.domain.values import CategoryId, Direction, Money, PaymentMethod
+
+    created = {
+        "id": "t1", "direction": "expense", "amount": 8500,
+        "occurred_at": "2026-10-14T03:30:00+00:00", "category_id": "food",
+        "account_id": "card", "merchant": "김밥천국", "memo": "", "source": "agent", "run_id": "r1",
+    }  # fmt: skip
+    handler, seen = recorder(201, created)
+    entry = CreateTransactionInput(
+        Direction.EXPENSE, Money(8500), datetime(2026, 10, 14, 12, 30, tzinfo=SEOUL),
+        CategoryId("food"), PaymentMethod.CARD, "김밥천국",
+    )  # fmt: skip
+    line = asyncio.run(api(handler).create_transaction(entry, "r1:2", "r1"))
+    (request,) = seen
+    assert request.method == "POST" and request.url.path == "/v1/transactions"
+    assert request.headers["Idempotency-Key"] == "r1:2"
+    assert request.headers["X-Confirmed-By"] == "user" and request.headers["X-Agent-Run-Id"] == "r1"
+    assert json.loads(request.content)["account_id"] == "card" and line.id == "t1"

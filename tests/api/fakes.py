@@ -13,7 +13,6 @@ from api.application.dto import (
     CategoryBaseline,
     Frequency,
     IdempotencyRecord,
-    RunRecord,
     StoredReply,
     Totals,
     TransactionDraft,
@@ -27,6 +26,7 @@ from api.domain.values import AccountId, CategoryId, Direction, Money, Period, T
 from . import fake_outliers
 from .fake_documents import FakeDocuments
 from .fake_index import FakeIndex
+from .fake_runs import FakeRuns
 
 SEOUL = ZoneInfo("Asia/Seoul")
 
@@ -195,16 +195,6 @@ class FakeBudgets:
 
     def set_limit(self, category_id: CategoryId, period: Period, amount: Money | None) -> None:
         self.rows[(category_id, str(period))] = amount
-
-
-class FakeRuns:
-    def __init__(self) -> None:
-        self.rows: dict[str, RunRecord] = {}
-
-    def add(self, run: RunRecord) -> None:
-        if run.id in self.rows:
-            raise ValueError("같은 실행이 두 번 들어왔다 — DB라면 기본 키에 걸린다")
-        self.rows[run.id] = run
 
 
 class FakeInsightCache:

@@ -35,7 +35,7 @@ class HttpRunRecorder:
             "steps": run.steps,
             "tokens": run.tokens,
             "cost_usd": round(run.cost_usd, 6),
-            "status": "failed" if run.failed else "done",
+            "status": _status(run),
             "stop_reason": run.stop_reason,
             "tool_calls": [
                 {
@@ -60,3 +60,9 @@ class HttpRunRecorder:
             raise ErrorReply.rejection(response)
         if response.is_error:
             raise LedgerUnavailable(f"HTTP {response.status_code}")
+
+
+def _status(run: RunRecord) -> str:
+    if run.failed:
+        return "failed"
+    return "awaiting_confirmation" if run.awaiting else "done"

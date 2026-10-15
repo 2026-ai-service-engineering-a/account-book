@@ -19,6 +19,7 @@ class RunRecord:
     utterance: str
     stop_reason: str
     failed: bool = False
+    awaiting: bool = False  # 쓰기 제안 — 사람의 확인을 기다린다(감사 줄이 곧 제안이다)
     steps: int = 0  # LLM 호출 수
     tokens: int = 0
     cost_usd: float = 0.0

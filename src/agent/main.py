@@ -7,24 +7,40 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
+from datetime import UTC, datetime
 
 from fastapi import FastAPI
 
 from agent.application.dto import ClassifyThresholds, LoopLimits, RetrievalDefaults
-from agent.application.ports import Embedder, InsightCache, LanguageModel, LedgerApi, RunRecorder
+from agent.application.ports import (
+    Embedder,
+    InsightCache,
+    LanguageModel,
+    LedgerApi,
+    ProposalBook,
+    RunRecorder,
+)
 from agent.application.use_cases import (
     AnswerQuestion,
     AskDocuments,
     BuildInsights,
     CachedInsights,
     ClassifyCategory,
+    DecideRecord,
+    ProposeRecord,
     ReadCapture,
     RecordRun,
     Retrieve,
     SyncIndex,
 )
 from agent.domain.values import ChunkStrategy, SearchMode
-from agent.infrastructure.http import HttpInsightCache, HttpLedgerApi, HttpRunRecorder
+from agent.infrastructure.http import (
+    HttpInsightCache,
+    HttpLedgerApi,
+    HttpProposalBook,
+    HttpRunRecorder,
+)
 from agent.infrastructure.llm import LitellmEmbedder, LitellmLanguageModel
 from agent.infrastructure.settings import Settings
 from agent.interfaces.services import Services
@@ -49,6 +65,8 @@ def create_app(
     embedder: Embedder | None = None,
     recorder: RunRecorder | None = None,
     cache: InsightCache | None = None,
+    book: ProposalBook | None = None,
+    clock: Callable[[], datetime] | None = None,
 ) -> FastAPI:
     """가짜를 넘기면 그것을 쓰고, 넘기지 않은 자리는 설정으로 진짜를 만든다."""
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -56,7 +74,7 @@ def create_app(
     logging.getLogger("LiteLLM").setLevel(logging.WARNING)
     thresholds, limits, defaults = _DEFAULT_THRESHOLDS, _DEFAULT_LIMITS, RetrievalDefaults()
     insight_calls = _DEFAULT_INSIGHT_CALLS
-    if model is None or ledger is None or recorder is None or cache is None:
+    if model is None or ledger is None or recorder is None or cache is None or book is None:
         settings = settings or Settings()
         thresholds = ClassifyThresholds(
             settings.classify_min_confidence, settings.classify_abstain_below
@@ -80,6 +98,9 @@ def create_app(
             settings.api_base_url, timeout=_RECORD_TIMEOUT_SECONDS
         )
         cache = cache or HttpInsightCache(settings.api_base_url, timeout=_RECORD_TIMEOUT_SECONDS)
+        book = book or HttpProposalBook(
+            settings.api_base_url, timeout=settings.agent_timeout_seconds
+        )
         if embedder is None and settings.embedding_model:
             embedder = LitellmEmbedder(
                 settings.embedding_model,
@@ -91,9 +112,14 @@ def create_app(
     index = SyncIndex(ledger, embedder) if embedder else None
     retrieve = Retrieve(ledger, embedder, index, defaults)
     answer = AnswerQuestion(model, ledger, retrieve, limits, time.perf_counter)
+    record = RecordRun(recorder, model.model)
+    read_capture = ReadCapture(model, classify)
+    # 제안을 저장하는 길은 RecordRun(실패를 삼킨다)이 아니라 recorder다 —
+    # 저장이 실패하면 카드를 내지 않는다
+    propose = ProposeRecord(read_capture, ledger, recorder, record, model.model)
     return build_web_app(
         Services(
-            read_capture=ReadCapture(model, classify),
+            read_capture=read_capture,
             classify=classify,
             answer=answer,
             retrieve=retrieve,
@@ -106,6 +132,13 @@ def create_app(
                 cache,
                 model.model,
             ),
-            record=RecordRun(recorder, model.model),
+            record=record,
+            propose=propose,
+            decide=DecideRecord(book, ledger, propose, clock or _utc_now),
         )
     )
+
+
+def _utc_now() -> datetime:
+    """제안의 나이(24시간)를 재는 시계. 조립 지점에서만 지금을 읽는다 — 안쪽은 받아서 쓴다."""
+    return datetime.now(UTC)

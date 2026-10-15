@@ -228,7 +228,10 @@ running → awaiting_confirmation → running → done
 - 서버가 재시작하면 `running`으로 남은 실행은 `aborted`로 정리한다. 되살리지 않는다 —
   중간 상태의 LLM 대화를 복원하는 값이 그 복잡도보다 작다.
 - `awaiting_confirmation`은 살아남는다. 그건 LLM 상태가 아니라 제안 한 건이고,
-  멱등 키와 제안 내용만 있으면 끝까지 갈 수 있다.
+  멱등 키와 제안 내용만 있으면 끝까지 갈 수 있다. 제안은 감사 테이블의 그 실행 줄이다 —
+  `create_transaction` 호출의 인자가 제안 내용이고 키는 `{run_id}:{seq}`로 다시 만든다. 확인되면
+  그 호출에 `confirmed_at`이 찍히고 `done`으로, 취소·만료면 `aborted`로 닫힌다. 감사 로그를 고치는
+  길은 이것뿐이고 "대기일 때만"이다([chat-capture.md 6장](chat-capture.md#6-입력과-출력)).
 - 로그에 발화 원문·금액·가맹점을 넣지 않는다. 감사 테이블과 운영 로그는 다른
   것이다([../development-rules.md 6.4](../development-rules.md#64-로깅--운영-로그와-감사-로그를-나눈다)).
 

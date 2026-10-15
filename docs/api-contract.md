@@ -84,8 +84,9 @@ X-Agent-Run-Id: 01J9X...
 
 - `AGENT_CONFIRM_THRESHOLD` 이상의 금액, 그리고 모든 `DELETE`는 `X-Confirmed-By: user`가
   없으면 `412 confirmation_required`로 거부한다.
-- 에이전트는 412를 받으면 사용자에게 확인을 묻고, 확인을 받으면 **같은 `Idempotency-Key`로**
-  헤더를 붙여 다시 보낸다.
+- 에이전트는 **412를 받기 전에 묻는다.** 쓰기는 금액과 관계없이 언제나 제안 → 확인 → 실행이고
+  ([ai/README.md 2장 원칙 6](ai/README.md#2-모든-ai-기능에-걸리는-원칙)), 확인을 받으면 제안 때 정한
+  `Idempotency-Key`와 `X-Confirmed-By`를 붙여 처음 보낸다. 412는 그 약속이 깨졌을 때 막는 안전망이다.
 - 거부된 요청도 `tool_calls`에 남는다. 무엇을 하려다 막혔는지가 감사에서는 중요하다.
 
 > **한계를 적어 둔다.** `X-Confirmed-By`는 에이전트가 붙이는 헤더라서, 에이전트가
@@ -142,7 +143,7 @@ X-Agent-Run-Id: 01J9X...
 |---|---|---|---|
 | `GET` | `/v1/transactions` | `search_transactions` | — |
 | `GET` | `/v1/transactions/{id}` | — (화면) | — |
-| `POST` | `/v1/transactions` | `create_transaction` | 임계값 이상 |
+| `POST` | `/v1/transactions` | `create_transaction` | 임계값 이상(agent는 언제나 묻는다) |
 | `PATCH` | `/v1/transactions/{id}` | `update_transaction` | 임계값 이상 |
 | `DELETE` | `/v1/transactions/{id}` | `delete_transaction` | **항상** |
 | `GET` | `/v1/summary` | `summarize_spending` | — |
@@ -161,6 +162,9 @@ X-Agent-Run-Id: 01J9X...
 | `GET` | `/v1/embeddings/pending` | — (색인) | — |
 | `PUT` | `/v1/embeddings/{text_hash}` | — (색인) | — |
 | `POST` | `/v1/runs` | — (감사) | — |
+| `GET` | `/v1/runs/{id}` | — (감사 · 제안 되살리기) | — |
+| `POST` | `/v1/runs/{id}/confirm` | — (제안 확인) | — |
+| `POST` | `/v1/runs/{id}/close` | — (제안 닫기) | — |
 | `GET` | `/v1/stats/version` | — (리포트 캐시) | — |
 | `GET` | `/v1/insights/cache/{key}` | — (리포트 캐시) | — |
 | `PUT` | `/v1/insights/cache/{key}` | — (리포트 캐시) | — |
@@ -264,13 +268,25 @@ X-Agent-Run-Id: 01J9X...
   `tool_calls`는 `{call_id, tool, args, result}`의 목록이고 `call_id`는 실행 안에서 유일하다.
 - 키는 `run:{run_id}`다. 기록을 다시 보내도 줄이 둘이 되지 않는다. 응답은 `201 {"id"}`.
 - 값의 목록은 `seat` = `capture`·`classify`·`chat`·`ask`·`insight`, `flow` = `single`·`react`·`plan_execute`,
-  `status` = `done`(답이 나갔다 — 모른다는 답과 부분 결과도)·`failed`(503으로 끝났다).
+  `status` = `done`(답이 나갔다 — 모른다는 답과 부분 결과도)·`failed`(503으로 끝났다)·`awaiting_confirmation`(쓰기 제안이 사람을 기다린다)·`aborted`(제안이 취소·만료됐다).
   `stop_reason`은 자리마다 다르다 — 채팅은 루프의 정지 조건([ai/agent-loop.md 4.2](ai/agent-loop.md#42-정지-조건)),
   기록은 `read`·`question`·`cancelled`·`no_amount`·`unreadable`, 분류는 고른 길, 문서 Q&A는 답의 상태.
 - 단발 자리(`capture`·`classify`·`ask`)의 `steps`·`tokens`·`cost_usd`는 아직 0이다. 구조화 출력 호출이
   사용량을 내지 않는다.
 - 발화·인자·금액·가맹점이 여기에 있다. 운영 로그에는 없다([development-rules.md 6.4](development-rules.md#64-로깅--운영-로그와-감사-로그를-나눈다)).
 - 기록이 실패해도 `agent`는 답을 낸다. 실패는 운영 로그에 `run_id`와 코드만 남는다.
+
+**쓰기 제안은 감사 줄이 곧 제안이다**([ai/chat-capture.md](ai/chat-capture.md)). `status=awaiting_confirmation`으로
+넣고(`aborted`로는 넣지 못한다), 사람의 결정으로 닫는다. 고치는 길은 이것뿐이고 좁다 — 둘 다 **지금 대기일 때만**
+바꾸고, 바꿨든 아니든 결정 뒤의 실행(`GET /v1/runs/{id}`와 같은 모양)을 돌려준다. 발화와 인자는 고치지 않는다.
+
+- `POST /v1/runs/{id}/confirm` `{"call_id"}` — 그 호출의 `confirmed_at`을 비어 있을 때만 채운다(시각은 `api`가).
+  두 번 눌러도 처음 시각이 남는다.
+- `POST /v1/runs/{id}/close` `{"status": "done"|"aborted"|"failed", "stop_reason", "results": [{"call_id", "result"}]}` —
+  **확인된 호출이 있으면 `aborted`로 닫히지 않는다.** 확인된 제안은 취소되지 않는다. `failed`는 확인한 쓰기를
+  `api`가 거절한 것(422)이라 확인됐어도 닫힌다.
+- `GET /v1/runs/{id}` — 실행과 도구 호출(`confirmed_at` 포함), `created_at`. 없으면 `404 not_found`.
+  제안의 수명(24시간)은 `agent`가 `created_at`으로 잰다.
 
 ### 예산은 바꿀 때까지 이어진다
 

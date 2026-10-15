@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from api.application.ports import RunLog
-from tests.api.fakes import FakeRuns
+from tests.api.fake_runs import FakeRuns
 
 
 def test_fake_fills_the_port():

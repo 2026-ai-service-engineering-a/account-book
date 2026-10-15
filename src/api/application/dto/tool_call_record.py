@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,3 +17,4 @@ class ToolCallRecord:
     tool: str
     args: Mapping[str, object]
     result: Mapping[str, object] | None
+    confirmed_at: datetime | None = None  # 사람이 확인한 시각 — 쓰기 제안만(api-contract 4장)
