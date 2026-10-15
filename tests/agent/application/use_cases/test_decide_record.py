@@ -151,3 +151,18 @@ def test_a_rejected_write_closes_as_failed():
 
 def test_an_unknown_proposal():
     assert gate().confirm("nope").code == "not_found"
+
+
+def test_the_pace_line_follows_like_the_stand_in():
+    from datetime import date
+
+    pacing = (
+        BudgetLine(CategoryId("food"), "식비", Amount(182_300), Amount(300_000), Amount(117_700),
+                   61, Amount(321_705), date(2026, 10, 28)),
+    )  # fmt: skip
+    g = gate(ledger(budget_status=pacing))
+    assert g.confirm().text.split("\n") == [
+        "기록했어요.",
+        "10월 식비 182,300원 / 예산 300,000원 (61%).",
+        "지금 페이스면 10월 28일에 예산을 넘고, 말일에 321,705원이 됩니다.",
+    ]

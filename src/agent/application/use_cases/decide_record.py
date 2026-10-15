@@ -108,21 +108,29 @@ class DecideRecord:
         return RecordReply(text=EXPIRED, card=renewed.card)
 
     async def _after(self, entry: CreateTransactionInput, line: TransactionLine) -> str:
-        """기록 뒤 예산 한 줄 — 숫자는 api가 내고 문장은 코드가 쓴다. 못 읽으면 빼고 말한다."""
+        """기록 뒤 예산 한두 줄 — 대역(ScriptedChatAgent)과 같은 모양이다.
+        숫자는 api가 내고 문장은 코드가 쓴다. 넘을 페이스면 언제 넘고 말일에 얼마가 되는지
+        한 줄 더. 못 읽으면 빼고 말한다."""
         if line.direction.value != "expense":
             return RECORDED
         month = entry.occurred_at.date().replace(day=1)
         try:
-            lines = await self._ledger.budget_status(month, entry.category_id)
+            statuses = await self._ledger.budget_status(month, entry.category_id)
         except LedgerUnavailable:
             return RECORDED
-        found = next((b for b in lines if b.limit is not None), None)
+        found = next((b for b in statuses if b.limit is not None), None)
         if found is None or found.limit is None:
             return RECORDED
         budget = (
             f"{month.month}월 {found.name} {found.spent.amount:,}원 / 예산 {found.limit.amount:,}원"
         )
-        return f"{RECORDED}\n{budget} ({found.percent}%)."
+        lines = [RECORDED, f"{budget} ({found.percent}%)."]
+        if found.over_on is not None and found.projected is not None:
+            when = f"{found.over_on.month}월 {found.over_on.day}일"
+            lines.append(
+                f"지금 페이스면 {when}에 예산을 넘고, 말일에 {found.projected.amount:,}원이 됩니다."
+            )
+        return "\n".join(lines)
 
 
 def _entry(found: StoredProposal) -> CreateTransactionInput:
