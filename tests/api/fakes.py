@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from types import TracebackType
@@ -9,6 +10,7 @@ from typing import Self
 from zoneinfo import ZoneInfo
 
 from api.application.dto import (
+    CategoryBaseline,
     Frequency,
     IdempotencyRecord,
     RunRecord,
@@ -22,6 +24,7 @@ from api.application.errors import RequestInProgress
 from api.domain.entities import Account, Category, Transaction
 from api.domain.values import AccountId, CategoryId, Direction, Money, Period, TransactionId
 
+from . import fake_outliers
 from .fake_documents import FakeDocuments
 from .fake_index import FakeIndex
 
@@ -161,6 +164,14 @@ class FakeStats:
 
     def first_occurred_at(self) -> datetime | None:
         return min((t.occurred_at for t in self._transactions.rows.values()), default=None)
+
+    def baselines(self, query: TransactionQuery, since: datetime) -> tuple[CategoryBaseline, ...]:
+        return fake_outliers.baselines(self._transactions.rows.values(), query, since)
+
+    def above(
+        self, query: TransactionQuery, uppers: Mapping[CategoryId, Money], limit: int
+    ) -> tuple[Transaction, ...]:
+        return fake_outliers.above(self._transactions.rows.values(), query, uppers, limit)
 
 
 def _half_up(value: Decimal, places: str) -> Decimal:

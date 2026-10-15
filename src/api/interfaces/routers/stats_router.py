@@ -1,4 +1,5 @@
-"""기간 집계 — `/v1/stats/frequency`(count_frequency)와 `/v1/stats/compare`(compare_periods).
+"""기간 집계 — `/v1/stats/frequency`(count_frequency), `/v1/stats/compare`(compare_periods),
+`/v1/stats/outliers`(detect_outliers).
 
 기간은 이름이 아니라 경계로 받는다. `from`·`to`는 오프셋이 붙은 ISO 8601 시각이고 `[from, to)`다.
 naive 시각은 422다 — 어느 타임존의 자정인지 모르는 경계로 세지 않는다.
@@ -14,7 +15,7 @@ from pydantic import AwareDatetime
 
 from api.domain.values import CategoryId, Direction
 from api.interfaces.query_span import time_range
-from api.interfaces.schemas import FrequencyBody, PeriodChangeBody
+from api.interfaces.schemas import FrequencyBody, OutliersBody, PeriodChangeBody
 from api.interfaces.services import ServicesDep
 
 router = APIRouter(prefix="/v1/stats")
@@ -55,3 +56,23 @@ def compare(
         CategoryId(category_id) if category_id else None,
     )
     return [PeriodChangeBody.of(change) for change in found]
+
+
+@router.get("/outliers")
+def outliers(
+    services: ServicesDep,
+    start: Annotated[AwareDatetime, Query(alias="from")],
+    end: Annotated[AwareDatetime, Query(alias="to")],
+    direction: Literal["expense", "income"] = "expense",
+    category_id: str | None = None,
+    q: Annotated[str, Query(max_length=100)] = "",
+) -> OutliersBody:
+    """평소 범위를 벗어난 거래. 걸름은 `/v1/summary`와 같다. 판정 기준은 받지 않는다 — api가
+    정한다(domain/rules/usual_range)."""
+    found = services.outliers(
+        time_range(start, end, "to"),
+        direction=Direction(direction),
+        category_id=CategoryId(category_id) if category_id else None,
+        text=q,
+    )
+    return OutliersBody.of(found)
