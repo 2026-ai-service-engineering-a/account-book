@@ -354,6 +354,9 @@ DOC_CHUNK_STRATEGY=
 DOC_SEARCH_MODE=
 DOC_TOP_K=
 
+# 상황에 맞는 통계(리포트)
+INSIGHT_MAX_TOOL_CALLS=
+
 # 서비스 주소 — compose 내부 네트워크 기준
 API_BASE_URL=
 AGENT_BASE_URL=

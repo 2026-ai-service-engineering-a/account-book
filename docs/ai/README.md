@@ -224,7 +224,8 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 기능 1의 색인 엔드포인트 둘, 기능 2의 `/v1/stats/frequency`·`/v1/stats/compare`, 기능 3의
 `/v1/stats/outliers`는 계약에 옮겼다(api-contract 6장).
 
-`agent`가 새로 노출하는 것은 `POST /insights`(기능 3)다. 기능 4의 `POST /retrieve`·`POST /ask`는
+기능 3의 `POST /insights`는 붙었다 — 정본은 [agentic-reports.md](agentic-reports.md)이고, 화면이 부르는 일은
+insights-llm에서 붙인다. 기능 4의 `POST /retrieve`·`POST /ask`는
 붙었다 — 정본은 [../../ui_docs/pages/documents.md](../../ui_docs/pages/documents.md). 기록의 `POST /capture`, 기능 1의
 `POST /classify`, 기능 2의 `POST /chat`(SSE)은 이미 붙었다 — `/chat`의 정본은
 [../../ui_docs/pages/chat.md 4.1](../../ui_docs/pages/chat.md#41-sse-이벤트가-화면으로), 나머지 둘은
@@ -248,11 +249,9 @@ README 4장과 api-contract 6장의 도구 이름은 `check_docs.py`가 맞춰 �
 기능 4의 `DOC_CHUNK_STRATEGY`·`DOC_SEARCH_MODE`·`DOC_TOP_K`도 옮겼다(document-rag.md 6.3에서 재서 골랐다).
 계획에 있던 `CHUNK_SIZE`·`CHUNK_OVERLAP`은 없앴다 — 길이 상한과 겹침 대신 청킹 전략 셋을 견줬다.
 `EMBEDDING_MODEL`은 비어 있어도 뜬다 — 시크릿이 아니라 기능 스위치라서, 비면 벡터 단계를
-건너뛰고 규칙·이력으로만 고른다.
+건너뛰고 규칙·이력으로만 고른다. 기능 3의 `INSIGHT_MAX_TOOL_CALLS`도 옮겼다 — 고정 호출 둘을 포함한다.
 
 ```
-INSIGHT_MAX_TOOL_CALLS=6    # 리포트 한 번에 허용하는 집계 호출 수
-
 DOC_MIN_SIMILARITY=0.6      # 상위 조각의 유사도가 이 아래면 모른다고 답한다. 시작값
 
 MCP_ENABLED=false           # 외부 AI 서비스 통로. 기본은 닫혀 있다
