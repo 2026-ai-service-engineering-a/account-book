@@ -1,4 +1,4 @@
-{% from "ai.html" import ai_badge %}
+{% from "ai.html" import ai_badge with context %}
 <div class="card-confirm" data-proposal-id="{{ proposal.id }}">
   <div class="card-confirm-head"><strong>이렇게 기록할게요</strong>{{ ai_badge("capture") }}</div>
   <p class="card-main">
@@ -6,6 +6,9 @@
     <strong class="amount {{ 'in' if proposal.direction == 'income' else 'out' }}">{{ proposal.amount | signed(proposal.direction) }}</strong>
   </p>
   <p class="card-detail">{{ proposal.account_name }}{% if proposal.merchant %} · {{ proposal.merchant }}{% endif %}</p>
+  {# AI가 읽지 못해 기본값으로 둔 칸 — 카드에서 고칠 수 없으니 틀리면 취소하고 폼으로(chat.md 5.1) #}
+  {% if "category" in proposal.unsure %}<p class="card-detail muted">카테고리는 AI가 고르지 못해 {{ proposal.category_name }}로 둡니다.</p>{% endif %}
+  {% if "account" in proposal.unsure %}<p class="card-detail muted">결제수단을 읽지 못해 {{ proposal.account_name }}로 둡니다.</p>{% endif %}
   <div class="actions">
     <button type="button" class="btn btn-outline btn-sm" data-decision="cancel">취소</button>
     <button type="button" class="btn btn-sm" data-decision="confirm">확인</button>

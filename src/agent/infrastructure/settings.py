@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     doc_search_mode: Literal["keyword", "vector", "hybrid"] = "hybrid"
     doc_top_k: int = Field(default=8, ge=1, le=20)
 
+    # 리포트 한 번에 허용하는 집계 호출 수 — 고정 둘을 포함한다(docs/ai/agentic-reports.md 4장).
+    # 계획 하나가 고를 수 있는 단계는 이것에서 둘을 뺀 만큼이다
+    insight_max_tool_calls: int = Field(default=6, ge=2, le=12)
+
     # .env에는 다른 서비스의 변수도 있다. agent가 쓰지 않는 것은 모른 척한다.
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

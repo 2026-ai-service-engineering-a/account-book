@@ -9,7 +9,9 @@ from .routers import (
     category_search_router,
     documents_router,
     health_router,
+    insight_cache_router,
     reports_router,
+    runs_router,
     stats_router,
     transactions_router,
 )
@@ -29,6 +31,8 @@ def build_web_app(services: Services) -> FastAPI:
         budgets_router,
         category_search_router,
         documents_router,
+        runs_router,
+        insight_cache_router,
     ):
         app.include_router(module.router)
     install_error_translation(app)

@@ -1,5 +1,6 @@
 # 기본 구성 — 운영처럼 뜬다. 코드를 이미지에 굽고, 고쳐도 다시 뜨지 않는다.
 # 서비스 넷 — ui, agent, api, db(README 3장). 호스트로 여는 건 ui 하나뿐이다.
+# 다섯째 mcp는 켜야 선다 — 외부 AI 클라이언트가 띄운다(docs/ai/mcp.md).
 #
 #   docker compose up -d --build   # http://localhost:8080
 #
@@ -77,6 +78,27 @@ services:
     expose:
       - "8000"
     restart: unless-stopped
+
+  # 외부 AI 클라이언트의 통로(docs/ai/mcp.md). 집계 넷만 읽고 쓰지 않는다. 기본은 꺼져 있고
+  # up으로는 뜨지 않는다(profile) — 클라이언트가 `docker compose run --rm -T mcp`로 띄우고
+  # stdin·stdout으로 말한다. 포트가 없다. LLM 키도 DB 접속 정보도 모른다 — api만 부른다.
+  mcp:
+    build:
+      context: .
+      target: mcp
+    image: account-book-mcp
+    profiles: ["mcp"]
+    environment:
+      MCP_ENABLED: ${MCP_ENABLED:-false}
+      MCP_TRANSPORT: ${MCP_TRANSPORT:-stdio}
+      MCP_TOKEN: ${MCP_TOKEN:-}
+      MCP_ALLOWED_TOOLS: ${MCP_ALLOWED_TOOLS:-summarize_spending,compare_periods,count_frequency,get_budget_status}
+      MCP_CALLS_PER_MINUTE: ${MCP_CALLS_PER_MINUTE:-30}
+      USER_TIMEZONE: ${USER_TIMEZONE:-Asia/Seoul}
+      API_BASE_URL: ${API_BASE_URL:-http://api:8000}
+    depends_on:
+      - api
+    stdin_open: true
 
   # PostgreSQL + pgvector. 확장이 든 이미지라 카테고리 고르기의 벡터 검색을 DB에서 한다.
   # 포트를 열지 않는다. 데이터는 볼륨에 남는다 — 지우려면 docker compose down -v.

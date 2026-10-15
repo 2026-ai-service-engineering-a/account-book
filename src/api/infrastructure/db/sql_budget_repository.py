@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import distinct_on, insert
 from sqlalchemy.orm import Session
 
@@ -35,6 +35,6 @@ class SqlBudgetRepository:
         self._session.execute(
             statement.on_conflict_do_update(
                 index_elements=[BudgetRow.category_id, BudgetRow.period],
-                set_={"limit_amount": statement.excluded.limit_amount},
+                set_={"limit_amount": statement.excluded.limit_amount, "updated_at": func.now()},
             )
         )

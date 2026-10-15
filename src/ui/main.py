@@ -25,6 +25,8 @@ from ui.application.ports import (
     DocumentAnswerer,
     DocumentGateway,
     ReportGateway,
+    ReportNarrator,
+    RunGateway,
     TransactionGateway,
 )
 from ui.infrastructure.agent import (
@@ -33,6 +35,7 @@ from ui.infrastructure.agent import (
     AgentChatAgent,
     AgentDocumentAnswerer,
     AgentDocumentGateway,
+    AgentReportNarrator,
     RoutedChatAgent,
 )
 from ui.infrastructure.api import (
@@ -41,6 +44,7 @@ from ui.infrastructure.api import (
     HttpCatalogGateway,
     HttpDocumentGateway,
     HttpReportGateway,
+    HttpRunGateway,
     HttpTransactionGateway,
 )
 from ui.infrastructure.memory import (
@@ -49,6 +53,7 @@ from ui.infrastructure.memory import (
     MemoryDemoData,
     MemoryDocumentGateway,
     MemoryReportGateway,
+    MemoryRunGateway,
     MemoryStore,
     MemoryTransactionGateway,
 )
@@ -66,9 +71,11 @@ from ui.interfaces.services import Services
 from ui.interfaces.web_app import build_web_app
 
 # agent가 붙으면 진짜가 서는 자리(ai_map의 key)
-_LIVE = frozenset({"capture", "classify", "query"})
+_LIVE = frozenset({"capture", "classify", "query", "insight"})
 # api 호출 하나의 상한. 화면 한 장이 기다리는 시간이라 짧게 둔다 — 집계도 DB가 하니 금방이다.
 _API_TIMEOUT = 5.0
+# agent가 리포트 한 번을 끊는 벽시계(docs/ai/agent-loop.md 8장)
+_REPORT_WALL_SECONDS = 10.0
 
 
 def create_app(
@@ -83,7 +90,7 @@ def create_app(
     clock = clock or SystemClock(zone)
     ledger = _api_ledger(settings) if settings.api_base_url else _memory_ledger(zone, clock, seeded)
     transactions, reports, budgets, catalog, demo = ledger
-    # 채팅의 기록 쪽은 아직 각본 대역이다. 질문 쪽만 agent가 있으면 agent가 받는다.
+    # agent가 없을 때 채팅의 기록과 질문을 둘 다 받는 각본 대역
     scripted = ScriptedChatAgent(
         transactions,
         reports,
@@ -105,7 +112,8 @@ def create_app(
             answerer=_answerer(settings, documents),
             suggester=_category_suggester(settings),
             chat=chat,
-            narrator=ScriptedReportNarrator(),
+            narrator=_narrator(settings, clock),
+            runs=_runs(settings),
             clock=clock,
             demo=demo,
             capture=_capture_reader(settings, capture_delay),
@@ -144,6 +152,13 @@ def _memory_ledger(zone: ZoneInfo, clock: Clock, seeded: bool) -> _Ledger:
         MemoryCatalogGateway(store),
         MemoryDemoData(store, clock),
     )
+
+
+def _runs(settings: Settings) -> RunGateway:
+    """실행 기록(감사 로그). api가 없으면 비어 있는 대역 — 각본 대역은 실행을 남기지 않는다."""
+    if not settings.api_base_url:
+        return MemoryRunGateway()
+    return HttpRunGateway(ApiClient(settings.api_base_url, timeout=_API_TIMEOUT))
 
 
 def _documents(settings: Settings) -> DocumentGateway:
@@ -189,11 +204,27 @@ def _category_suggester(settings: Settings) -> CategorySuggester:
     return AgentCategorySuggester(settings.agent_base_url, timeout)
 
 
+def _narrator(settings: Settings, clock: Clock) -> ReportNarrator:
+    """리포트의 "눈에 띈 것". agent가 없으면 규칙 문구 대역이, 있으면 agent의 /insights가 선다.
+
+    agent가 죽으면 대역으로 물러서지 않는다 — 그 영역을 그리지 않는다(agentic-reports 7장).
+    """
+    if not settings.agent_base_url:
+        return ScriptedReportNarrator()
+    # agent가 실행 전체를 벽시계(리포트 10초)로 끊는다. 캐시·버전 읽기와 감사 기록까지 기다린다
+    timeout = _REPORT_WALL_SECONDS + 5
+    return AgentReportNarrator(settings.agent_base_url, settings.user_timezone, clock, timeout)
+
+
 def _chat_agent(settings: Settings, clock: Clock, scripted: ChatAgent) -> ChatAgent:
     if not settings.agent_base_url:
         return scripted
-    # 이벤트 사이 한 번의 읽기 상한. 도구 고르기 LLM 한 번과 스키마 재시도까지 기다린다.
-    # 실행 전체는 agent가 벽시계(대화 20초)로 끊는다.
-    timeout = settings.agent_timeout_seconds * 2 + 2
-    questions = AgentChatAgent(settings.agent_base_url, settings.user_timezone, clock, timeout)
-    return RoutedChatAgent(questions, scripted)
+    base, zone = settings.agent_base_url, settings.user_timezone
+    # 이벤트 사이 한 번의 읽기 상한. 질문은 도구 고르기 LLM 한 번과 스키마 재시도까지,
+    # 실행 전체는 agent가 벽시계(대화 20초)로 끊는다. 기록은 읽기·분류가 LLM을 각각 한 번씩
+    # 부르고 스키마를 못 맞추면 한 번씩 더 — 카드가 뜰 때까지 이벤트가 없다
+    questions = AgentChatAgent(base, zone, clock, settings.agent_timeout_seconds * 2 + 2)
+    records = AgentChatAgent(
+        base, zone, clock, settings.agent_timeout_seconds * 4 + 2, path="/record"
+    )
+    return RoutedChatAgent(questions, records)

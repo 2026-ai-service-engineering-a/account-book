@@ -1,0 +1,7 @@
+# mcp의 런타임 의존성. 공통 위에 MCP SDK를 얹는다.
+# 따로 둔 이유: 외부로 열리는 통로라 이미지에 든 것이 곧 표면이다. LLM 라이브러리도 DB
+# 라이브러리도 넣지 않는다(docs/ai/mcp.md 2장).
+-r requirements.txt
+
+# 공식 SDK. 저수준 Server만 쓴다 — 도구 목록은 src/shared/mcp_tools.json에서 읽는다
+mcp>=2.3,<3

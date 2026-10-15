@@ -1,0 +1,77 @@
+[
+  {
+    "name": "suggest_category",
+    "description": "가맹점·메모로 카테고리 후보와 근거 거래, 그 방향의 카테고리 사전을 낸다.\n이미 기록된 거래를 찾거나 세는 데는 쓰지 않는다 — 새 기록의 카테고리를 고를 때만.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "merchant": {
+          "type": "string"
+        },
+        "memo": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "expense",
+            "income"
+          ]
+        }
+      },
+      "required": [
+        "merchant"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "create_transaction",
+    "description": "거래 한 건을 기록하자고 제안한다. 사람이 확인 카드에서 누른 뒤에야 기록된다.\n이미 있는 거래를 고치거나 지우는 데는 쓰지 않는다 — 그런 쓰기는 채팅에 없다.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": [
+            "expense",
+            "income"
+          ]
+        },
+        "amount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "category_id": {
+          "type": "string"
+        },
+        "account": {
+          "type": "string",
+          "enum": [
+            "card",
+            "cash",
+            "bank"
+          ]
+        },
+        "merchant": {
+          "type": "string"
+        },
+        "memo": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "direction",
+        "amount",
+        "occurred_at",
+        "category_id",
+        "account"
+      ],
+      "additionalProperties": false
+    }
+  }
+]

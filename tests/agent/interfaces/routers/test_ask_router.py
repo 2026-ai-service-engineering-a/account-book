@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from agent.application.errors import ModelUnavailable
 from tests.agent.application.use_cases.test_ask_documents import TRANSIT, WITHDRAW, reply
-from tests.agent.conftest import FakeLedger, FakeModel
+from tests.agent.conftest import FakeLedger, FakeModel, FakeRecorder
 from tests.agent.interfaces.conftest import client_with
 
 
@@ -24,3 +24,12 @@ def test_a_model_outage_is_still_200_with_the_search_results():
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "search_only" and len(body["chunks"]) == 2 and body["answer"] == ""
+
+
+def test_leaves_the_run_with_the_search_and_the_status():
+    recorder = FakeRecorder()
+    model = FakeModel(reply("계약서를 받은 날부터 7일 안에 철회할 수 있어요.", ("c1",)))
+    client_with(model, ledger(), recorder).post("/ask", json={"q": "노트북 취소"})
+    ((run, _),) = recorder.runs
+    assert (run.utterance, run.stop_reason) == ("노트북 취소", "answered")
+    assert run.tool_calls[0].tool == "search_documents"

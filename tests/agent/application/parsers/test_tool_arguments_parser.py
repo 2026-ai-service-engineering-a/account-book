@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
 from datetime import date
+from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -9,10 +12,13 @@ from agent.application.parsers import parse_tool_arguments
 from agent.domain.tools import (
     ComparePeriodsInput,
     CountFrequencyInput,
+    CreateTransactionInput,
+    DetectOutliersInput,
     GetBudgetStatusInput,
     SearchDocumentsInput,
     SearchTransactionsInput,
     SuggestCategoryInput,
+    SummarizeSpendingInput,
     ToolName,
 )
 from agent.domain.values import CategoryId, Direction, PeriodName, PeriodSpec
@@ -102,3 +108,63 @@ def test_wrong_arguments_name_the_field(name, raw, field):
     with pytest.raises(InvalidToolArguments) as error:
         parse_tool_arguments(name, raw)
     assert error.value.field == field
+
+
+def test_outliers_take_a_period_and_the_summary_filters_but_no_threshold():
+    found = parse_tool_arguments(
+        ToolName.DETECT_OUTLIERS, {"period": "last_month", "category_id": "living"}
+    )
+    assert found == DetectOutliersInput(
+        PeriodSpec(PeriodName.LAST_MONTH), CategoryId("living"), "", Direction.EXPENSE
+    )
+    with pytest.raises(InvalidToolArguments, match="threshold"):
+        parse_tool_arguments(ToolName.DETECT_OUTLIERS, {"period": LAST_WEEK, "threshold": 2})
+
+
+ENTRY = {
+    "direction": "expense",
+    "amount": 8500,
+    "occurred_at": "2026-10-14T12:30:00+09:00",
+    "category_id": "food",
+    "account": "card",
+    "merchant": "김밥천국",
+}
+
+
+def test_a_write_is_rebuilt_from_its_stored_arguments():
+    found = parse_tool_arguments(ToolName.CREATE_TRANSACTION, ENTRY)
+    assert isinstance(found, CreateTransactionInput)
+    assert (
+        found.amount.amount,
+        found.account.value,
+        found.occurred_at.utcoffset() is not None,
+    ) == (
+        8500,
+        "card",
+        True,
+    )
+
+
+def test_a_write_takes_no_dry_run_and_needs_a_category():
+    with pytest.raises(InvalidToolArguments, match="dry_run"):
+        parse_tool_arguments(ToolName.CREATE_TRANSACTION, ENTRY | {"dry_run": True})
+    with pytest.raises(InvalidToolArguments, match="category_id"):
+        parse_tool_arguments(ToolName.CREATE_TRANSACTION, ENTRY | {"category_id": ""})
+
+
+# mcp의 테스트도 같은 표를 통과한다 — 기간 풀이는 서비스마다 따로 있고, 이 표가 둘을 맞춘다
+PERIOD_CASES = Path(__file__).parents[3] / "fixtures" / "shared" / "period_cases.json"
+_TABLE = json.loads(PERIOD_CASES.read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("case", _TABLE["cases"], ids=lambda c: f"{c['today']} {c['period']}")
+def test_the_shared_period_table(case):
+    arguments = {"period": case["period"]}
+    if case.get("rejected"):
+        with pytest.raises(InvalidToolArguments):
+            parse_tool_arguments(ToolName.SUMMARIZE_SPENDING, arguments)
+        return
+    parsed = parse_tool_arguments(ToolName.SUMMARIZE_SPENDING, arguments)
+    assert isinstance(parsed, SummarizeSpendingInput)
+    found = parsed.period.bounds(date.fromisoformat(case["today"]), ZoneInfo(_TABLE["zone"]))
+    assert (found.start.isoformat(), found.end.isoformat()) == (case["from"], case["to"])

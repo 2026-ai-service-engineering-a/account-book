@@ -34,6 +34,8 @@ services:
         - action: rebuild
           path: requirements-api.txt
         - action: rebuild
+          path: requirements-mcp.txt
+        - action: rebuild
           path: requirements-dev.txt
         - action: rebuild
           path: Dockerfile
@@ -57,6 +59,8 @@ services:
           path: requirements-agent.txt
         - action: rebuild
           path: requirements-api.txt
+        - action: rebuild
+          path: requirements-mcp.txt
         - action: rebuild
           path: requirements-dev.txt
         - action: rebuild
@@ -82,9 +86,21 @@ services:
         - action: rebuild
           path: requirements-api.txt
         - action: rebuild
+          path: requirements-mcp.txt
+        - action: rebuild
           path: requirements-dev.txt
         - action: rebuild
           path: Dockerfile
+
+  # 코드를 굽지 않고 저장소를 마운트한다. 클라이언트가 붙을 때마다 새로 뜨니 --reload가 없다.
+  mcp:
+    build:
+      context: .
+      target: dev
+    image: account-book-mcp-dev
+    volumes:
+      - .:/app
+    command: python -m mcp_server.main
 
   # 도구 컨테이너. make check·lint·test가 여기서 돈다.
   dev:
@@ -112,6 +128,8 @@ services:
           path: requirements-agent.txt
         - action: rebuild
           path: requirements-api.txt
+        - action: rebuild
+          path: requirements-mcp.txt
         - action: rebuild
           path: requirements-dev.txt
         - action: rebuild

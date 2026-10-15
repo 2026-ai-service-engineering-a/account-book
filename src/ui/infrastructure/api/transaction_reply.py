@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, PositiveInt
 
 from ui.application.dto import Direction, Source, Transaction
-from ui.application.values import AccountId, CategoryId, Money, TransactionId
+from ui.application.values import AccountId, CategoryId, Money, RunId, TransactionId
 
 
 class TransactionReply(BaseModel):
@@ -20,6 +20,7 @@ class TransactionReply(BaseModel):
     merchant: str
     memo: str
     source: Literal["manual", "agent", "import"]
+    run_id: str | None = None
 
     def transaction(self) -> Transaction:
         return Transaction(
@@ -32,4 +33,5 @@ class TransactionReply(BaseModel):
             merchant=self.merchant,
             memo=self.memo,
             source=Source(self.source),
+            run_id=RunId(self.run_id) if self.run_id else None,
         )

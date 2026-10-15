@@ -22,6 +22,7 @@ NO_AMOUNT = (
     "금액을 찾지 못했어요. 카드 문자를 붙여넣거나 '오늘 오후 3시 카페 5천원'처럼 적어 주세요."
 )
 UNREADABLE = "이 한 줄은 읽지 못했어요. 칸을 직접 채워 주세요."
+PLANNED = "아직 쓰지 않은 돈은 기록하지 않아요. 쓴 뒤에 적어 주세요."
 NO_CATEGORY = "지금은 카테고리를 추천할 수 없어요. 직접 골라 주세요."
 
 _log = logging.getLogger(__name__)
@@ -73,16 +74,22 @@ def _reading(extraction: CaptureExtraction, text: str, now: datetime) -> Capture
         return CaptureReading.refused(QUESTION)
     if extraction.kind is ExtractionKind.CANCELLATION:
         return CaptureReading.refused(CANCELLED)
+    if extraction.kind is ExtractionKind.PLANNED:
+        return CaptureReading.refused(PLANNED)
     if extraction.kind is ExtractionKind.UNREADABLE or extraction.amount == 0:
         return CaptureReading.refused(NO_AMOUNT)
     try:
         amount = Money(extraction.amount)
     except ValueError:
         return CaptureReading.refused(NO_AMOUNT)
+    occurred_at = extraction.when.resolve(now)
+    if occurred_at is not None and occurred_at > now:
+        # 모델이 planned를 놓쳐도 "10/20"처럼 앞날을 적었으면 코드가 막는다 — 쓰지 않은 돈이다
+        return CaptureReading.refused(PLANNED)
     return CaptureReading(
         direction=extraction.direction,
         amount=amount,
-        occurred_at=extraction.when.resolve(now),
+        occurred_at=occurred_at,
         payment_method=extraction.payment_method,
         merchant=_grounded(extraction.merchant, text),
     )

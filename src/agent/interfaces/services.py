@@ -8,8 +8,12 @@ from fastapi import Depends, Request
 from agent.application.use_cases import (
     AnswerQuestion,
     AskDocuments,
+    CachedInsights,
     ClassifyCategory,
+    DecideRecord,
+    ProposeRecord,
     ReadCapture,
+    RecordRun,
     Retrieve,
 )
 
@@ -23,6 +27,10 @@ class Services:
     answer: AnswerQuestion
     retrieve: Retrieve
     ask: AskDocuments
+    insights: CachedInsights
+    propose: ProposeRecord
+    decide: DecideRecord
+    record: RecordRun
 
 
 def get_services(request: Request) -> Services:

@@ -41,3 +41,22 @@ def test_blank_message_just_finishes(empty_client):
 
 def test_unknown_decision_is_rejected(empty_client):
     assert empty_client.post("/chat/proposals/x/maybe").status_code == 422
+
+
+def test_the_card_says_which_fields_the_ai_could_not_read():
+    from dataclasses import replace
+    from datetime import date
+
+    from ui.application.dto import Direction, Proposal
+    from ui.application.values import Money, ProposalId
+    from ui.interfaces.templating import fragment
+
+    unsure = Proposal(
+        ProposalId("run-1"), date(2026, 10, 14), "기타", Direction.EXPENSE, Money(7700), "카드",
+        "", unsure=("category", "account"),
+    )  # fmt: skip
+    card = fragment("partials/chat_proposal.html", {"proposal": unsure})
+    assert "카테고리는 AI가 고르지 못해 기타로 둡니다." in card
+    assert "결제수단을 읽지 못해 카드로 둡니다." in card
+    sure = fragment("partials/chat_proposal.html", {"proposal": replace(unsure, unsure=())})
+    assert "고르지 못해" not in sure

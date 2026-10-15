@@ -14,6 +14,8 @@ from agent.domain.tools import (
     CategorySuggestion,
     ComparePeriodsInput,
     CountFrequencyInput,
+    CreateTransactionInput,
+    DetectOutliersInput,
     DocumentLine,
     EvidenceLine,
     GetBudgetStatusInput,
@@ -98,8 +100,13 @@ class RunTool:
                 month = period.start.date()  # 달 이름만 받으니 그 달 1일이다
                 lines = await self._ledger.budget_status(month, arguments.category_id)
                 return _rows({"budgets": plain(lines)}, "budgets", {"period": period})
+            case DetectOutliersInput():
+                return await self._outliers(arguments, today, zone)
             case SuggestCategoryInput():
                 return await self._suggest(arguments)
+            case CreateTransactionInput():
+                # 쓰기는 실행기로 부르지 않는다 — 제안 → 확인 게이트만 지난다(ai/tools.md 7장)
+                raise InvalidToolArguments("name", "쓰기는 확인 카드를 거쳐야 한다")
             case SearchDocumentsInput():
                 return await self._documents(arguments)
 
@@ -124,6 +131,20 @@ class RunTool:
         data: dict[str, object] = {"changes": plain(shifts[:_MAX_CHANGES])}
         data, meta = _rows(data, "changes", {"a": a, "b": b}, more=len(shifts) > _MAX_CHANGES)
         return data, dataclasses.replace(meta, note=" ".join(filter(None, (aligned, meta.note))))
+
+    async def _outliers(
+        self, arguments: DetectOutliersInput, today: date, zone: tzinfo
+    ) -> _Outcome:
+        period = arguments.period.bounds(today, zone)
+        where = Filter(period, arguments.category_id, arguments.merchant, arguments.direction)
+        found = await self._ledger.outliers(where)
+        items = [
+            dataclasses.replace(o, occurred_at=o.occurred_at.astimezone(zone)) for o in found.items
+        ]
+        # 판정하지 못한 카테고리를 같이 낸다 — "없다"와 "모른다"를 모델이 가를 수 있게
+        data: dict[str, object] = {"outliers": plain(items), "skipped": plain(found.skipped)}
+        periods = {"period": period, "baseline": found.baseline}
+        return _rows(data, "outliers", periods, more=found.truncated)
 
     async def _suggest(self, arguments: SuggestCategoryInput) -> _Outcome:
         # 벡터 없이 묻는다 — 임베딩도 모델 호출이다. 규칙·이력 단계까지만 간다
@@ -183,9 +204,11 @@ def _same_length(a: TimeRange, b: TimeRange, today: date, zone: tzinfo) -> tuple
     10월 8일에 "지난달보다 늘었어?"를 9월 전체와 견주면 늘 줄었다고 나온다.
     """
     midnight = datetime.combine(today, time(0), tzinfo=zone)
-    if not b.start <= midnight < b.end:
+    tomorrow = midnight + timedelta(days=1)
+    # b가 오늘로 끝나면(지난달 리포트의 기준일이 말일이다) 다 지나온 것으로 본다 — 자르지 않는다
+    if not b.start <= midnight < b.end or tomorrow >= b.end:
         return a, ""
-    elapsed = midnight + timedelta(days=1) - b.start
+    elapsed = tomorrow - b.start
     clipped = a.first(elapsed)
     if clipped == a:
         return a, ""

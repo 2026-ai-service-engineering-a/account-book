@@ -10,6 +10,8 @@ from api.application.ports import StatsRepository
 from api.domain.values import CategoryId, Direction, Money, Period
 from api.infrastructure.db.reference_seeder import seed_reference
 from api.infrastructure.db.sql_unit_of_work import SqlUnitOfWork
+from tests.api import fake_outliers
+from tests.api.application.use_cases.test_detect_outliers import OCTOBER, history
 from tests.api.conftest import SEOUL
 from tests.api.infrastructure.db.test_sql_transaction_repository import tx
 
@@ -98,3 +100,37 @@ def test_frequency_rounds_half_away_from_zero(uow):
 
 def test_frequency_of_nothing(uow):
     assert uow.stats.frequency(TransactionQuery()) == Frequency(0, 0, None, None)
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        TransactionQuery(start=OCTOBER.start, end=OCTOBER.end, direction=Direction.EXPENSE),
+        TransactionQuery(
+            start=OCTOBER.start, end=OCTOBER.end, direction=Direction.EXPENSE, text="오마카세"
+        ),
+        TransactionQuery(start=OCTOBER.start, end=OCTOBER.end, direction=Direction.INCOME),
+    ],
+)
+def test_outlier_aggregates_agree_with_the_fake(uow, query):
+    # percentile_cont와 round를 가짜가 같은 뜻으로 흉내 내는지 — 유스케이스 테스트가 가짜를 믿는다
+    rows = history()
+    for t in rows:
+        uow.transactions.add(t)
+    since = datetime(2026, 4, 1, tzinfo=SEOUL)
+    found = uow.stats.baselines(query, since)
+    assert found == fake_outliers.baselines(rows, query, since)
+    uppers = {b.category_id: Money(b.median.amount * 2) for b in found if b.count}
+    assert uow.stats.above(query, uppers, 6) == fake_outliers.above(rows, query, uppers, 6)
+
+
+def test_food_usual_is_the_median_and_mad_in_won(uow):
+    for t in history():
+        uow.transactions.add(t)
+    query = TransactionQuery(start=OCTOBER.start, end=OCTOBER.end, direction=Direction.EXPENSE)
+    found = uow.stats.baselines(query, datetime(2026, 4, 1, tzinfo=SEOUL))
+    # 판정 기간에 거래가 있는 카테고리만, id 순서로
+    assert [b.category_id for b in found] == ["cafe", "food", "living"]
+    food = found[1]
+    assert (food.median, food.mad, food.count) == (Money(9000), Money(400), 10)
+    assert uow.stats.above(query, {}, 5) == ()

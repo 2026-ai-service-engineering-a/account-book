@@ -42,3 +42,7 @@ class TransactionRow(Base):
     search_text: Mapped[str] = mapped_column(String(300), default="", server_default="")
     text_hash: Mapped[str] = mapped_column(String(64), default="", server_default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # 고칠 때마다 바뀐다 — 리포트 캐시의 data_version이 고친 거래를 알아챈다(agentic-reports 8장)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

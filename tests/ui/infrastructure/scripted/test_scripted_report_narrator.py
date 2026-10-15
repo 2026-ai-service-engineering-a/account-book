@@ -46,8 +46,9 @@ def test_picks_rises_pace_and_calm_budget():
             TRANSPORT, Money(100_000), Money(40_000), Money(60_000), 40, Money(70_000), None
         ),
     )
-    lines = asyncio.run(ScriptedReportNarrator().narrate(report, budgets))
-    assert lines == (
+    found = asyncio.run(ScriptedReportNarrator().narrate(report.period, report, budgets))
+    assert found.charts == ()  # 대역은 그림을 고르지 않는다
+    assert found.highlights == (
         "식비가 지난달보다 32,300원 늘었어요.",
         "생활이 지난달보다 17,000원 늘었어요.",
         "식비 — 이 페이스면 9월 28일에 예산을 넘습니다.",

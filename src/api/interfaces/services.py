@@ -11,14 +11,22 @@ from api.application.use_cases import (
     ComparePeriods,
     CountFrequency,
     CreateTransaction,
+    DecideRun,
     DeleteTransaction,
+    DetectOutliers,
     GetTransaction,
     IdempotentWrite,
     ListCatalog,
     ListPendingTexts,
+    ListRuns,
     PutEmbedding,
+    PutInsightCache,
     ReadBudgetStatuses,
+    ReadDataVersion,
+    ReadInsightCache,
     ReadPace,
+    ReadRun,
+    RecordRun,
     SearchDocuments,
     SearchTransactions,
     SetBudget,
@@ -42,6 +50,7 @@ class Services:
     catalog: ListCatalog
     summarize: SummarizeSpending
     frequency: CountFrequency
+    outliers: DetectOutliers
     compare: ComparePeriods
     monthly: BuildMonthlyReport
     pace: ReadPace
@@ -51,6 +60,13 @@ class Services:
     pending: ListPendingTexts
     put_embedding: PutEmbedding
     search_documents: SearchDocuments
+    record_run: RecordRun
+    read_run: ReadRun
+    list_runs: ListRuns
+    decide_run: DecideRun
+    data_version: ReadDataVersion
+    read_insight_cache: ReadInsightCache
+    put_insight_cache: PutInsightCache
 
 
 def get_services(request: Request) -> Services:

@@ -3,19 +3,20 @@ from __future__ import annotations
 from agent.domain.tools import READ_TOOLS, Permission, ToolName
 from agent.domain.values import PeriodName
 
-SEVEN = {
+EIGHT = {
     "search_transactions",
     "summarize_spending",
     "count_frequency",
     "compare_periods",
     "get_budget_status",
+    "detect_outliers",
     "suggest_category",
     "search_documents",
 }
 
 
-def test_seven_read_tools_and_nothing_that_writes():
-    assert {name.value for name in READ_TOOLS} == SEVEN
+def test_eight_read_tools_and_nothing_that_writes():
+    assert {name.value for name in READ_TOOLS} == EIGHT
     assert all(name.permission is Permission.READ for name in READ_TOOLS)
     assert all(spec.name is name for name, spec in READ_TOOLS.items())
 

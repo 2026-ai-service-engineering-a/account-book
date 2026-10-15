@@ -17,14 +17,7 @@ SEATS: tuple[AiSeat, ...] = (
         flow_detail="단발 + 확인 게이트",
         llm_calls="1회",
         mode="capture",
-        tools=(
-            "suggest_category",
-            "search_transactions",
-            "create_transaction",
-            "update_transaction",
-            "delete_transaction",
-            "set_budget",
-        ),
+        tools=("suggest_category", "create_transaction"),
         replaces="문장이나 카드 문자를 보며 날짜·금액·가맹점을 칸마다 옮겨 치기",
         screens=(("채팅 — 기록 문장", "/"), ("거래 입력 — 한 줄로 채우기", "/transactions/new")),
         human="채팅은 확인 카드, 폼은 저장 버튼. 확인 전에는 아무것도 쓰지 않는다",
@@ -34,8 +27,10 @@ SEATS: tuple[AiSeat, ...] = (
         stand_in_does="정해진 모양의 한 줄과 카드 승인 문자 한 모양만 읽는다",
         doc="docs/ai/agent-loop.md 3장 · tools.md 6장",
         live=(
-            "한 줄로 채우기는 agent의 POST /capture가 LLM으로 읽는다. 날짜 계산과 가맹점 검사는"
-            " 코드가 한다. 채팅의 기록 문장은 아직 각본 대역"
+            "한 줄로 채우기는 agent의 POST /capture가 LLM으로 읽는다. 채팅의 기록 문장은"
+            " agent의 POST /record가 같은 읽기로 확인 카드를 내고, 제안은 감사 테이블에"
+            " 남는다. 확인을 누르면 agent가 같은 멱등 키와 확인 헤더로 쓴다 — ui는 api에"
+            " 쓰지 않는다. 날짜 계산과 가맹점 검사는 코드가 한다"
         ),
     ),
     AiSeat(
@@ -109,11 +104,21 @@ SEATS: tuple[AiSeat, ...] = (
         replaces="고정 차트를 눈으로 훑으며 이번 달에 볼 것 고르기",
         screens=(("리포트 — 눈에 띈 것", "/reports"),),
         human="읽기만 한다. 문장의 숫자는 도구 결과의 값만 쓴다",
-        fallback="검증에 실패하면 고정 리포트만 보여 준다",
+        fallback="검증에서 버린 것은 빠지고, AI에 닿지 못하면 그 영역 없이 고정 리포트만 보여 준다",
         port="ReportNarrator",
         stand_in="ScriptedReportNarrator",
-        stand_in_does="늘어난 카테고리와 예산 페이스를 규칙 문구로 — 그림 고르기는 아직 고정",
+        stand_in_does="늘어난 카테고리와 예산 페이스를 규칙 문구로 — 그림은 고르지 않는다",
         doc="docs/ai/agentic-reports.md",
+        live=(
+            "리포트 페이지는 고정 영역을 먼저 보내고,"
+            " 눈에 띈 것만 HTMX로 뒤에 채운다 — agent의 POST /insights가"
+            " 고정 집계 둘을 훑고, 더 볼 것을 계획해 동시에 부르고,"
+            " 그림 두 장·문장 세 줄로 조립한다."
+            " 그림의 값은 코드가 도구 결과에서 채우고,"
+            " 문장의 숫자·훈계는 검증이 거른다."
+            " 10초 안에 끊고, 같은 달·같은 데이터면 캐시에서 바로 낸다."
+            " agent에 닿지 못하면 이 영역 없이 고정 리포트만 남는다"
+        ),
     ),
 )
 

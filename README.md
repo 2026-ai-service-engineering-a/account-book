@@ -63,9 +63,11 @@ graph LR
   AG -->|도구 호출 = HTTP| API
   API --> DB[(db<br/>PostgreSQL)]
   AG -->|litellm| LLM[LLM 제공자<br/>Gemini / OpenAI / Anthropic]
+  EX[외부 AI 클라이언트] -.->|MCP · stdio| MCP[mcp<br/>집계 넷 · 읽기 전용]
+  MCP -->|HTTP| API
 ```
 
-docker compose 서비스는 넷이다.
+docker compose 서비스는 다섯이다. 다섯째 `mcp`는 기본으로 꺼져 있다.
 
 | 서비스 | 역할 | 포트 | 비고 |
 |---|---|---|---|
@@ -73,8 +75,10 @@ docker compose 서비스는 넷이다.
 | `agent` | 에이전트 런타임. ReAct 루프, 도구 정의, 하네스 | 8001 — 내부 | DB 접속 정보를 **모른다** |
 | `api` | FastAPI. 가계부 도메인의 **단일 진실 공급원**. CRUD·집계·검증·권한 | 8000 — 내부 | DB에 접근하는 유일한 서비스 |
 | `db` | PostgreSQL. 거래·예산·감사 로그의 저장소 | 5432 — 내부 | 볼륨으로 영속화 |
+| `mcp` | 외부 AI 클라이언트의 통로. 집계 넷을 읽기만 한다([docs/ai/mcp.md](docs/ai/mcp.md)) | 없음 — stdio | 켜야 선다. `up`에 들지 않는다(profile) |
 
 호스트로 포트를 여는 건 `ui` 하나뿐이다. `agent`·`api`·`db`는 compose 내부 네트워크에만 붙는다.
+`mcp`는 포트가 없다 — 클라이언트가 `docker compose run --rm -T mcp`로 띄운 프로세스와 파이프로 말한다.
 LLM 호출은 `litellm`으로 추상화해서 Gemini / OpenAI / Anthropic 중 아무 키나 하나로 돌아가게 한다.
 
 ### 경계 두 개
@@ -112,6 +116,7 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 | `summarize_spending` | 기간별/카테고리별 합계·비교 | 읽기 — 자동 |
 | `count_frequency` | 기간 내 건수·거래가 있던 날 수·평균 간격 | 읽기 — 자동 |
 | `compare_periods` | 두 기간의 카테고리별 합계와 증감 | 읽기 — 자동 |
+| `detect_outliers` | 카테고리별 최근 여섯 달의 평소를 벗어난 거래 — 기준은 `api`가 정한다 | 읽기 — 자동 |
 | `get_budget_status` | 예산 대비 소진율, 잔여일 기준 페이스 | 읽기 — 자동 |
 | `suggest_category` | 가맹점·메모 → 카테고리 후보 + 신뢰도 + 근거 거래 | 읽기 — 자동 |
 | `search_documents` | 카드·할부·전자금융·연말정산 조문 조각 찾기 — 인용할 ref와 법령명·자리·시행일 | 읽기 — 자동 |
@@ -163,12 +168,13 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 |---|---|
 | `accounts` | id, name, kind(cash/card/bank) |
 | `categories` | id, name, parent_id |
-| `transactions` | id, occurred_at, amount, direction(in/out), account_id, category_id, merchant, memo, **source**, **run_id** |
-| `budgets` | id, category_id, period(YYYY-MM), limit_amount — 바뀐 달만 적고 바꿀 때까지 이어진다 |
-| `agent_runs` | id, utterance, model, steps, tokens, cost_usd, status |
-| `tool_calls` | id, run_id, tool, args, result, confirmed_at |
+| `transactions` | id, occurred_at, amount, direction(in/out), account_id, category_id, merchant, memo, **source**, **run_id**, created_at, updated_at |
+| `budgets` | id, category_id, period(YYYY-MM), limit_amount, updated_at — 바뀐 달만 적고 바꿀 때까지 이어진다 |
+| `agent_runs` | id, **seat**, **flow**, utterance, model, steps, tokens, cost_usd, status(done·failed·awaiting_confirmation·aborted), **stop_reason** |
+| `tool_calls` | id, run_id, **call_id**, tool, args, result, confirmed_at |
 | `idempotency_keys` | key, request_hash, response, status_code, created_at |
 | `text_embeddings` | model, text_hash, vector, updated_at |
+| `insight_cache` | key(sha256), body(JSONB), created_at — 리포트 AI 영역의 캐시. TTL 없음 |
 | `category_rules` | id, merchant_pattern, category_id, source(seed/user), hit_count |
 | `documents` | id(법령명), title, source, mst(법령일련번호), effective_date, body — 받은 원문 그대로 |
 | `document_chunks` | id, document_id, strategy, heading, body(원문), search_text, text_hash, position |
@@ -200,7 +206,8 @@ account-book/
 │   ├── api/             # 도메인 로직, 유일한 DB 접근자
 │   ├── agent/           # 에이전트 런타임 — 헤드리스
 │   ├── ui/              # 화면 서버 — 도메인 로직 없음
-│   └── shared/          # 서비스 공통 — 도메인 지식 없음
+│   ├── mcp_server/      # mcp — 외부 AI 클라이언트의 통로. 집계 넷 읽기 전용
+│   └── shared/          # 서비스끼리 나누는 데이터 — 코드가 아니다(mcp_tools.json)
 ├── tests/               # src/와 같은 구조. LLM 호출 없는 목 기반 테스트
 ├── docs/                # 다른 프로젝트에도 통하는 규칙
 │   ├── development-rules.md
@@ -235,6 +242,7 @@ account-book/
 ├── requirements.txt       # 런타임 의존성 — ui·agent 공통
 ├── requirements-agent.txt # agent만 — LLM 라이브러리. ui 이미지에는 들어가지 않는다
 ├── requirements-api.txt   # api만 — SQLAlchemy·psycopg·Alembic·pgvector
+├── requirements-mcp.txt   # mcp만 — MCP SDK
 ├── requirements-dev.txt   # 개발 도구
 └── .env.sample
 ```
@@ -352,6 +360,16 @@ CLASSIFY_ABSTAIN_BELOW=
 DOC_CHUNK_STRATEGY=
 DOC_SEARCH_MODE=
 DOC_TOP_K=
+
+# 상황에 맞는 통계(리포트)
+INSIGHT_MAX_TOOL_CALLS=
+
+# 외부 AI 서비스 통로(mcp) — 기본은 꺼져 있다
+MCP_ENABLED=
+MCP_TRANSPORT=
+MCP_TOKEN=
+MCP_ALLOWED_TOOLS=
+MCP_CALLS_PER_MINUTE=
 
 # 서비스 주소 — compose 내부 네트워크 기준
 API_BASE_URL=

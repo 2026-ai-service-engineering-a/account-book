@@ -49,9 +49,8 @@ class MemoryTransactionGateway:
         if replayed is not None:
             return replayed
         self._check(draft)
-        created = self._build(
-            self._store.next_id(), draft, Source.AGENT if run_id else Source.MANUAL
-        )
+        source = Source.AGENT if run_id else Source.MANUAL
+        created = self._build(self._store.next_id(), draft, source, run_id)
         self._store.transactions[created.id] = created
         self._store.replies[idempotency_key] = created.id
         return created
@@ -64,7 +63,7 @@ class MemoryTransactionGateway:
     ) -> Transaction:
         existing = await self.get(transaction_id)
         self._check(draft)
-        updated = self._build(existing.id, draft, existing.source)
+        updated = self._build(existing.id, draft, existing.source, existing.run_id)
         self._store.transactions[existing.id] = updated
         self._store.replies[idempotency_key] = existing.id
         return updated
@@ -87,7 +86,10 @@ class MemoryTransactionGateway:
 
     @staticmethod
     def _build(
-        transaction_id: TransactionId, draft: TransactionDraft, source: Source
+        transaction_id: TransactionId,
+        draft: TransactionDraft,
+        source: Source,
+        run_id: RunId | None = None,  # 고쳐도 출처와 실행은 그대로다 — api와 같다
     ) -> Transaction:
         return Transaction(
             id=transaction_id,
@@ -99,4 +101,5 @@ class MemoryTransactionGateway:
             merchant=draft.merchant.strip(),
             memo=draft.memo.strip(),
             source=source,
+            run_id=run_id,
         )

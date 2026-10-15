@@ -9,6 +9,9 @@ import pytest
 from agent.domain.tools import Mode, Permission, ToolName
 
 SNAPSHOTS = Path(__file__).parents[3] / "fixtures" / "ai" / "tool_schemas"
+# mcp 모드의 스냅샷은 mcp 서비스가 실행 중에 읽는 계약이다 — 서비스끼리 코드를 나누지 않고
+# 이 데이터를 나눈다(docs/ai/mcp.md 2장)
+CONTRACT = Path(__file__).parents[4] / "src" / "shared" / "mcp_tools.json"
 WRITES = {
     ToolName.CREATE_TRANSACTION,
     ToolName.UPDATE_TRANSACTION,
@@ -38,6 +41,39 @@ def test_only_the_query_mode_searches_documents():
     assert [m for m in Mode if ToolName.SEARCH_DOCUMENTS in m.tools] == [Mode.QUERY]
 
 
+def test_insight_mode_is_the_five_aggregates_and_nothing_that_writes():
+    # 리포트의 재료는 숫자를 내는 집계뿐이다. 거래 목록도 쓰기도 없다(agentic-reports 3장)
+    assert {t.value for t in Mode.INSIGHT.tools} == {
+        "summarize_spending",
+        "count_frequency",
+        "compare_periods",
+        "get_budget_status",
+        "detect_outliers",
+    }
+    assert all(t.permission is Permission.READ for t in Mode.INSIGHT.tools)
+
+
+def test_capture_mode_writes_one_thing_only():
+    # 채팅의 기록 — 고르기와 거래 한 건 쓰기. 고치기·지우기·예산은 없다(ai/chat-capture.md 10장)
+    assert Mode.CAPTURE.tools == (ToolName.SUGGEST_CATEGORY, ToolName.CREATE_TRANSACTION)
+    assert [t for t in Mode.CAPTURE.tools if t in WRITES] == [ToolName.CREATE_TRANSACTION]
+
+
+def test_only_the_capture_mode_can_write():
+    assert [m for m in Mode if WRITES & set(m.tools)] == [Mode.CAPTURE]
+
+
+def test_mcp_mode_is_the_four_aggregates_and_reads_only():
+    # 외부로 나가는 것은 합계·건수·증감·소진율까지(mcp.md 7.2). 개별 거래도 쓰기도 없다
+    assert {t.value for t in Mode.MCP.tools} == {
+        "summarize_spending",
+        "compare_periods",
+        "count_frequency",
+        "get_budget_status",
+    }
+    assert all(t.permission is Permission.READ for t in Mode.MCP.tools)
+
+
 def test_classify_mode_only_suggests():
     assert Mode.CLASSIFY.tools == (ToolName.SUGGEST_CATEGORY,)
 
@@ -60,7 +96,7 @@ def test_what_the_model_sees_is_pinned(mode):
 
     의도한 변경이면 UPDATE_SNAPSHOTS=1로 한 번 돌려 파일을 다시 쓰고 같이 커밋한다.
     """
-    path = SNAPSHOTS / f"{mode.value}.json"
+    path = CONTRACT if mode is Mode.MCP else SNAPSHOTS / f"{mode.value}.json"
     current = json.dumps(schema_of(mode), ensure_ascii=False, indent=2) + "\n"
     if os.environ.get("UPDATE_SNAPSHOTS") == "1":
         path.write_text(current, encoding="utf-8")

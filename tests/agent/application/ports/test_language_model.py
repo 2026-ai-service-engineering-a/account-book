@@ -13,3 +13,8 @@ def test_adapter_and_fake_fill_the_port():
     fake: LanguageModel = FakeModel()
     assert inspect.iscoroutinefunction(real.complete_json)
     assert inspect.iscoroutinefunction(fake.complete_json)
+
+
+def test_both_name_their_model_for_the_audit_log():
+    assert LitellmLanguageModel("gemini/x", "key", timeout=1).model == "gemini/x"
+    assert FakeModel().model == "fake/model"

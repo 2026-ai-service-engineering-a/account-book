@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from types import TracebackType
@@ -9,6 +10,7 @@ from typing import Self
 from zoneinfo import ZoneInfo
 
 from api.application.dto import (
+    CategoryBaseline,
     Frequency,
     IdempotencyRecord,
     StoredReply,
@@ -21,8 +23,10 @@ from api.application.errors import RequestInProgress
 from api.domain.entities import Account, Category, Transaction
 from api.domain.values import AccountId, CategoryId, Direction, Money, Period, TransactionId
 
+from . import fake_outliers
 from .fake_documents import FakeDocuments
 from .fake_index import FakeIndex
+from .fake_runs import FakeRuns
 
 SEOUL = ZoneInfo("Asia/Seoul")
 
@@ -161,6 +165,17 @@ class FakeStats:
     def first_occurred_at(self) -> datetime | None:
         return min((t.occurred_at for t in self._transactions.rows.values()), default=None)
 
+    def data_version(self, start: datetime, end: datetime) -> str:
+        return fake_outliers.data_version(self._transactions.rows.values(), start, end)
+
+    def baselines(self, query: TransactionQuery, since: datetime) -> tuple[CategoryBaseline, ...]:
+        return fake_outliers.baselines(self._transactions.rows.values(), query, since)
+
+    def above(
+        self, query: TransactionQuery, uppers: Mapping[CategoryId, Money], limit: int
+    ) -> tuple[Transaction, ...]:
+        return fake_outliers.above(self._transactions.rows.values(), query, uppers, limit)
+
 
 def _half_up(value: Decimal, places: str) -> Decimal:
     """Postgres의 round()처럼 .5를 0에서 멀어지는 쪽으로. 파이썬 round()는 짝수로 간다."""
@@ -180,6 +195,17 @@ class FakeBudgets:
 
     def set_limit(self, category_id: CategoryId, period: Period, amount: Money | None) -> None:
         self.rows[(category_id, str(period))] = amount
+
+
+class FakeInsightCache:
+    def __init__(self) -> None:
+        self.rows: dict[str, dict[str, object]] = {}
+
+    def get(self, key: str) -> Mapping[str, object] | None:
+        return self.rows.get(key)
+
+    def put(self, key: str, body: Mapping[str, object]) -> None:
+        self.rows[key] = dict(body)
 
 
 class FixedClock:
@@ -204,6 +230,8 @@ class FakeUnitOfWork:
         self.budgets = FakeBudgets()
         self.index = FakeIndex(self.transactions)
         self.documents = FakeDocuments(self.index)
+        self.runs = FakeRuns()
+        self.insight_cache = FakeInsightCache()
         self.commits = 0
 
     def __call__(self) -> FakeUnitOfWork:
@@ -213,6 +241,8 @@ class FakeUnitOfWork:
         self._rows = dict(self.transactions.rows)
         self._records = dict(self.idempotency.records)
         self._budgets = dict(self.budgets.rows)
+        self._runs = dict(self.runs.rows)
+        self._cache = dict(self.insight_cache.rows)
         self._documents = (dict(self.documents.documents), dict(self.documents.chunks))
         self._committed = False
         return self
@@ -227,6 +257,8 @@ class FakeUnitOfWork:
             self.transactions.rows = self._rows
             self.idempotency.records = self._records
             self.budgets.rows = self._budgets
+            self.runs.rows = self._runs
+            self.insight_cache.rows = self._cache
             self.documents.documents, self.documents.chunks = self._documents
 
     def commit(self) -> None:

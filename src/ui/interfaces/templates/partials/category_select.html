@@ -1,4 +1,4 @@
-{% from "ai.html" import ai_badge %}
+{% from "ai.html" import ai_badge with context %}
 {% from "icons.html" import icon %}
 <div id="category-select" class="field">
   {% set picked = "category_id" in (filled or ()) %}

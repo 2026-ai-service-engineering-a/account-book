@@ -9,4 +9,5 @@ class ExtractionKind(StrEnum):
     RECORD = "record"
     QUESTION = "question"
     CANCELLATION = "cancellation"  # 승인 취소 문자
+    PLANNED = "planned"  # 아직 쓰지 않은 돈 — 예정·내일·할 거야. 기록이 아니다
     UNREADABLE = "unreadable"

@@ -1,7 +1,11 @@
-"""데모 데이터 — 여섯 달치 예시 거래와 예산. ui의 메모리 대역이 뜰 때마다 채우던 것을 옮겼다.
+"""데모 데이터 — 열두 달치 예시 거래와 예산. ui의 메모리 대역이 뜰 때마다 채우던 것을 옮겼다.
 
 날짜를 박아 두지 않고 지금을 기준으로 만든다. 언제 넣어도 "이번 달"에 기록이 있다.
 씨앗이 고정이라 같은 날 넣으면 같은 데이터가 나온다.
+
+열두 달인 까닭 — 이상치 판정은 판정하는 달 앞의 여섯 달을 평소로 쓴다(api-contract 6장).
+여섯 달치로는 어느 달도 판정할 수 없었다. 지난달에는 큰 한 건(가전)을 일부러 둔다 —
+상황에 맞는 통계가 짚어야 할 "큰 한 건이 있는 달"이다(docs/ai/agentic-reports.md 9장).
 """
 
 from __future__ import annotations
@@ -24,7 +28,8 @@ _LIVING = ("이마트", "쿠팡", "다이소", "올리브영")
 _INCOME = {"salary", "other_income"}
 # 주거는 예산을 두지 않는다. 1일에 한 번 나가는 고정비라 일할 페이스가 뜻이 없다.
 _LIMITS = {"food": 300_000, "transport": 100_000, "living": 250_000}
-_MONTHS = 6
+_MONTHS = 12
+_BIG_ONE = (14, "living", 890_000, "전자랜드")  # 지난달 14일 — 평소 생활비의 열 배쯤
 
 
 def seed_demo(connection: Connection, now: datetime, zone: tzinfo) -> int:
@@ -42,10 +47,13 @@ def seed_demo(connection: Connection, now: datetime, zone: tzinfo) -> int:
     for _ in range(_MONTHS - 1):
         period = period.previous()
     first = period
+    previous = current.previous()
+    big_day = date(previous.year, previous.month, _BIG_ONE[0])
     while period <= current:
         last = local_now.day if period == current else period.days
         for day in range(1, last + 1):
-            rows += _day(rng, date(period.year, period.month, day), local_now, zone)
+            when = date(period.year, period.month, day)
+            rows += _day(rng, when, local_now, zone, big=when == big_day)
         period = period.next()
     connection.execute(insert(TransactionRow), rows)
     # 예산은 가장 이른 달에 둔다 — 그 뒤의 달은 바뀔 때까지 같은 예산을 이어 쓴다
@@ -56,7 +64,9 @@ def seed_demo(connection: Connection, now: datetime, zone: tzinfo) -> int:
     return len(rows)
 
 
-def _day(rng: random.Random, day: date, now: datetime, zone: tzinfo) -> list[dict[str, object]]:
+def _day(
+    rng: random.Random, day: date, now: datetime, zone: tzinfo, big: bool = False
+) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
 
     def add(at: time, category: str, amount: int, merchant: str, account: str = "card") -> None:
@@ -81,6 +91,9 @@ def _day(rng: random.Random, day: date, now: datetime, zone: tzinfo) -> list[dic
         )
 
     weekday = day.weekday() < 5
+    if big:
+        _, category, amount, merchant = _BIG_ONE
+        add(time(15), category, amount, merchant)
     if day.day == 1:
         add(time(9), "housing", 450_000, "월세", "bank")
     if day.day == 10:

@@ -84,8 +84,9 @@ X-Agent-Run-Id: 01J9X...
 
 - `AGENT_CONFIRM_THRESHOLD` 이상의 금액, 그리고 모든 `DELETE`는 `X-Confirmed-By: user`가
   없으면 `412 confirmation_required`로 거부한다.
-- 에이전트는 412를 받으면 사용자에게 확인을 묻고, 확인을 받으면 **같은 `Idempotency-Key`로**
-  헤더를 붙여 다시 보낸다.
+- 에이전트는 **412를 받기 전에 묻는다.** 쓰기는 금액과 관계없이 언제나 제안 → 확인 → 실행이고
+  ([ai/README.md 2장 원칙 6](ai/README.md#2-모든-ai-기능에-걸리는-원칙)), 확인을 받으면 제안 때 정한
+  `Idempotency-Key`와 `X-Confirmed-By`를 붙여 처음 보낸다. 412는 그 약속이 깨졌을 때 막는 안전망이다.
 - 거부된 요청도 `tool_calls`에 남는다. 무엇을 하려다 막혔는지가 감사에서는 중요하다.
 
 > **한계를 적어 둔다.** `X-Confirmed-By`는 에이전트가 붙이는 헤더라서, 에이전트가
@@ -142,12 +143,13 @@ X-Agent-Run-Id: 01J9X...
 |---|---|---|---|
 | `GET` | `/v1/transactions` | `search_transactions` | — |
 | `GET` | `/v1/transactions/{id}` | — (화면) | — |
-| `POST` | `/v1/transactions` | `create_transaction` | 임계값 이상 |
+| `POST` | `/v1/transactions` | `create_transaction` | 임계값 이상(agent는 언제나 묻는다) |
 | `PATCH` | `/v1/transactions/{id}` | `update_transaction` | 임계값 이상 |
 | `DELETE` | `/v1/transactions/{id}` | `delete_transaction` | **항상** |
 | `GET` | `/v1/summary` | `summarize_spending` | — |
 | `GET` | `/v1/stats/frequency` | `count_frequency` | — |
 | `GET` | `/v1/stats/compare` | `compare_periods` | — |
+| `GET` | `/v1/stats/outliers` | `detect_outliers` | — |
 | `GET` | `/v1/reports/monthly` | — (화면) | — |
 | `GET` | `/v1/reports/pace` | — (화면) | — |
 | `GET` | `/v1/budgets/status` | `get_budget_status` | — |
@@ -159,6 +161,13 @@ X-Agent-Run-Id: 01J9X...
 | `POST` | `/v1/documents/search` | `search_documents` | — |
 | `GET` | `/v1/embeddings/pending` | — (색인) | — |
 | `PUT` | `/v1/embeddings/{text_hash}` | — (색인) | — |
+| `POST` | `/v1/runs` | — (감사) | — |
+| `GET` | `/v1/runs/{id}` | — (감사 · 제안 되살리기) | — |
+| `POST` | `/v1/runs/{id}/confirm` | — (제안 확인) | — |
+| `POST` | `/v1/runs/{id}/close` | — (제안 닫기) | — |
+| `GET` | `/v1/stats/version` | — (리포트 캐시) | — |
+| `GET` | `/v1/insights/cache/{key}` | — (리포트 캐시) | — |
+| `PUT` | `/v1/insights/cache/{key}` | — (리포트 캐시) | — |
 | `GET` | `/v1/healthz` | — | — |
 
 색인 둘은 도구가 아니다. `agent`가 카테고리를 고르기 전에 색인 안 된 텍스트를 당겨 가
@@ -195,6 +204,26 @@ X-Agent-Run-Id: 01J9X...
   카테고리는 빠지지만 `category_id`로 집어 물으면 0이어도 한 줄이 온다.
 - "지난달보다 늘었나"를 같은 날까지로 견줄지는 부르는 쪽이 `a`의 끝을 잘라서 정한다.
 
+### 이상치는 api가 판정한다
+
+`outliers`는 평소 범위를 벗어난 거래를 낸다. **판정 기준은 받지 않는다** — 모델이 임계값을 말하기
+시작하면 같은 데이터가 달마다 다르게 특이해진다([ai/agentic-reports.md 3장](ai/agentic-reports.md#3-집계-도구)).
+걸름은 `frequency`와 같다(`from`·`to`, `direction` 기본 `expense`, `category_id`, `q`). 걸름은 판정할 거래를
+고를 뿐 평소를 좁히지 않는다.
+
+- **평소**는 같은 카테고리·같은 방향에서 판정 기간 시작 직전 여섯 달(사용자 타임존의 달)의 거래다.
+  판정 기간은 평소에 넣지 않는다 — 큰 한 건이 제 기준을 끌어올리지 않게.
+- **한계**는 `max(중앙값 + 3.5 × 1.4826 × MAD, 중앙값 × 2, 평소 기간의 최댓값)`이고 넘은 거래만 낸다(같으면
+  평소). 표준편차가 아니라 MAD라 큰 한 건이 산포를 키워 자기를 평범하게 만들지 않는다. 두 배 바닥은 산포가 0인
+  구독용이다. 최댓값 바닥은 점심과 주말 저녁이 섞인 식비처럼 중앙값이 작은 쪽에 붙는 카테고리용이다 — 없으면
+  늘 있던 저녁이 매달 특이해진다. 즉 "지난 여섯 달의 어느 거래보다도 크다"가 필요조건이다. 위쪽만 본다.
+  중앙값·MAD·최댓값은 SQL(`percentile_cont`·`max`)이 원 단위로 낸다.
+- 답은 `baseline_from`·`baseline_to`, `items`(거래 + `usual_median`·`usual_upper`, 한계 대비 비율이 큰 순서,
+  최대 5건), `truncated`, `skipped`다.
+- 판정하지 않은 카테고리는 `skipped`에 이유와 함께 온다. `short_history`는 첫 거래가 평소의 시작보다 늦어
+  여섯 달이 안 됐고, `too_few`는 여섯 달은 됐지만 평소 기간의 거래가 5건 미만이다. 판정 기간에 걸름에 맞는
+  거래가 있는 카테고리만 오른다. "특이한 건이 없다"와 "판정할 수 없다"는 다른 답이다.
+
 ### 문서 검색 — 키워드·벡터·하이브리드
 
 문서 조각을 찾는다(기능 4, [ai/document-rag.md](ai/document-rag.md)). 길이 둘이다.
@@ -216,6 +245,56 @@ X-Agent-Run-Id: 01J9X...
 - 점수로 거르지 않는다. 순위를 재야 하고, 근거가 없다고 답할지는 생성 쪽이 정한다.
 - 줄마다 `id`·`document_id`·`title`·`effective_date`·`strategy`·`heading`·`body`·`score`. `body`는
   원문이고, 찾는 글(`search_text`)은 내보내지 않는다.
+
+### 리포트 캐시 — 시간이 아니라 버전으로
+
+`agent`의 리포트("눈에 띈 것")는 같은 달을 두 번 열면 두 번째가 공짜다([ai/agentic-reports.md 8장](ai/agentic-reports.md#8-캐시--시간이-아니라-버전으로)).
+키는 `period · data_version · prompt_version · model`의 sha256이고 `agent`가 만든다. **TTL이 없다.**
+
+- `GET /v1/stats/version?from=&to=` → `{"version"}`. 범위 거래의 건수·마지막 변경(`updated_at`)과 예산 전부의
+  건수·마지막 변경을 해시한 불투명한 글이다. 더하기·고치기·지우기·예산 바꾸기에 바뀌고, 범위 밖 거래로는 안 바뀐다.
+  `agent`는 그 달과 앞 여섯 달(이상치의 평소)을 범위로 준다 — 오늘 커피를 넣어도 지난달 리포트는 그대로다.
+- `GET /v1/insights/cache/{key}` → `{"key", "body"}`. 없으면 `body`가 `null`이다 — 없는 것은 오류가 아니다.
+- `PUT /v1/insights/cache/{key}` `{"body"}` → `204`. 멱등 키가 필요하다. 같은 키에 쓰면 갈아 끼운다.
+  `key`는 64자 16진수만 받는다. `api`는 `body`를 읽지 않는다 — 모양은 `agent`가 정한다.
+
+### 감사 로그는 끝날 때 한 번 남긴다
+
+`POST /v1/runs`는 `agent`의 실행 하나와 그 도구 호출들을 한 트랜잭션으로 넣는다(`agent_runs`·`tool_calls`,
+[ai/README.md 2장 원칙 7](ai/README.md#2-모든-ai-기능에-걸리는-원칙)). 도구가 아니다 — 모델이 고르는 길이 없고,
+`agent`의 자리가 끝날 때 코드가 부른다.
+
+- 본문 `{id, seat, flow, utterance, model, steps, tokens, cost_usd, status, stop_reason, tool_calls, client}`.
+  `client`는 `mcp` 자리만 채운다 — 외부 클라이언트가 MCP 초기화에서 댄 이름이다([ai/mcp.md 7.3](ai/mcp.md#73-남는-것)).
+  `tool_calls`는 `{call_id, tool, args, result}`의 목록이고 `call_id`는 실행 안에서 유일하다.
+- 키는 `run:{run_id}`다. 기록을 다시 보내도 줄이 둘이 되지 않는다. 응답은 `201 {"id"}`.
+- 값의 목록은 `seat` = `capture`·`classify`·`chat`·`ask`·`insight`·`mcp`, `flow` = `single`·`react`·`plan_execute`·`direct`(LLM 없이 도구 하나 — `mcp`),
+  `status` = `done`(답이 나갔다 — 모른다는 답과 부분 결과도)·`failed`(503으로 끝났다)·`awaiting_confirmation`(쓰기 제안이 사람을 기다린다)·`aborted`(제안이 취소·만료됐다).
+  `stop_reason`은 자리마다 다르다 — 채팅은 루프의 정지 조건([ai/agent-loop.md 4.2](ai/agent-loop.md#42-정지-조건)),
+  기록은 `read`·`question`·`cancelled`·`no_amount`·`unreadable`, 분류는 고른 길, 문서 Q&A는 답의 상태.
+- 단발 자리(`capture`·`classify`·`ask`)의 `steps`·`tokens`·`cost_usd`는 아직 0이다. 구조화 출력 호출이
+  사용량을 내지 않는다.
+- 발화·인자·금액·가맹점이 여기에 있다. 운영 로그에는 없다([development-rules.md 6.4](development-rules.md#64-로깅--운영-로그와-감사-로그를-나눈다)).
+- 기록이 실패해도 `agent`는 답을 낸다. 실패는 운영 로그에 `run_id`와 코드만 남는다.
+
+**쓰기 제안은 감사 줄이 곧 제안이다**([ai/chat-capture.md](ai/chat-capture.md)). `status=awaiting_confirmation`으로
+넣고(`aborted`로는 넣지 못한다), 사람의 결정으로 닫는다. 고치는 길은 이것뿐이고 좁다 — 둘 다 **지금 대기일 때만**
+바꾸고, 바꿨든 아니든 결정 뒤의 실행(`GET /v1/runs/{id}`와 같은 모양)을 돌려준다. 발화와 인자는 고치지 않는다.
+
+- `POST /v1/runs/{id}/confirm` `{"call_id"}` — 그 호출의 `confirmed_at`을 비어 있을 때만 채운다(시각은 `api`가).
+  두 번 눌러도 처음 시각이 남는다.
+- `POST /v1/runs/{id}/close` `{"status": "done"|"aborted"|"failed", "stop_reason", "results": [{"call_id", "result"}]}` —
+  **확인된 호출이 있으면 `aborted`로 닫히지 않는다.** 확인된 제안은 취소되지 않는다. `failed`는 확인한 쓰기를
+  `api`가 거절한 것(422)이라 확인됐어도 닫힌다.
+- `GET /v1/runs/{id}` — 실행과 도구 호출(`confirmed_at` 포함), 모델·스텝·토큰·비용, `client`, `created_at`.
+  없으면 `404 not_found`. 제안의 수명(24시간)은 `agent`가 `created_at`으로 잰다.
+
+**읽는 길은 둘이다.** 위의 실행 하나와, 실행 기록 화면([../ui_docs/pages/runs.md](../ui_docs/pages/runs.md))이
+읽는 목록이다.
+
+- `GET /v1/runs?seat=&status=&cursor=&limit=` → `{"items", "next_cursor"}`. 최신순(`created_at`, `id`)이고 키셋
+  커서다. 한 줄은 실행의 칸과 `tool_count` — 인자와 결과는 싣지 않는다. `limit`은 기본 30, 최대 100.
+  `seat`·`status`는 위의 값 목록 밖이면 `422 validation_error`.
 
 ### 예산은 바꿀 때까지 이어진다
 

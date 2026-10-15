@@ -8,8 +8,7 @@
 | 자리 | 진짜 | 대역이 서는 때 |
 |---|---|---|
 | api 자리(거래·카탈로그·집계·예산) | `Http*Gateway` → `api` | `API_BASE_URL`이 비었을 때 — 테스트, api 없이 화면만 볼 때 |
-| AI 자리(기록, 카테고리 고르기, 채팅의 질문) | `Agent*` → `agent` | `AGENT_BASE_URL`이 비었을 때 — 키 없이 볼 때 |
-| 나머지 AI 자리(채팅의 기록 문장, 리포트 문장) | 아직 없다 | 언제나 |
+| AI 자리 전부(한 줄로 채우기, 카테고리 고르기, 채팅의 기록과 질문, 리포트의 눈에 띈 것) | `Agent*` → `agent` | `AGENT_BASE_URL`이 비었을 때 — 키 없이 볼 때 |
 
 ui 테스트는 언제나 대역으로 돈다. 개발용 `.env`에 주소가 있어도 부르지 않는다.
 
@@ -36,9 +35,9 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 
 | 포트 | 대신하는 판단 | 지금 서 있는 대역 | 진짜가 올 곳 |
 |---|---|---|---|
-| `ChatAgent` | 자연어 한 줄 → 거래 제안이나 답 | `ScriptedChatAgent` — 정해진 모양만 알아듣는다 | **질문 쪽이 붙었다.** `RoutedChatAgent`가 금액이 있고 묻는 말이 아닌 한 줄은 기록으로 보고 대역에, 나머지는 질문으로 보고 `AgentChatAgent` → `agent`의 `POST /chat` SSE에 보낸다([../docs/ai/chat-analytics.md](../docs/ai/chat-analytics.md)). 기록 쪽은 아직 대역 |
+| `ChatAgent` | 자연어 한 줄 → 거래 제안이나 답 | `ScriptedChatAgent` — 정해진 모양만 알아듣는다 | **붙었다.** `RoutedChatAgent`가 금액이 있고 묻는 말이 아닌 한 줄은 기록으로 보고 `AgentChatAgent` → `agent`의 `POST /record`(확인 게이트)에, 나머지는 질문으로 보고 `POST /chat`(SSE)에 보낸다. 확인 카드의 답도 agent로 간다 — ui는 api에 쓰지 않는다([../docs/ai/chat-capture.md](../docs/ai/chat-capture.md), [../docs/ai/chat-analytics.md](../docs/ai/chat-analytics.md)) |
 | `CategorySuggester` | 가맹점·메모 → 카테고리 | `ScriptedCategorySuggester` — 낱말 표 | **붙었다.** `AgentCategorySuggester` → `agent`의 `POST /classify`([pages/transaction-form.md 4.1](pages/transaction-form.md#41-카테고리는-ai로-고르기를-누를-때만-고른다)) |
-| `ReportNarrator` | 리포트의 "눈에 띈 것" 문장 | `ScriptedReportNarrator` — 규칙 문구 | 아직 안 정했다([pages/reports.md 3.2](pages/reports.md#32-눈에-띈-것은-문장으로-낸다)) |
+| `ReportNarrator` | 리포트의 "눈에 띈 것" — 그림과 문장 | `ScriptedReportNarrator` — 규칙 문구, 그림은 고르지 않는다 | **붙었다.** `AgentReportNarrator` → `agent`의 `POST /insights`(plan-and-execute, 캐시). agent에 닿지 못하면 대역으로 물러서지 않고 그 영역을 그리지 않는다([pages/reports.md 3.2](pages/reports.md#32-눈에-띈-것은-문장으로-낸다)) |
 | `CaptureReader` | 카드 문자나 말로 쓴 한 줄 → 거래 칸 (기록) | `ScriptedCaptureReader` — 승인 문자 한 모양과 채팅 대역의 귀 | **붙었다.** `AgentCaptureReader` → `agent`의 `POST /capture`([pages/transaction-form.md 4.5](pages/transaction-form.md#45-agent와-주고받는-것--post-capture)) |
 | `DocumentAnswerer` | 법령 질문 → 조문을 인용한 답 | `ScriptedDocumentAnswerer` — 낱말로 찾은 조문만 보이고 답 문장은 만들지 않는다 | **붙었다.** `AgentDocumentAnswerer` → `agent`의 `POST /ask`([pages/documents.md](pages/documents.md)) |
 
@@ -77,6 +76,7 @@ make ui      # ui만 띄울 때. devcontainer 안에서는 그 자리에서 직�
 | `BudgetGateway` | `MemoryBudgetGateway` |
 | `CatalogGateway` | `MemoryCatalogGateway` |
 | `DocumentGateway` | `MemoryDocumentGateway` — 법령 조문 네 줄. 진짜 자료(아홉 조문)는 `make docs`로 api에 넣는다 |
+| `RunGateway` | `MemoryRunGateway` — 비어 있다. 각본 대역은 실행을 남기지 않는다([pages/runs.md](pages/runs.md)) |
 
 `src/ui/infrastructure/memory/`에 있다. 합계·페이스·검증·멱등성을 **여기서만** 계산한다.
 이 패키지가 api의 대역이기 때문이다. 화면 쪽(`interfaces`)에는 나눗셈 하나 없다.

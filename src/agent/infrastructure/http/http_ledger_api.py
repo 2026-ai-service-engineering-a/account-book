@@ -13,13 +13,16 @@ from agent.application.dto import (
     SearchResult,
     TransactionFilter,
 )
-from agent.application.errors import LedgerRejected, LedgerUnavailable
+from agent.application.errors import LedgerUnavailable
 from agent.domain.tools import (
     BudgetLine,
     CategoryLine,
     CategoryShift,
+    CreateTransactionInput,
     Frequency,
+    OutlierReport,
     SpendingTotals,
+    TransactionLine,
     TransactionList,
 )
 from agent.domain.values import CategoryId, Direction, TimeRange
@@ -27,13 +30,16 @@ from agent.domain.values import CategoryId, Direction, TimeRange
 from .budget_status_reply import BudgetStatusReply
 from .categories_reply import CategoriesReply
 from .compare_reply import CompareReply
+from .created_reply import CreatedReply
 from .document_hits_reply import DocumentHitsReply
 from .error_reply import ErrorReply
 from .frequency_reply import FrequencyReply
+from .outliers_reply import OutliersReply
 from .pending_reply import PendingReply
 from .suggest_reply import SuggestReply
 from .totals_reply import TotalsReply
 from .transaction_page_reply import TransactionPageReply
+from .version_reply import VersionReply
 
 type _Params = dict[str, str | int]
 
@@ -97,6 +103,15 @@ class HttpLedgerApi:
         response = await self._send("GET", "/v1/stats/frequency", params=_filter(where))
         return self._parse(FrequencyReply, response).frequency()
 
+    async def data_version(self, period: TimeRange) -> str:
+        params: _Params = {"from": period.start.isoformat(), "to": period.end.isoformat()}
+        response = await self._send("GET", "/v1/stats/version", params=params)
+        return self._parse(VersionReply, response).version
+
+    async def outliers(self, where: TransactionFilter) -> OutlierReport:
+        response = await self._send("GET", "/v1/stats/outliers", params=_filter(where))
+        return self._parse(OutliersReply, response).report()
+
     async def compare(
         self, a: TimeRange, b: TimeRange, category_id: CategoryId | None
     ) -> tuple[CategoryShift, ...]:
@@ -119,6 +134,26 @@ class HttpLedgerApi:
             params["category_id"] = category_id
         response = await self._send("GET", "/v1/budgets/status", params=params)
         return self._parse(BudgetStatusReply, response).lines()
+
+    async def create_transaction(
+        self, entry: CreateTransactionInput, idempotency_key: str, run_id: str
+    ) -> TransactionLine:
+        body: dict[str, object] = {
+            "direction": entry.direction.value,
+            "amount": entry.amount.amount,
+            "occurred_at": entry.occurred_at.isoformat(),
+            "category_id": entry.category_id,
+            "account_id": entry.account.value,
+            "merchant": entry.merchant,
+            "memo": entry.memo,
+        }
+        headers = {
+            "Idempotency-Key": idempotency_key,
+            "X-Confirmed-By": "user",  # 확인 카드를 지난 쓰기만 여기 온다
+            "X-Agent-Run-Id": run_id,
+        }
+        response = await self._send("POST", "/v1/transactions", json=body, headers=headers)
+        return self._parse(CreatedReply, response).line()
 
     async def categories(self) -> tuple[CategoryLine, ...]:
         response = await self._send("GET", "/v1/categories")
@@ -155,7 +190,7 @@ class HttpLedgerApi:
         except httpx.HTTPError as error:
             raise LedgerUnavailable(type(error).__name__) from error
         if response.is_client_error:
-            raise _rejected(response)
+            raise ErrorReply.rejection(response)
         if response.is_error:
             raise LedgerUnavailable(f"HTTP {response.status_code}")
         return response
@@ -178,12 +213,3 @@ def _filter(where: TransactionFilter) -> _Params:
     if where.direction is not None:
         params["direction"] = Direction(where.direction).value
     return params
-
-
-def _rejected(response: httpx.Response) -> LedgerUnavailable:
-    """4xx 본문의 `code`를 읽는다. 모르는 모양의 4xx는 거절이 아니라 고장이다."""
-    try:
-        error = ErrorReply.model_validate_json(response.content).error
-    except ValidationError:
-        return LedgerUnavailable(f"HTTP {response.status_code}")
-    return LedgerRejected(response.status_code, error["code"], error.get("details", {}))

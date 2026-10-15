@@ -14,6 +14,7 @@ from agent.application.dto import (
     PendingText,
     Prompt,
     RetrievedChunk,
+    RunRecord,
     SearchResult,
     SearchStrategy,
     ToolPrompt,
@@ -24,8 +25,11 @@ from agent.domain.tools import (
     BudgetLine,
     CategoryLine,
     CategoryShift,
+    CreateTransactionInput,
     Frequency,
+    OutlierReport,
     SpendingTotals,
+    TransactionLine,
     TransactionList,
 )
 from agent.domain.values import CategoryId, ChunkStrategy, Confidence, Money, TimeRange
@@ -57,6 +61,8 @@ class FakeModel:
 
     `tape`는 도구를 쓰는 호출의 답이다 — 루프가 같은 경로를 밟는지 본다(ai/agent-loop.md 10장).
     """
+
+    model = "fake/model"
 
     def __init__(
         self,
@@ -171,6 +177,15 @@ class FakeLedger:
     async def frequency(self, where: TransactionFilter) -> Frequency:
         return self._reply("frequency", Frequency, where)
 
+    async def data_version(self, period: TimeRange) -> str:
+        if "data_version" not in self.replies:
+            self.calls.append(("data_version", (period,)))
+            return "v1"  # 리포트 캐시의 키 — 따로 정하지 않으면 늘 같은 데이터다
+        return self._reply("data_version", str, period)
+
+    async def outliers(self, where: TransactionFilter) -> OutlierReport:
+        return self._reply("outliers", OutlierReport, where)
+
     async def compare(
         self, a: TimeRange, b: TimeRange, category_id: CategoryId | None
     ) -> tuple[CategoryShift, ...]:
@@ -183,6 +198,11 @@ class FakeLedger:
 
     async def categories(self) -> tuple[CategoryLine, ...]:
         return self._reply("categories", tuple)
+
+    async def create_transaction(
+        self, entry: CreateTransactionInput, idempotency_key: str, run_id: str
+    ) -> TransactionLine:
+        return self._reply("create_transaction", TransactionLine, entry, idempotency_key, run_id)
 
     async def search_documents(self, query: DocumentQuery) -> tuple[RetrievedChunk, ...]:
         return self._reply("search_documents", tuple, query)
@@ -210,3 +230,34 @@ class FakeEmbedder:
         if self._fail:
             raise ModelUnavailable("fake")
         return tuple((float(len(t)), 1.0) for t in texts)
+
+
+class FakeRecorder:
+    """감사 로그 자리. 받은 실행을 쌓는다. `fail`을 주면 매번 그것을 던진다."""
+
+    def __init__(self, fail: Exception | None = None) -> None:
+        self._fail = fail
+        self.runs: list[tuple[RunRecord, str]] = []
+
+    async def record(self, run: RunRecord, model: str) -> None:
+        if self._fail is not None:
+            raise self._fail
+        self.runs.append((run, model))
+
+
+class FakeInsightCache:
+    """리포트 캐시 자리. `fail`을 주면 읽기·쓰기가 그것을 던진다."""
+
+    def __init__(self, fail: Exception | None = None) -> None:
+        self._fail = fail
+        self.rows: dict[str, Mapping[str, object]] = {}
+
+    async def get(self, key: str) -> Mapping[str, object] | None:
+        if self._fail is not None:
+            raise self._fail
+        return self.rows.get(key)
+
+    async def put(self, key: str, body: Mapping[str, object]) -> None:
+        if self._fail is not None:
+            raise self._fail
+        self.rows[key] = body

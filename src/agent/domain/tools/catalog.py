@@ -1,4 +1,4 @@
-"""읽기 도구 일곱의 설명과 입력 JSON Schema. 모델이 읽는 문서다(ai/tools.md 2장).
+"""읽기 도구 여덟의 설명과 입력 JSON Schema. 모델이 읽는 문서다(ai/tools.md 2장).
 
 이 파일이 바뀌면 모델에게 주는 프롬프트가 바뀐 것이다 — 모드별 스키마 스냅샷 테스트가
 리뷰에서 그 차이를 보이게 한다(ai/tools.md 8장).
@@ -112,6 +112,21 @@ READ_TOOLS: Mapping[ToolName, ToolSpec] = {
             does="한 달의 카테고리별 예산·쓴 돈·남은 돈·소진율·말일 예상을 낸다.",
             avoid="예산은 달 단위다. 주·일 기간이나 예산과 상관없는 지출 합에는 쓰지 않는다.",
             input_schema=_object({"period": _PERIOD, "category_id": _CATEGORY}, ["period"]),
+        ),
+        ToolSpec(
+            ToolName.DETECT_OUTLIERS,
+            does="기간 안에서 카테고리의 평소(직전 여섯 달)를 벗어난 큰 거래를 고른다(최대 5건). "
+            "판정하지 못한 카테고리는 이유와 함께 낸다.",
+            avoid="합계는 summarize_spending을 쓴다. 판정 기준은 api가 정한다 — 넘기지 않는다.",
+            input_schema=_object(
+                {
+                    "period": _PERIOD,
+                    "category_id": _CATEGORY,
+                    "merchant": _MERCHANT,
+                    "direction": _DIRECTION,
+                },
+                ["period"],
+            ),
         ),
         ToolSpec(
             ToolName.SUGGEST_CATEGORY,

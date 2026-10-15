@@ -9,6 +9,11 @@ from agent.application.dto import ModelReply, Prompt, ToolPrompt
 class LanguageModel(Protocol):
     """구조화 출력이나 도구 호출을 내는 LLM. 어느 제공자인지는 조립 지점만 안다."""
 
+    @property
+    def model(self) -> str:
+        """감사 로그에 남길 모델 이름(litellm 표기). 부르는 데는 쓰지 않는다."""
+        ...
+
     async def complete_json(self, prompt: Prompt) -> Mapping[str, object]:
         """`prompt.schema` 모양의 JSON 객체 하나를 낸다.
 

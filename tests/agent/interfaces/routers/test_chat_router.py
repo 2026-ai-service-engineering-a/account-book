@@ -6,7 +6,7 @@ from agent.application.dto import ModelReply, ModelUsage, ToolCall
 from agent.application.errors import LedgerUnavailable
 from agent.domain.tools import CategoryLine, Frequency
 from agent.domain.values import Amount, CategoryId
-from tests.agent.conftest import FakeLedger, FakeModel
+from tests.agent.conftest import FakeLedger, FakeModel, FakeRecorder
 from tests.agent.interfaces.conftest import client_with
 
 BODY = {
@@ -83,3 +83,32 @@ def test_unexpected_failures_end_with_an_error_and_done():
 
 def test_a_bad_body_is_422_before_the_stream():
     assert client_with(FakeModel()).post("/chat", json={"text": "q"}).status_code == 422
+
+
+def test_leaves_the_run_after_done_with_every_step():
+    recorder = FakeRecorder()
+    model = FakeModel(
+        tape=[
+            ModelReply("", (ToolCall("c1", "count_frequency", ARGUMENTS),), ModelUsage(90, 10)),
+            ModelReply("저번 주에 카페에 3번 갔어요.", (), ModelUsage(80, 20)),
+        ]
+    )
+    found = ledger(frequency=Frequency(3, 3, 1.0, Amount(5267)))
+    client_with(model, found, recorder).post("/chat", json=BODY)
+    ((run, _),) = recorder.runs
+    assert (run.stop_reason, run.steps, run.tokens) == ("answered", 2, 200)
+    assert [(c.call_id, c.args) for c in run.tool_calls] == [("c1", ARGUMENTS)]
+
+
+def test_a_broken_stream_is_left_as_failed_and_a_failed_record_still_ends_with_done():
+    class Broken(FakeLedger):
+        async def categories(self) -> tuple[CategoryLine, ...]:
+            raise RuntimeError("boom")
+
+    recorder = FakeRecorder()
+    client_with(FakeModel(), Broken(), recorder).post("/chat", json=BODY)
+    assert recorder.runs[0][0].failed and recorder.runs[0][0].stop_reason == "internal_error"
+    model = FakeModel(tape=[ModelReply("예측은 못 해요.", (), ModelUsage())])
+    broken = FakeRecorder(fail=RuntimeError("boom"))
+    found = events(client_with(model, ledger(), broken).post("/chat", json=BODY).text)
+    assert found[0][0] == "message" and found[-1] == ("done", "")

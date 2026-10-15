@@ -13,6 +13,7 @@ from api.domain.errors import (
     ConfirmationRequired,
     InvalidEmbedding,
     InvalidTransaction,
+    RunNotFound,
     TransactionNotFound,
 )
 
@@ -24,6 +25,7 @@ _log = logging.getLogger(__name__)
 
 def install_error_translation(app: FastAPI) -> None:
     app.add_exception_handler(TransactionNotFound, _not_found)
+    app.add_exception_handler(RunNotFound, _run_not_found)
     app.add_exception_handler(InvalidTransaction, _invalid)
     app.add_exception_handler(InvalidEmbedding, _invalid)
     app.add_exception_handler(RequestValidationError, _malformed)
@@ -36,6 +38,10 @@ def install_error_translation(app: FastAPI) -> None:
 
 async def _not_found(_: Request, __: Exception) -> JSONResponse:
     return ErrorResponse.reply(404, "not_found", "그 거래를 찾지 못했습니다.")
+
+
+async def _run_not_found(_: Request, __: Exception) -> JSONResponse:
+    return ErrorResponse.reply(404, "not_found", "그 실행을 찾지 못했습니다.")
 
 
 async def _invalid(_: Request, error: Exception) -> JSONResponse:

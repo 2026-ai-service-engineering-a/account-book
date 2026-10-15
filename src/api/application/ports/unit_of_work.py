@@ -8,6 +8,8 @@ from .catalog_repository import CatalogRepository
 from .category_index import CategoryIndex
 from .document_repository import DocumentRepository
 from .idempotency_store import IdempotencyStore
+from .insight_cache import InsightCache
+from .run_log import RunLog
 from .stats_repository import StatsRepository
 from .transaction_repository import TransactionRepository
 
@@ -40,6 +42,12 @@ class UnitOfWork(Protocol):
 
     @property
     def documents(self) -> DocumentRepository: ...
+
+    @property
+    def runs(self) -> RunLog: ...
+
+    @property
+    def insight_cache(self) -> InsightCache: ...
 
     def __enter__(self) -> Self: ...
 

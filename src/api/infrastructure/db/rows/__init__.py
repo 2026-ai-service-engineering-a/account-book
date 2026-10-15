@@ -9,6 +9,7 @@ from .category_rule_row import CategoryRuleRow
 from .document_chunk_row import DocumentChunkRow
 from .document_row import DocumentRow
 from .idempotency_key_row import IdempotencyKeyRow
+from .insight_cache_row import InsightCacheRow
 from .text_embedding_row import TextEmbeddingRow
 from .tool_call_row import ToolCallRow
 from .transaction_row import TransactionRow
@@ -22,6 +23,7 @@ __all__ = [
     "DocumentChunkRow",
     "DocumentRow",
     "IdempotencyKeyRow",
+    "InsightCacheRow",
     "TextEmbeddingRow",
     "ToolCallRow",
     "TransactionRow",
