@@ -118,7 +118,7 @@ graph LR
 | `domain` | 도구 스키마, 분류 결과·기간·신뢰도 값 객체, 루프 상태 |
 | `application` | 루프, 하네스 정책, 근거 검증, 프롬프트 조립 |
 | `infrastructure` | litellm 어댑터, 임베딩 클라이언트, `api` HTTP 클라이언트 |
-| `interfaces` | `POST /capture`, `POST /classify`, `POST /chat`(SSE), `POST /insights` |
+| `interfaces` | `POST /capture`, `POST /classify`, `POST /chat`(SSE), `POST /record`(SSE, 확인 게이트), `POST /insights` |
 
 **프롬프트 문자열은 `application`에 둔다.** 모델 제공자를 바꿔도 안 바뀌는 것이라서
 `infrastructure`에 두면 어댑터마다 복사본이 생긴다.

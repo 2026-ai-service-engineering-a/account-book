@@ -11,7 +11,7 @@
 | | |
 |---|---|
 | 경로 | `/` |
-| 부르는 곳 | `agent` — `POST /chat` (SSE 스트림), `POST /chat/{run_id}/confirm` |
+| 부르는 곳 | `agent` — `POST /chat`(질문, SSE), `POST /record`(기록, SSE), `POST /record/proposals/{proposal_id}/confirm`·`cancel` — `proposal_id`는 그 제안의 `run_id`다 |
 | `api` 직접 호출 | 없다 |
 
 `ui`는 `agent`의 스트림을 받아 브라우저로 중계한다. 이 화면에서 `api`를 직접 부르는 일은

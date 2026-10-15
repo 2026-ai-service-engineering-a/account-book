@@ -84,8 +84,9 @@ X-Agent-Run-Id: 01J9X...
 
 - `AGENT_CONFIRM_THRESHOLD` 이상의 금액, 그리고 모든 `DELETE`는 `X-Confirmed-By: user`가
   없으면 `412 confirmation_required`로 거부한다.
-- 에이전트는 412를 받으면 사용자에게 확인을 묻고, 확인을 받으면 **같은 `Idempotency-Key`로**
-  헤더를 붙여 다시 보낸다.
+- 에이전트는 **412를 받기 전에 묻는다.** 쓰기는 금액과 관계없이 언제나 제안 → 확인 → 실행이고
+  ([ai/README.md 2장 원칙 6](ai/README.md#2-모든-ai-기능에-걸리는-원칙)), 확인을 받으면 제안 때 정한
+  `Idempotency-Key`와 `X-Confirmed-By`를 붙여 처음 보낸다. 412는 그 약속이 깨졌을 때 막는 안전망이다.
 - 거부된 요청도 `tool_calls`에 남는다. 무엇을 하려다 막혔는지가 감사에서는 중요하다.
 
 > **한계를 적어 둔다.** `X-Confirmed-By`는 에이전트가 붙이는 헤더라서, 에이전트가
@@ -142,7 +143,7 @@ X-Agent-Run-Id: 01J9X...
 |---|---|---|---|
 | `GET` | `/v1/transactions` | `search_transactions` | — |
 | `GET` | `/v1/transactions/{id}` | — (화면) | — |
-| `POST` | `/v1/transactions` | `create_transaction` | 임계값 이상 |
+| `POST` | `/v1/transactions` | `create_transaction` | 임계값 이상(agent는 언제나 묻는다) |
 | `PATCH` | `/v1/transactions/{id}` | `update_transaction` | 임계값 이상 |
 | `DELETE` | `/v1/transactions/{id}` | `delete_transaction` | **항상** |
 | `GET` | `/v1/summary` | `summarize_spending` | — |
