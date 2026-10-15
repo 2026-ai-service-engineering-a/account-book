@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Literal
-
 from pydantic import BaseModel
 
 from api.application.dto import SkippedCategory
+from api.domain.values import SkipReason
 
 
 class SkippedCategoryBody(BaseModel):
@@ -12,8 +11,8 @@ class SkippedCategoryBody(BaseModel):
     적다(api-contract 6장)."""
 
     category_id: str
-    reason: Literal["short_history", "too_few"]
+    reason: SkipReason
 
     @classmethod
     def of(cls, skipped: SkippedCategory) -> SkippedCategoryBody:
-        return cls.model_validate({"category_id": skipped.category_id, "reason": skipped.reason})
+        return cls(category_id=skipped.category_id, reason=skipped.reason)

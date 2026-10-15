@@ -11,6 +11,7 @@ from .run_flow import RunFlow
 from .run_seat import RunSeat
 from .run_status import RunStatus
 from .search_mode import SearchMode
+from .skip_reason import SkipReason
 from .source import Source
 from .time_range import TimeRange
 from .transaction_id import TransactionId
@@ -29,6 +30,7 @@ __all__ = [
     "RunSeat",
     "RunStatus",
     "SearchMode",
+    "SkipReason",
     "Source",
     "TimeRange",
     "TransactionId",

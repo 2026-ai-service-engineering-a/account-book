@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from api.application.dto import SkippedCategory
-from api.domain.values import CategoryId
+from api.domain.values import CategoryId, SkipReason
 
 
 def test_carries_the_reason():
-    assert SkippedCategory(CategoryId("cafe"), "short_history").reason == "short_history"
+    skipped = SkippedCategory(CategoryId("cafe"), SkipReason.SHORT_HISTORY)
+    assert skipped.reason == "short_history"  # 값은 응답에 그대로 나가는 글자다

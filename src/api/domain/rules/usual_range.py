@@ -14,7 +14,7 @@ import calendar
 import math
 from datetime import datetime, tzinfo
 
-from api.domain.values import Money
+from api.domain.values import Money, SkipReason
 
 BASELINE_MONTHS = 6
 MIN_BASELINE = 5  # 기준 기간의 거래가 이보다 적으면 중앙값·MAD가 뜻을 잃는다
@@ -22,9 +22,6 @@ _MAD_TO_SIGMA = 1.4826  # 정규분포에서 MAD를 표준편차 눈금으로 �
 _Z_LIMIT = 3.5  # 수정 z 점수의 관례적 경계(Iglewicz·Hoaglin)
 # 산포가 0이어도(매달 같은 금액의 구독) 중앙값의 두 배는 넘어야 특이하다. 900원 오른 구독료는 아니다
 _FLOOR_RATIO = 2
-
-SHORT_HISTORY = "short_history"  # 첫 거래가 기준 시작보다 늦다 — 여섯 달이 안 됐다
-TOO_FEW = "too_few"  # 여섯 달은 됐지만 기준 기간의 거래가 MIN_BASELINE보다 적다
 
 
 def baseline_start(start: datetime, zone: tzinfo) -> datetime:
@@ -45,10 +42,10 @@ def usual_upper(median: Money, mad: Money) -> Money:
     return Money(max(median.amount + spread, median.amount * _FLOOR_RATIO))
 
 
-def unjudged(first_at: datetime | None, since: datetime, count: int) -> str | None:
+def unjudged(first_at: datetime | None, since: datetime, count: int) -> SkipReason | None:
     """판정하지 않는 이유. 판정할 수 있으면 None. `first_at`이 없으면 판정 기간이 첫 거래다."""
     if first_at is None or first_at > since:
-        return SHORT_HISTORY
+        return SkipReason.SHORT_HISTORY
     if count < MIN_BASELINE:
-        return TOO_FEW
+        return SkipReason.TOO_FEW
     return None

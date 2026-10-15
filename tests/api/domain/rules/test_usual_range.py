@@ -5,14 +5,8 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from api.domain.rules.usual_range import (
-    SHORT_HISTORY,
-    TOO_FEW,
-    baseline_start,
-    unjudged,
-    usual_upper,
-)
-from api.domain.values import Money
+from api.domain.rules.usual_range import baseline_start, unjudged, usual_upper
+from api.domain.values import Money, SkipReason
 
 SEOUL = ZoneInfo("Asia/Seoul")
 
@@ -47,10 +41,10 @@ def test_no_spread_still_needs_twice_the_median():
 
 def test_why_a_category_is_not_judged():
     since = datetime(2026, 4, 1, tzinfo=SEOUL)
-    assert unjudged(datetime(2026, 5, 3, tzinfo=SEOUL), since, 30) == SHORT_HISTORY
-    assert unjudged(datetime(2025, 1, 1, tzinfo=SEOUL), since, 4) == TOO_FEW
+    assert unjudged(datetime(2026, 5, 3, tzinfo=SEOUL), since, 30) is SkipReason.SHORT_HISTORY
+    assert unjudged(datetime(2025, 1, 1, tzinfo=SEOUL), since, 4) is SkipReason.TOO_FEW
     assert unjudged(since, since, 5) is None  # 딱 여섯 달이면 판정한다
 
 
 def test_a_category_that_starts_in_the_period_is_short_history():
-    assert unjudged(None, datetime(2026, 4, 1, tzinfo=SEOUL), 0) == SHORT_HISTORY
+    assert unjudged(None, datetime(2026, 4, 1, tzinfo=SEOUL), 0) is SkipReason.SHORT_HISTORY
