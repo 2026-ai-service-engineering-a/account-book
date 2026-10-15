@@ -17,14 +17,7 @@ SEATS: tuple[AiSeat, ...] = (
         flow_detail="단발 + 확인 게이트",
         llm_calls="1회",
         mode="capture",
-        tools=(
-            "suggest_category",
-            "search_transactions",
-            "create_transaction",
-            "update_transaction",
-            "delete_transaction",
-            "set_budget",
-        ),
+        tools=("suggest_category", "create_transaction"),
         replaces="문장이나 카드 문자를 보며 날짜·금액·가맹점을 칸마다 옮겨 치기",
         screens=(("채팅 — 기록 문장", "/"), ("거래 입력 — 한 줄로 채우기", "/transactions/new")),
         human="채팅은 확인 카드, 폼은 저장 버튼. 확인 전에는 아무것도 쓰지 않는다",
@@ -34,8 +27,10 @@ SEATS: tuple[AiSeat, ...] = (
         stand_in_does="정해진 모양의 한 줄과 카드 승인 문자 한 모양만 읽는다",
         doc="docs/ai/agent-loop.md 3장 · tools.md 6장",
         live=(
-            "한 줄로 채우기는 agent의 POST /capture가 LLM으로 읽는다. 날짜 계산과 가맹점 검사는"
-            " 코드가 한다. 채팅의 기록 문장은 아직 각본 대역"
+            "한 줄로 채우기는 agent의 POST /capture가 LLM으로 읽는다. 채팅의 기록 문장은"
+            " agent의 POST /record가 같은 읽기로 확인 카드를 내고, 제안은 감사 테이블에"
+            " 남는다. 확인을 누르면 agent가 같은 멱등 키와 확인 헤더로 쓴다 — ui는 api에"
+            " 쓰지 않는다. 날짜 계산과 가맹점 검사는 코드가 한다"
         ),
     ),
     AiSeat(
