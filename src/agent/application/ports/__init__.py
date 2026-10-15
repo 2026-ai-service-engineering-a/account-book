@@ -2,6 +2,7 @@ from .embedder import Embedder
 from .insight_cache import InsightCache
 from .language_model import LanguageModel
 from .ledger_api import LedgerApi
+from .proposal_book import ProposalBook
 from .run_recorder import RunRecorder
 
-__all__ = ["Embedder", "InsightCache", "LanguageModel", "LedgerApi", "RunRecorder"]
+__all__ = ["Embedder", "InsightCache", "LanguageModel", "LedgerApi", "ProposalBook", "RunRecorder"]

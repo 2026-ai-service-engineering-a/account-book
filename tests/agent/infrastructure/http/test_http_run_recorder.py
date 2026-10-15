@@ -79,3 +79,10 @@ def test_server_errors_and_unreachable_api_are_unavailable():
     unreachable = HttpRunRecorder("http://api:8000", timeout=1, transport=httpx.MockTransport(down))
     with pytest.raises(LedgerUnavailable, match="ConnectError"):
         asyncio.run(unreachable.record(RUN, "m"))
+
+
+def test_a_proposal_waits_for_confirmation():
+    adapter, seen = recorder()
+    run = RunRecord("r-3", RunSeat.CAPTURE, "김밥천국 8500원", "proposed", awaiting=True)
+    asyncio.run(adapter.record(run, "m"))
+    assert json.loads(seen[0].content)["status"] == "awaiting_confirmation"

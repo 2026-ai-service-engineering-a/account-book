@@ -2,8 +2,16 @@
 
 from .http_insight_cache import HttpInsightCache
 from .http_ledger_api import HttpLedgerApi
+from .http_proposal_book import HttpProposalBook
 from .http_run_recorder import HttpRunRecorder
 from .pending_reply import PendingReply
 from .suggest_reply import SuggestReply
 
-__all__ = ["HttpInsightCache", "HttpLedgerApi", "HttpRunRecorder", "PendingReply", "SuggestReply"]
+__all__ = [
+    "HttpInsightCache",
+    "HttpLedgerApi",
+    "HttpProposalBook",
+    "HttpRunRecorder",
+    "PendingReply",
+    "SuggestReply",
+]
