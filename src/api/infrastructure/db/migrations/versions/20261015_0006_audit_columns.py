@@ -37,7 +37,8 @@ def upgrade() -> None:
     op.create_check_constraint(
         op.f("ck_agent_runs_status"), "agent_runs", "status IN ('done', 'failed')"
     )
-    op.add_column("tool_calls", sa.Column("call_id", sa.String(length=100), nullable=False))
+    # 제공자가 정하는 값이다. Gemini는 생각 서명을 붙여 150자를 넘긴다 — 길이를 못 박지 않는다
+    op.add_column("tool_calls", sa.Column("call_id", sa.Text(), nullable=False))
     op.create_unique_constraint(
         op.f("uq_tool_calls_run_id_call_id"), "tool_calls", ["run_id", "call_id"]
     )

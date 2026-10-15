@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Identity, String, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, Identity, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,7 +20,8 @@ class ToolCallRow(Base):
 
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     run_id: Mapped[str] = mapped_column(ForeignKey("agent_runs.id"), index=True)
-    call_id: Mapped[str] = mapped_column(String(100))
+    # 제공자가 정한다. Gemini는 생각 서명을 붙여 150자를 넘기기도 해서 길이를 못 박지 않는다
+    call_id: Mapped[str] = mapped_column(Text)
     tool: Mapped[str] = mapped_column(String(50))
     # 도구 인자와 결과는 모양이 도구마다 다르다. DB 경계에서만 Any다(development-rules 5.2)
     args: Mapped[dict[str, Any]] = mapped_column(JSONB)

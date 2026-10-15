@@ -15,7 +15,7 @@ pytestmark = pytest.mark.integration
 def test_puts_the_run_and_its_calls_in_one_transaction(migrated):
     calls = (
         ToolCallRecord("c1", "summarize_spending", {"q": "카페"}, {"ok": True}),
-        ToolCallRecord("c2", "summarize_spending", {"q": "카페"}, None),
+        ToolCallRecord("c2__thought__" + "x" * 200, "summarize_spending", {"q": "카페"}, None),
     )
     sessions = SqlUnitOfWork.factory(migrated)
     with SqlUnitOfWork(sessions) as uow:
@@ -27,7 +27,8 @@ def test_puts_the_run_and_its_calls_in_one_transaction(migrated):
             select(ToolCallRow.call_id, ToolCallRow.result).order_by(ToolCallRow.id)
         ).all()
     assert tuple(run) == ("chat", "answered")
-    assert [tuple(r) for r in rows] == [("c1", {"ok": True}), ("c2", None)]
+    # 제공자의 call_id는 길다 — Gemini는 생각 서명을 붙인다
+    assert [tuple(r) for r in rows] == [("c1", {"ok": True}), ("c2__thought__" + "x" * 200, None)]
 
 
 def test_the_same_run_twice_is_refused(migrated):
