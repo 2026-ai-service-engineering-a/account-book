@@ -7,6 +7,9 @@ from .document_id import DocumentId
 from .embedding_dimensions import EMBEDDING_DIMENSIONS
 from .money import Money
 from .period import Period
+from .run_flow import RunFlow
+from .run_seat import RunSeat
+from .run_status import RunStatus
 from .search_mode import SearchMode
 from .source import Source
 from .time_range import TimeRange
@@ -22,6 +25,9 @@ __all__ = [
     "DocumentId",
     "Money",
     "Period",
+    "RunFlow",
+    "RunSeat",
+    "RunStatus",
     "SearchMode",
     "Source",
     "TimeRange",

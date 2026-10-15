@@ -159,6 +159,7 @@ X-Agent-Run-Id: 01J9X...
 | `POST` | `/v1/documents/search` | `search_documents` | — |
 | `GET` | `/v1/embeddings/pending` | — (색인) | — |
 | `PUT` | `/v1/embeddings/{text_hash}` | — (색인) | — |
+| `POST` | `/v1/runs` | — (감사) | — |
 | `GET` | `/v1/healthz` | — | — |
 
 색인 둘은 도구가 아니다. `agent`가 카테고리를 고르기 전에 색인 안 된 텍스트를 당겨 가
@@ -216,6 +217,24 @@ X-Agent-Run-Id: 01J9X...
 - 점수로 거르지 않는다. 순위를 재야 하고, 근거가 없다고 답할지는 생성 쪽이 정한다.
 - 줄마다 `id`·`document_id`·`title`·`effective_date`·`strategy`·`heading`·`body`·`score`. `body`는
   원문이고, 찾는 글(`search_text`)은 내보내지 않는다.
+
+### 감사 로그는 끝날 때 한 번 남긴다
+
+`POST /v1/runs`는 `agent`의 실행 하나와 그 도구 호출들을 한 트랜잭션으로 넣는다(`agent_runs`·`tool_calls`,
+[ai/README.md 2장 원칙 7](ai/README.md#2-모든-ai-기능에-걸리는-원칙)). 도구가 아니다 — 모델이 고르는 길이 없고,
+`agent`의 자리가 끝날 때 코드가 부른다.
+
+- 본문 `{id, seat, flow, utterance, model, steps, tokens, cost_usd, status, stop_reason, tool_calls}`.
+  `tool_calls`는 `{call_id, tool, args, result}`의 목록이고 `call_id`는 실행 안에서 유일하다.
+- 키는 `run:{run_id}`다. 기록을 다시 보내도 줄이 둘이 되지 않는다. 응답은 `201 {"id"}`.
+- 값의 목록은 `seat` = `capture`·`classify`·`chat`·`ask`, `flow` = `single`·`react`·`plan_execute`,
+  `status` = `done`(답이 나갔다 — 모른다는 답과 부분 결과도)·`failed`(503으로 끝났다).
+  `stop_reason`은 자리마다 다르다 — 채팅은 루프의 정지 조건([ai/agent-loop.md 4.2](ai/agent-loop.md#42-정지-조건)),
+  기록은 `read`·`question`·`cancelled`·`no_amount`·`unreadable`, 분류는 고른 길, 문서 Q&A는 답의 상태.
+- 단발 자리(`capture`·`classify`·`ask`)의 `steps`·`tokens`·`cost_usd`는 아직 0이다. 구조화 출력 호출이
+  사용량을 내지 않는다.
+- 발화·인자·금액·가맹점이 여기에 있다. 운영 로그에는 없다([development-rules.md 6.4](development-rules.md#64-로깅--운영-로그와-감사-로그를-나눈다)).
+- 기록이 실패해도 `agent`는 답을 낸다. 실패는 운영 로그에 `run_id`와 코드만 남는다.
 
 ### 예산은 바꿀 때까지 이어진다
 

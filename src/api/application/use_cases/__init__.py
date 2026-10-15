@@ -11,6 +11,7 @@ from .load_documents import LoadDocuments
 from .put_embedding import PutEmbedding
 from .read_budget_statuses import ReadBudgetStatuses
 from .read_pace import ReadPace
+from .record_run import RecordRun
 from .search_documents import SearchDocuments
 from .search_transactions import SearchTransactions
 from .set_budget import SetBudget
@@ -32,6 +33,7 @@ __all__ = [
     "PutEmbedding",
     "ReadBudgetStatuses",
     "ReadPace",
+    "RecordRun",
     "SearchDocuments",
     "SearchTransactions",
     "SetBudget",

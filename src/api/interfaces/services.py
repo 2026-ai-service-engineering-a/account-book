@@ -19,6 +19,7 @@ from api.application.use_cases import (
     PutEmbedding,
     ReadBudgetStatuses,
     ReadPace,
+    RecordRun,
     SearchDocuments,
     SearchTransactions,
     SetBudget,
@@ -51,6 +52,7 @@ class Services:
     pending: ListPendingTexts
     put_embedding: PutEmbedding
     search_documents: SearchDocuments
+    record_run: RecordRun
 
 
 def get_services(request: Request) -> Services:

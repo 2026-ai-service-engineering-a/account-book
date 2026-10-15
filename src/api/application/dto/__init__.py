@@ -12,8 +12,10 @@ from .month_total import MonthTotal
 from .monthly_report import MonthlyReport
 from .pace_series import PaceSeries
 from .period_change import PeriodChange
+from .run_record import RunRecord
 from .search_strategy import SearchStrategy
 from .stored_reply import StoredReply
+from .tool_call_record import ToolCallRecord
 from .totals import Totals
 from .transaction_draft import TransactionDraft
 from .transaction_page import TransactionPage
@@ -34,8 +36,10 @@ __all__ = [
     "MonthlyReport",
     "PaceSeries",
     "PeriodChange",
+    "RunRecord",
     "SearchStrategy",
     "StoredReply",
+    "ToolCallRecord",
     "Totals",
     "TransactionDraft",
     "TransactionPage",

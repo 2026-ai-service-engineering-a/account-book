@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Identity, String, func
+from sqlalchemy import DateTime, ForeignKey, Identity, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,9 +15,12 @@ class ToolCallRow(Base):
     (docs/api-contract.md 4장)."""
 
     __tablename__ = "tool_calls"
+    # 같은 도구를 두 번 부른 대화에서 어느 결과인지 가리는 키다(docs/ai/tools.md 3.1)
+    __table_args__ = (UniqueConstraint("run_id", "call_id"),)
 
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     run_id: Mapped[str] = mapped_column(ForeignKey("agent_runs.id"), index=True)
+    call_id: Mapped[str] = mapped_column(String(100))
     tool: Mapped[str] = mapped_column(String(50))
     # 도구 인자와 결과는 모양이 도구마다 다르다. DB 경계에서만 Any다(development-rules 5.2)
     args: Mapped[dict[str, Any]] = mapped_column(JSONB)
