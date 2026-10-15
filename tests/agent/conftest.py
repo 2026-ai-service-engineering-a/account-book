@@ -14,6 +14,7 @@ from agent.application.dto import (
     PendingText,
     Prompt,
     RetrievedChunk,
+    RunRecord,
     SearchResult,
     SearchStrategy,
     ToolPrompt,
@@ -57,6 +58,8 @@ class FakeModel:
 
     `tape`는 도구를 쓰는 호출의 답이다 — 루프가 같은 경로를 밟는지 본다(ai/agent-loop.md 10장).
     """
+
+    model = "fake/model"
 
     def __init__(
         self,
@@ -210,3 +213,16 @@ class FakeEmbedder:
         if self._fail:
             raise ModelUnavailable("fake")
         return tuple((float(len(t)), 1.0) for t in texts)
+
+
+class FakeRecorder:
+    """감사 로그 자리. 받은 실행을 쌓는다. `fail`을 주면 매번 그것을 던진다."""
+
+    def __init__(self, fail: Exception | None = None) -> None:
+        self._fail = fail
+        self.runs: list[tuple[RunRecord, str]] = []
+
+    async def record(self, run: RunRecord, model: str) -> None:
+        if self._fail is not None:
+            raise self._fail
+        self.runs.append((run, model))

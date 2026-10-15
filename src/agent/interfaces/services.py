@@ -10,6 +10,7 @@ from agent.application.use_cases import (
     AskDocuments,
     ClassifyCategory,
     ReadCapture,
+    RecordRun,
     Retrieve,
 )
 
@@ -23,6 +24,7 @@ class Services:
     answer: AnswerQuestion
     retrieve: Retrieve
     ask: AskDocuments
+    record: RecordRun
 
 
 def get_services(request: Request) -> Services:
