@@ -1,0 +1,18 @@
+{% from "run_line.html" import run_summary %}
+{% if failed %}
+<div id="more-runs" class="run-more muted">더 불러오지 못했어요. 잠시 뒤에 다시 열어 주세요.</div>
+{% else %}
+{% for line in page.items %}
+<details class="run" hx-get="/partials/runs/{{ line.id }}/calls" hx-trigger="toggle once"
+         hx-target="#run-{{ line.id }}-calls" hx-swap="innerHTML">
+  <summary>{{ run_summary(line, zone) }}</summary>
+  <div id="run-{{ line.id }}-calls" class="run-calls"><p class="muted">불러오는 중…</p></div>
+</details>
+{% endfor %}
+{% if page.next_cursor %}
+<div id="more-runs" class="run-more">
+  <button class="btn btn-outline btn-sm" hx-get="/partials/runs/more?{{ filter_query }}{{ '&' if filter_query }}cursor={{ page.next_cursor | urlencode }}"
+          hx-target="#more-runs" hx-swap="outerHTML">더 보기</button>
+</div>
+{% endif %}
+{% endif %}

@@ -286,8 +286,15 @@ X-Agent-Run-Id: 01J9X...
 - `POST /v1/runs/{id}/close` `{"status": "done"|"aborted"|"failed", "stop_reason", "results": [{"call_id", "result"}]}` —
   **확인된 호출이 있으면 `aborted`로 닫히지 않는다.** 확인된 제안은 취소되지 않는다. `failed`는 확인한 쓰기를
   `api`가 거절한 것(422)이라 확인됐어도 닫힌다.
-- `GET /v1/runs/{id}` — 실행과 도구 호출(`confirmed_at` 포함), `created_at`. 없으면 `404 not_found`.
-  제안의 수명(24시간)은 `agent`가 `created_at`으로 잰다.
+- `GET /v1/runs/{id}` — 실행과 도구 호출(`confirmed_at` 포함), 모델·스텝·토큰·비용, `client`, `created_at`.
+  없으면 `404 not_found`. 제안의 수명(24시간)은 `agent`가 `created_at`으로 잰다.
+
+**읽는 길은 둘이다.** 위의 실행 하나와, 실행 기록 화면([../ui_docs/pages/runs.md](../ui_docs/pages/runs.md))이
+읽는 목록이다.
+
+- `GET /v1/runs?seat=&status=&cursor=&limit=` → `{"items", "next_cursor"}`. 최신순(`created_at`, `id`)이고 키셋
+  커서다. 한 줄은 실행의 칸과 `tool_count` — 인자와 결과는 싣지 않는다. `limit`은 기본 30, 최대 100.
+  `seat`·`status`는 위의 값 목록 밖이면 `422 validation_error`.
 
 ### 예산은 바꿀 때까지 이어진다
 

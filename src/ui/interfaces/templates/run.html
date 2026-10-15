@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% from "run_line.html" import run_summary %}
+{% block title %}실행 기록{% endblock %}
+{% block main %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">실행 하나</h1>
+    <p class="page-description">AI가 한 일을 거슬러 봅니다. 여기서는 아무것도 바꾸지 않습니다.</p>
+  </div>
+  <a class="btn btn-outline btn-sm" href="/runs">{{ icon("chevron-left") }}실행 기록</a>
+</div>
+
+{% if detail %}
+<section class="card">
+  <div class="card-header"><p class="run-line">{{ run_summary(detail.line, zone) }}</p></div>
+  <div class="card-content run-calls">{% include "partials/run_calls.html" %}</div>
+</section>
+{% else %}
+<section class="card">
+  <div class="empty">
+    <div class="empty-icon">{{ icon("search") }}</div>
+    <p class="empty-title">그 실행을 찾지 못했어요.</p>
+    <div class="empty-actions"><a class="btn btn-outline" href="/runs">목록으로</a></div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

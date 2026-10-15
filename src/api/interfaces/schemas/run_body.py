@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 from pydantic import AwareDatetime, BaseModel
@@ -16,12 +17,17 @@ class _CallBody(BaseModel):
 
 
 class RunBody(BaseModel):
-    """감사 로그의 실행 한 줄 — 쓰기 제안을 되살릴 때 agent가 읽는다(api-contract 6장)."""
+    """감사 로그의 실행 한 줄 — 쓰기 제안을 되살릴 때 agent가, 실행 기록 화면에서 ui가 읽는다
+    (api-contract 6장)."""
 
     id: str
     seat: str
     flow: str
     utterance: str
+    model: str
+    steps: int
+    tokens: int
+    cost_usd: Decimal
     status: str
     stop_reason: str
     client: str | None
@@ -35,6 +41,10 @@ class RunBody(BaseModel):
             seat=run.seat.value,
             flow=run.flow.value,
             utterance=run.utterance,
+            model=run.model,
+            steps=run.steps,
+            tokens=run.tokens,
+            cost_usd=run.cost_usd,
             status=run.status.value,
             stop_reason=run.stop_reason,
             client=run.client,

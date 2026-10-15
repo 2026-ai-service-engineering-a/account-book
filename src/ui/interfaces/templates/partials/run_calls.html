@@ -1,0 +1,41 @@
+{% if failed %}
+<p class="muted">도구 호출을 불러오지 못했어요.</p>
+{% elif missing %}
+<p class="muted">그 실행을 찾지 못했어요.</p>
+{% else %}
+{% set line = detail.line %}
+<p class="run-meta muted">모델 {{ line.model }} · 스텝 {{ line.steps }} · 토큰 {{ "{:,}".format(line.tokens) }} · ${{ "%.6f" | format(line.cost_usd) }}{% if line.client %} · 클라이언트 {{ line.client }}{% endif %}</p>
+{% if line.utterance %}<p class="run-utterance">{{ line.utterance }}</p>{% endif %}
+{% if detail.calls %}
+<table class="table run-table">
+  <thead><tr><th class="num">#</th><th>도구</th><th>인자</th><th>결과</th><th>확인</th></tr></thead>
+  <tbody>
+  {% for call in detail.calls %}
+  {% set made = call.result | result_transaction %}
+  <tr>
+    <td class="num">{{ loop.index }}</td>
+    <td><code>{{ call.tool }}</code></td>
+    <td>{{ call.args | args_summary }}</td>
+    <td>{{ call.result | result_summary }}{% if made %} <a class="btn btn-link" href="/transactions/{{ made }}">그 거래</a>{% endif %}</td>
+    <td class="date">{{ call.confirmed_at.astimezone(zone).strftime("%m-%d %H:%M") if call.confirmed_at else "" }}</td>
+  </tr>
+  <tr class="run-raw">
+    <td></td>
+    <td colspan="4">
+      <details>
+        <summary>원본</summary>
+        <pre>인자
+{{ call.args | pretty_json }}
+
+결과
+{{ call.result | pretty_json }}</pre>
+      </details>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">도구를 부르지 않은 실행이에요.</p>
+{% endif %}
+{% endif %}

@@ -9,6 +9,7 @@ from .document_answerer import DocumentAnswerer
 from .document_gateway import DocumentGateway
 from .report_gateway import ReportGateway
 from .report_narrator import ReportNarrator
+from .run_gateway import RunGateway
 from .transaction_gateway import TransactionGateway
 
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     "DocumentGateway",
     "ReportGateway",
     "ReportNarrator",
+    "RunGateway",
     "TransactionGateway",
 ]

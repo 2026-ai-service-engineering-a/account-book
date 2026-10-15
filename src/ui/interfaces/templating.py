@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from .ai_map import BY_KEY
+from .presenters import run_view
 from .presenters.money_format import change, grouped, signed_won, won
 from .request_id import request_id_of
 
@@ -26,6 +27,16 @@ def _page_context(request: Request) -> dict[str, object]:
 
 templates = Jinja2Templates(directory=_TEMPLATES, context_processors=[_page_context])
 templates.env.filters.update(won=won, signed=signed_won, grouped=grouped, change=change)
+# 실행 기록 화면의 요약과 원본(ui_docs/pages/runs.md 3장)
+templates.env.filters.update(
+    args_summary=run_view.args_summary,
+    result_summary=run_view.result_summary,
+    result_transaction=run_view.result_transaction,
+    pretty_json=run_view.pretty_json,
+)
+templates.env.globals.update(
+    RUN_SEATS=run_view.SEATS, RUN_FLOWS=run_view.FLOWS, RUN_STATUSES=run_view.STATUSES
+)
 # 화면의 AI 표시가 읽는 자리 목록. 위키도 같은 것을 읽는다.
 templates.env.globals["AI_SEATS"] = BY_KEY
 

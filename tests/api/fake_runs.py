@@ -6,8 +6,9 @@ import dataclasses
 from collections.abc import Mapping
 from datetime import UTC, datetime
 
-from api.application.dto import RunRecord
+from api.application.dto import RunPage, RunQuery, RunRecord, RunSummary
 from api.domain.values import RunStatus
+from api.infrastructure.db.page_cursor import decode_cursor, encode_cursor
 
 _WAITING = RunStatus.AWAITING_CONFIRMATION
 
@@ -24,6 +25,30 @@ class FakeRuns:
 
     def get(self, run_id: str) -> RunRecord | None:
         return self.rows.get(run_id)
+
+    def page(self, query: RunQuery) -> RunPage:
+        def key(run: RunRecord) -> tuple[datetime, str]:
+            return (run.created_at or self._now, run.id)
+
+        found = sorted(
+            (
+                r
+                for r in self.rows.values()
+                if (query.seat is None or r.seat is query.seat)
+                and (query.status is None or r.status is query.status)
+            ),
+            key=key,
+            reverse=True,
+        )
+        after = decode_cursor(query.cursor) if query.cursor else None
+        if after is not None:
+            found = [r for r in found if key(r) < after]
+        page, more = found[: query.limit], len(found) > query.limit
+        cursor = encode_cursor(*key(page[-1])) if more and page else None
+        lines = tuple(
+            RunSummary(dataclasses.replace(r, tool_calls=()), len(r.tool_calls)) for r in page
+        )
+        return RunPage(lines, cursor)
 
     def confirm(self, run_id: str, call_id: str, at: datetime) -> None:
         run = self.rows.get(run_id)

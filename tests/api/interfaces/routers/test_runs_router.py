@@ -69,3 +69,21 @@ def test_an_mcp_call_keeps_the_clients_name():
     assert client.post("/v1/runs", json=body, headers=KEY).status_code == 201
     read = client.get(f"/v1/runs/{body['id']}").json()
     assert (read["seat"], read["flow"], read["client"]) == ("mcp", "direct", "Claude")
+
+
+def test_lists_runs_newest_first_and_filters():
+    from tests.api.application.use_cases.test_list_runs import five_runs
+
+    client = client_with(uow=five_runs())
+    page = client.get("/v1/runs", params={"limit": 2}).json()
+    assert [x["id"] for x in page["items"]] == ["r4", "r3"] and page["next_cursor"]
+    rest = client.get("/v1/runs", params={"cursor": page["next_cursor"]}).json()
+    assert [x["id"] for x in rest["items"]] == ["r2", "r1", "r0"]
+    chat = client.get("/v1/runs", params={"seat": "chat", "status": "failed"}).json()
+    assert [(x["id"], x["tool_count"]) for x in chat["items"]] == [("r2", 2)]
+
+
+def test_an_unknown_seat_or_status_is_422():
+    client = client_with(uow=FakeUnitOfWork())
+    for params in ({"seat": "agent"}, {"status": "running"}, {"limit": 101}):
+        assert client.get("/v1/runs", params=params).status_code == 422

@@ -15,7 +15,10 @@ from .outlier import Outlier
 from .outliers import Outliers
 from .pace_series import PaceSeries
 from .period_change import PeriodChange
+from .run_page import RunPage
+from .run_query import RunQuery
 from .run_record import RunRecord
+from .run_summary import RunSummary
 from .search_strategy import SearchStrategy
 from .skipped_category import SkippedCategory
 from .stored_reply import StoredReply
@@ -43,7 +46,10 @@ __all__ = [
     "Outliers",
     "PaceSeries",
     "PeriodChange",
+    "RunPage",
+    "RunQuery",
     "RunRecord",
+    "RunSummary",
     "SearchStrategy",
     "SkippedCategory",
     "StoredReply",

@@ -8,13 +8,16 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
 from api.application.dto import StoredReply
 from api.application.ports import UnitOfWork
-from api.domain.values import RunStatus
-from api.interfaces.schemas import RunBody, RunDecision, RunWrite
+from api.application.use_cases.list_runs import DEFAULT_LIMIT, MAX_LIMIT
+from api.domain.values import RunSeat, RunStatus
+from api.interfaces.schemas import RunBody, RunDecision, RunPageBody, RunWrite
 from api.interfaces.services import ServicesDep
 from api.interfaces.write_headers import WriteHeadersDep
 
@@ -32,6 +35,18 @@ def record_run(body: RunWrite, services: ServicesDep, headers: WriteHeadersDep) 
     key_hash = headers.request_hash("POST", "/v1/runs", body)
     reply = services.write(headers.idempotency_key, key_hash, perform)
     return JSONResponse(dict(reply.body or {}), status_code=reply.status_code)
+
+
+@router.get("/runs")
+def list_runs(
+    services: ServicesDep,
+    seat: RunSeat | None = None,
+    status: RunStatus | None = None,
+    cursor: str | None = None,
+    limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
+) -> RunPageBody:
+    """최신순 한 쪽. 줄마다 도구 호출의 수만 낸다 — 인자와 결과는 `/runs/{id}`에서."""
+    return RunPageBody.of(services.list_runs(seat, status, cursor, limit))
 
 
 @router.get("/runs/{run_id}")

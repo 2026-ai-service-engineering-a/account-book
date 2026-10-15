@@ -1,0 +1,24 @@
+{% from "icons.html" import icon %}
+<section id="run-list" class="card">
+{% if failed %}
+  <div class="card-content">
+    <div class="alert alert-destructive" role="alert">{{ icon("alert") }}<div class="alert-title">가계부 서버에 닿지 못했어요. 잠시 뒤에 다시 열어 주세요.</div></div>
+  </div>
+{% elif page.items %}
+  <div class="card-content flush run-items">{% include "partials/run_rows.html" %}</div>
+{% elif criteria.is_narrowed %}
+  <div class="empty">
+    <div class="empty-icon">{{ icon("search") }}</div>
+    <p class="empty-title">조건에 맞는 실행이 없어요.</p>
+    <p class="empty-description">필터를 지워볼까요?</p>
+    <div class="empty-actions"><a class="btn btn-outline" href="/runs">필터 지우기</a></div>
+  </div>
+{% else %}
+  <div class="empty">
+    <div class="empty-icon">{{ icon("inbox") }}</div>
+    <p class="empty-title">아직 AI 실행이 없어요.</p>
+    <p class="empty-description">채팅에서 물어보거나 기록해 보세요.</p>
+    <div class="empty-actions"><a class="btn" href="/">{{ icon("message") }}채팅으로</a></div>
+  </div>
+{% endif %}
+</section>

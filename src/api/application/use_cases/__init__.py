@@ -9,6 +9,7 @@ from .get_transaction import GetTransaction
 from .idempotent_write import IdempotentWrite
 from .list_catalog import ListCatalog
 from .list_pending_texts import ListPendingTexts
+from .list_runs import ListRuns
 from .load_documents import LoadDocuments
 from .put_embedding import PutEmbedding
 from .put_insight_cache import PutInsightCache
@@ -37,6 +38,7 @@ __all__ = [
     "IdempotentWrite",
     "ListCatalog",
     "ListPendingTexts",
+    "ListRuns",
     "LoadDocuments",
     "PutEmbedding",
     "PutInsightCache",

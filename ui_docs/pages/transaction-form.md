@@ -15,6 +15,10 @@
 
 둘은 **같은 폼**이다. 값이 채워져 있느냐만 다르다.
 
+에이전트가 넣은 거래(`source=agent`)를 열면 머리에 "이 기록을 만든 실행" 링크가 붙는다. 거래의
+`run_id`로 [실행 기록](runs.md)의 `/runs/{id}`에 간다 — 무엇을 듣고 어떤 칸으로 읽었는지, 언제
+확인됐는지가 거기 있다. 고쳐도 출처와 실행은 그대로 남는다.
+
 카테고리의 AI로 고르기는 `agent`의 `POST /classify`를 부른다. 조회가 아니라 판단이라서다
 (4.1, [../../docs/ai/category-suggestion-rag.md 3장](../../docs/ai/category-suggestion-rag.md#3-흐름--네-단계로-값이-싼-순서대로)).
 

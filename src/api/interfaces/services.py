@@ -18,6 +18,7 @@ from api.application.use_cases import (
     IdempotentWrite,
     ListCatalog,
     ListPendingTexts,
+    ListRuns,
     PutEmbedding,
     PutInsightCache,
     ReadBudgetStatuses,
@@ -61,6 +62,7 @@ class Services:
     search_documents: SearchDocuments
     record_run: RecordRun
     read_run: ReadRun
+    list_runs: ListRuns
     decide_run: DecideRun
     data_version: ReadDataVersion
     read_insight_cache: ReadInsightCache
