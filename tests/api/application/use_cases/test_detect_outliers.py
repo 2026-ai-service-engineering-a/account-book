@@ -16,7 +16,8 @@ from api.domain.values import (
 from tests.api.conftest import SEOUL, FakeUnitOfWork
 
 OCTOBER = TimeRange(datetime(2026, 10, 1, tzinfo=SEOUL), datetime(2026, 11, 1, tzinfo=SEOUL))
-# 식비의 평소(4~9월 10건): 중앙값 9,000원, MAD 400원 → 한계 max(11,076, 18,000) = 18,000원
+# 식비의 평소(4~9월 10건): 중앙값 9,000원, MAD 400원, 최댓값 10,000원
+# → 한계 max(11,076, 18,000, 10,000) = 18,000원
 FOOD_USUAL = (
     (4, 8000), (4, 9000), (5, 9500), (5, 8500), (6, 10000),
     (6, 9000), (7, 8800), (8, 9200), (9, 9600), (9, 8700),
@@ -107,3 +108,9 @@ def test_more_than_five_is_cut_and_says_so():
     rows = history() + [spend(60 + i, "food", 40000 + i, 10, 20) for i in range(5)]
     found = detect(ledger(rows))
     assert len(found.items) == 5 and found.truncated
+
+
+def test_what_the_last_six_months_already_had_is_usual():
+    # 8월에 50,000원 회식이 있었다면 10월의 45,000원·27,000원은 평소다
+    found = detect(ledger([*history(), spend(70, "food", 50000, 8, 20)]))
+    assert found.items == ()

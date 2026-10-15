@@ -6,6 +6,10 @@
 - 산포는 표준편차가 아니라 MAD(중앙값에서 떨어진 거리의 중앙값)다. 특이한 한 건이 평균과
   표준편차를 같이 끌어올려 자기를 평범하게 만드는 일이 없다.
 - 위쪽만 본다. 평소보다 적게 쓴 한 건은 리포트가 짚을 일이 아니다.
+- 지난 여섯 달의 최댓값도 바닥이다. 점심과 주말 저녁이 섞인 식비, 지하철과 가끔의 택시가
+  섞인 교통은 중앙값이 작은 쪽에 붙어서, 바닥이 없으면 늘 있던 저녁·택시가 매달 특이해진다.
+  12달 데모에서 이 바닥 없이 달마다 2~9건, 있으면 0~2건이었다. "여섯 달 중 가장 큰 금액"은
+  문장이 그대로 근거로 들 수 있는 말이기도 하다.
 """
 
 from __future__ import annotations
@@ -36,10 +40,11 @@ def baseline_start(start: datetime, zone: tzinfo) -> datetime:
     return local.replace(year=year, month=month + 1, day=day)
 
 
-def usual_upper(median: Money, mad: Money) -> Money:
-    """이 금액을 넘는 거래가 평소 범위를 벗어난 것이다(같으면 평소다)."""
+def usual_upper(median: Money, mad: Money, largest: Money) -> Money:
+    """이 금액을 넘는 거래가 평소 범위를 벗어난 것이다(같으면 평소다). `largest`는 평소 기간의
+    가장 큰 거래다."""
     spread = math.ceil(_Z_LIMIT * _MAD_TO_SIGMA * mad.amount)
-    return Money(max(median.amount + spread, median.amount * _FLOOR_RATIO))
+    return Money(max(median.amount + spread, median.amount * _FLOOR_RATIO, largest.amount))
 
 
 def unjudged(first_at: datetime | None, since: datetime, count: int) -> SkipReason | None:

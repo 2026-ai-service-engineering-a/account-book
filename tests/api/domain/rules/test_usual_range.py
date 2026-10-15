@@ -31,12 +31,12 @@ def test_a_utc_boundary_is_counted_in_the_users_zone():
 
 def test_the_upper_is_the_median_plus_the_scaled_spread():
     # 3.5 * 1.4826 * 2,000 = 10,378.2 → 10,379원 위
-    assert usual_upper(Money(9000), Money(2000)) == Money(19379)
+    assert usual_upper(Money(9000), Money(2000), Money(12000)) == Money(19379)
 
 
 def test_no_spread_still_needs_twice_the_median():
     # 매달 9,900원 구독: 산포가 0이라도 10,900원은 평소다
-    assert usual_upper(Money(9900), Money(0)) == Money(19800)
+    assert usual_upper(Money(9900), Money(0), Money(9900)) == Money(19800)
 
 
 def test_why_a_category_is_not_judged():
@@ -48,3 +48,8 @@ def test_why_a_category_is_not_judged():
 
 def test_a_category_that_starts_in_the_period_is_short_history():
     assert unjudged(None, datetime(2026, 4, 1, tzinfo=SEOUL), 0) is SkipReason.SHORT_HISTORY
+
+
+def test_nothing_the_last_six_months_already_had_is_unusual():
+    # 점심 9,000원이 중앙값인 식비에 주말 저녁 45,000원이 늘 있었다면 45,000원까지는 평소다
+    assert usual_upper(Money(9000), Money(500), Money(45000)) == Money(45000)

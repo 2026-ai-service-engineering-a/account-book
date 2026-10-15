@@ -36,11 +36,9 @@ def baselines(
         window = [t.amount.amount for t in same if since <= t.occurred_at < query.start]
         median = statistics.median(window) if window else 0
         mad = statistics.median([abs(a - median) for a in window]) if window else 0
-        out.append(
-            CategoryBaseline(
-                category, _won(median), _won(mad), len(window), min(before, default=None)
-            )
-        )
+        largest = Money(max(window, default=0))
+        first = min(before, default=None)
+        out.append(CategoryBaseline(category, _won(median), _won(mad), largest, len(window), first))
     return tuple(out)
 
 

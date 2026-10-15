@@ -47,7 +47,7 @@ class DetectOutliers:
                     skipped.append(SkippedCategory(usual.category_id, reason))
                     continue
                 medians[usual.category_id] = usual.median
-                uppers[usual.category_id] = usual_upper(usual.median, usual.mad)
+                uppers[usual.category_id] = usual_upper(usual.median, usual.mad, usual.largest)
             # 하나 더 받아 본다 — 넘쳤는지를 알려야 부르는 쪽이 "이게 전부"라고 말하지 않는다
             over = uow.stats.above(query, uppers, LIMIT + 1)
         items = tuple(

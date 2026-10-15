@@ -124,6 +124,7 @@ class SqlStatsRepository:
             select(
                 window.c.category_id,
                 func.percentile_cont(0.5).within_group(window.c.amount).label("median"),
+                func.max(window.c.amount).label("largest"),
                 func.count().label("n"),
             )
             .group_by(window.c.category_id)
@@ -145,6 +146,7 @@ class SqlStatsRepository:
                 type_coerce(present.c.category_id, String),
                 cast(func.round(cast(middle.c.median, Numeric)), Integer),
                 cast(func.round(cast(spread.c.mad, Numeric)), Integer),
+                cast(middle.c.largest, Integer),
                 cast(middle.c.n, Integer),
                 type_coerce(history.c.first_at, DateTime(timezone=True)),
             )
@@ -158,10 +160,11 @@ class SqlStatsRepository:
                 category_id=CategoryId(category),
                 median=Money(median or 0),
                 mad=Money(mad or 0),
+                largest=Money(largest or 0),
                 count=n or 0,
                 first_at=first_at,
             )
-            for category, median, mad, n, first_at in self._session.execute(statement)
+            for category, median, mad, largest, n, first_at in self._session.execute(statement)
         )
 
     def above(
