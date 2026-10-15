@@ -184,12 +184,13 @@ def test_the_chart_table_drops_one_chart_at_a_time():
         chart() | {"data": [412_000, 1_050_000]},  # 값 배열이 실려 왔다
         chart(source="call_1", x_field="expense", y_field="income"),  # 합계에는 행이 없다
         chart(unit="won"),  # 단위 밖
-        chart(title="남는 첫째"),
+        chart(title="남는 첫째", note="생활이 1,050,000원으로 가장 크다"),
         chart(source="call_3", x_field="merchant", y_field="amount", title="남는 둘째"),
         chart(title="셋째는 넘친다"),
     ]
     insight, _ = build(FakeModel(plan(OUTLIERS), assembled(charts)))
     assert [c.title for c in insight.charts] == ["남는 첫째", "남는 둘째"]
+    assert insight.charts[0].note == ""  # 숫자가 든 note는 비우고 차트는 살린다
     assert insight.charts[1].points[0].value == 890_000  # 금액 봉투에서 숫자를 꺼냈다
 
 

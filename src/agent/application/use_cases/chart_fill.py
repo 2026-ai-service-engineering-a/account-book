@@ -5,12 +5,15 @@
 | source가 이번 실행에서 부른 id인가 | 버린다 |
 | x_field·y_field가 결과의 행에 있나 | 버린다 |
 | 스펙에 값 배열이 실려 왔나         | 버린다 |
+| note에 숫자가 있나                 | note만 비운다. 선택 칸이라 차트는 살린다 |
 
-값은 코드가 source의 결과를 따라가 채운다. 모델이 쓴 숫자는 그림에 들어가지 않는다.
+값은 코드가 source의 결과를 따라가 채운다. 모델이 쓴 숫자는 그림에 들어가지 않는다 — 그림 밑
+한 줄도 그림이다. 막대 옆의 숫자는 아무도 검산하지 않는다(5장).
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping
 
 from agent.application.dto import Chart, ChartPoint, ChartSpec, ToolStep
@@ -18,6 +21,7 @@ from agent.application.dto import Chart, ChartPoint, ChartSpec, ToolStep
 KINDS = ("bar", "hbar", "line")
 UNITS = ("KRW", "count", "days")
 MAX_ANNOTATE = 2  # 전부 달면 아무것도 읽히지 않는다
+_DIGIT = re.compile(r"\d")
 
 
 def fill_chart(spec: ChartSpec, steps: Iterable[ToolStep]) -> Chart | None:
@@ -37,7 +41,8 @@ def fill_chart(spec: ChartSpec, steps: Iterable[ToolStep]) -> Chart | None:
         points.append(ChartPoint(str(label), value, str(label) in marks))
     if not points:
         return None
-    return Chart(spec.kind, spec.title, spec.unit, tuple(points), spec.note)
+    note = "" if _DIGIT.search(spec.note) else spec.note
+    return Chart(spec.kind, spec.title, spec.unit, tuple(points), note)
 
 
 def _rows(data: Mapping[str, object]) -> list[Mapping[str, object]]:
