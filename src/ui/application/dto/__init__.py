@@ -10,12 +10,15 @@ from .direction import Direction
 from .document_answer import DocumentAnswer
 from .document_hit import DocumentHit
 from .document_results import DocumentResults
+from .insight_chart import InsightChart
+from .insight_point import InsightPoint
 from .message_reading import MessageReading
 from .month_total import MonthTotal
 from .monthly_report import MonthlyReport
 from .pace_series import PaceSeries
 from .period import Period
 from .proposal import Proposal
+from .report_insight import ReportInsight
 from .search_mode import SearchMode
 from .source import Source
 from .totals import Totals
@@ -38,12 +41,15 @@ __all__ = [
     "DocumentAnswer",
     "DocumentHit",
     "DocumentResults",
+    "InsightChart",
+    "InsightPoint",
     "MessageReading",
     "MonthTotal",
     "MonthlyReport",
     "PaceSeries",
     "Period",
     "Proposal",
+    "ReportInsight",
     "SearchMode",
     "Source",
     "Totals",

@@ -4,6 +4,7 @@ from .data_fence import fence
 from .document_qa_prompt import DOCUMENT_QA_SCHEMA, document_qa_prompt
 from .insight_assembly_prompt import INSIGHT_SCHEMA, insight_assembly_prompt
 from .insight_plan_prompt import PLAN_SCHEMA, insight_plan_prompt
+from .insight_prompt_version import insight_prompt_version
 from .query_prompt import SYSTEM as QUERY_SYSTEM
 from .query_prompt import query_user_turn
 
@@ -19,5 +20,6 @@ __all__ = [
     "fence",
     "insight_assembly_prompt",
     "insight_plan_prompt",
+    "insight_prompt_version",
     "query_user_turn",
 ]

@@ -25,6 +25,7 @@ from ui.application.ports import (
     DocumentAnswerer,
     DocumentGateway,
     ReportGateway,
+    ReportNarrator,
     TransactionGateway,
 )
 from ui.infrastructure.agent import (
@@ -33,6 +34,7 @@ from ui.infrastructure.agent import (
     AgentChatAgent,
     AgentDocumentAnswerer,
     AgentDocumentGateway,
+    AgentReportNarrator,
     RoutedChatAgent,
 )
 from ui.infrastructure.api import (
@@ -66,9 +68,11 @@ from ui.interfaces.services import Services
 from ui.interfaces.web_app import build_web_app
 
 # agent가 붙으면 진짜가 서는 자리(ai_map의 key)
-_LIVE = frozenset({"capture", "classify", "query"})
+_LIVE = frozenset({"capture", "classify", "query", "insight"})
 # api 호출 하나의 상한. 화면 한 장이 기다리는 시간이라 짧게 둔다 — 집계도 DB가 하니 금방이다.
 _API_TIMEOUT = 5.0
+# agent가 리포트 한 번을 끊는 벽시계(docs/ai/agent-loop.md 8장)
+_REPORT_WALL_SECONDS = 10.0
 
 
 def create_app(
@@ -105,7 +109,7 @@ def create_app(
             answerer=_answerer(settings, documents),
             suggester=_category_suggester(settings),
             chat=chat,
-            narrator=ScriptedReportNarrator(),
+            narrator=_narrator(settings, clock),
             clock=clock,
             demo=demo,
             capture=_capture_reader(settings, capture_delay),
@@ -187,6 +191,18 @@ def _category_suggester(settings: Settings) -> CategorySuggester:
     # 검색 → (애매하면) LLM 한 번. 스키마를 못 맞추면 한 번 더 부르는 것까지 기다린다.
     timeout = settings.agent_timeout_seconds * 2 + 2
     return AgentCategorySuggester(settings.agent_base_url, timeout)
+
+
+def _narrator(settings: Settings, clock: Clock) -> ReportNarrator:
+    """리포트의 "눈에 띈 것". agent가 없으면 규칙 문구 대역이, 있으면 agent의 /insights가 선다.
+
+    agent가 죽으면 대역으로 물러서지 않는다 — 그 영역을 그리지 않는다(agentic-reports 7장).
+    """
+    if not settings.agent_base_url:
+        return ScriptedReportNarrator()
+    # agent가 실행 전체를 벽시계(리포트 10초)로 끊는다. 캐시·버전 읽기와 감사 기록까지 기다린다
+    timeout = _REPORT_WALL_SECONDS + 5
+    return AgentReportNarrator(settings.agent_base_url, settings.user_timezone, clock, timeout)
 
 
 def _chat_agent(settings: Settings, clock: Clock, scripted: ChatAgent) -> ChatAgent:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping
 from datetime import datetime
 
@@ -23,7 +24,7 @@ from api.application.dto import CategoryBaseline, Frequency, Totals, Transaction
 from api.domain.entities import Transaction
 from api.domain.values import CategoryId, Money
 
-from .rows import TransactionRow
+from .rows import BudgetRow, TransactionRow
 from .sql_transaction_repository import transaction_of
 from .transaction_filter import filter_conditions
 
@@ -101,6 +102,18 @@ class SqlStatsRepository:
 
     def first_occurred_at(self) -> datetime | None:
         return self._session.scalar(select(func.min(TransactionRow.occurred_at)))
+
+    def data_version(self, start: datetime, end: datetime) -> str:
+        t = TransactionRow
+        spent = self._session.execute(
+            select(func.count(), func.max(t.updated_at)).where(
+                t.occurred_at >= start, t.occurred_at < end
+            )
+        ).one()
+        # 예산은 바꿀 때까지 이어진다 — 어느 달을 바꿔도 리포트가 달라질 수 있어 전부 본다
+        budgets = self._session.execute(select(func.count(), func.max(BudgetRow.updated_at))).one()
+        parts = [str(v.isoformat() if isinstance(v, datetime) else v) for v in (*spent, *budgets)]
+        return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
 
     def baselines(self, query: TransactionQuery, since: datetime) -> tuple[CategoryBaseline, ...]:
         if query.start is None or query.direction is None:

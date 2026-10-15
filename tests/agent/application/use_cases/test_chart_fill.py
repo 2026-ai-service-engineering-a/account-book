@@ -51,3 +51,10 @@ def test_a_note_with_numbers_is_emptied_and_the_chart_kept():
     assert drawn is not None and drawn.note == "" and len(drawn.points) == 2
     plain = fill_chart(spec(note="생활이 가장 크게 늘었다"), [STEP])
     assert plain is not None and plain.note == "생활이 가장 크게 늘었다"
+
+
+def test_a_money_field_may_be_named_down_to_its_amount():
+    # 평가에서 모델이 "delta.amount"로 짚은 차트가 버려졌다 — 금액 봉투의 같은 칸이다
+    drawn = fill_chart(spec(y_field="delta.amount"), [STEP])
+    assert drawn is not None and drawn.points[0].value == 890000
+    assert fill_chart(spec(y_field="delta.currency"), [STEP]) is None

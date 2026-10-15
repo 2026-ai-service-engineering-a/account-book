@@ -86,3 +86,12 @@ def test_outliers_take_no_threshold_and_need_a_period():
     assert client.get("/v1/stats/outliers").status_code == 422
     reversed_period = {"from": OCTOBER["to"], "to": OCTOBER["from"]}
     assert client.get("/v1/stats/outliers", params=reversed_period).status_code == 422
+
+
+def test_the_data_version_is_opaque_and_moves_with_the_data():
+    uow = outliers.ledger()
+    client = client_with(uow)
+    first = client.get("/v1/stats/version", params=OCTOBER).json()["version"]
+    assert first == client.get("/v1/stats/version", params=OCTOBER).json()["version"]
+    uow.transactions.add(outliers.spend(99, "food", 12000, 10, 20))
+    assert client.get("/v1/stats/version", params=OCTOBER).json()["version"] != first

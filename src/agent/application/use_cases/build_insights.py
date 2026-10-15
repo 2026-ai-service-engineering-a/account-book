@@ -37,6 +37,10 @@ class BuildInsights:
     비었을 때만 한 번 다시 계획한다(5.3). LLM 호출은 많아야 계획 2 + 조립 1이고 각자 한 번씩
     다시 시킬 수 있다. 집계는 계획마다 `max_calls - 2`까지다.
     버리는 단위는 차트 하나, 문장 하나다. 모델에 닿지 못하면 `ModelUnavailable`이 올라간다.
+
+    벽시계 상한(agent-loop 8장 — 리포트 10초) 안에서 끝낸다. 추가 집계는 남은 시간의 절반까지만
+    기다린다 — 나머지는 조립의 몫이다. 상한에 닿으면 빈 답(wall_clock)이다. 덜 보여줄 수 있어도
+    늦으면 안 된다.
     """
 
     def __init__(
@@ -46,8 +50,10 @@ class BuildInsights:
         retrieve: Retrieve,
         max_calls: int,
         timer: Callable[[], float],
+        wall_seconds: float = 10.0,
     ) -> None:
         self._model = model
+        self._wall = wall_seconds
         self._run_tool = RunTool(ledger, retrieve, Mode.INSIGHT.tools, timer)
         self._per_plan = max(max_calls - len(_FIXED), 0)
 
@@ -56,7 +62,18 @@ class BuildInsights:
         # 기준일을 그 달 안에 둔다 — 지난달 리포트에서 this_month가 그 달, last_month가 앞 달이다
         last = month.replace(day=calendar.monthrange(month.year, month.month)[1])
         reference, label = min(today, last), f"{month:%Y-%m}"
-        run = InsightState(await self._gather(_FIXED, reference, zone))
+        run = InsightState()
+        deadline = asyncio.get_running_loop().time() + self._wall
+        try:
+            async with asyncio.timeout_at(deadline):
+                return await self._flow(run, label, reference, zone, deadline)
+        except TimeoutError:
+            return self._end(run, InsightStop.WALL_CLOCK)
+
+    async def _flow(
+        self, run: InsightState, label: str, reference: date, zone: tzinfo, deadline: float
+    ) -> Insight:
+        run.steps += await self._gather(_FIXED, reference, zone)
         if not all(s.result.ok for s in run.steps):
             return self._end(run, InsightStop.NO_BASE)
         empty_before: tuple[ToolStep, ...] = ()
@@ -73,8 +90,10 @@ class BuildInsights:
             )  # fmt: skip
             run.whys |= {call.call_id: step.why for call, step in planned}
             if not planned:
-                return self._end(run, InsightStop.NO_PLAN)
-            ran = await self._gather([call for call, _ in planned], reference, zone)
+                # 빈 계획은 "더 볼 것이 없다"이지 "말할 것이 없다"가 아니다 — 고정 호출의 결과로
+                # 조립한다. 평가에서 새 카테고리(병원)가 고정 호출에 있었는데 놓친 적이 있다
+                break
+            ran = await self._gather([call for call, _ in planned], reference, zone, deadline)
             run.steps += ran
             if empty_before or not _all_empty(ran):
                 break
@@ -89,10 +108,30 @@ class BuildInsights:
         stop = InsightStop.ASSEMBLED if run.charts or run.highlights else InsightStop.DISCARDED
         return self._end(run, stop, len(draft.charts) + len(draft.highlights))
 
-    async def _gather(self, calls: Sequence[ToolCall], today: date, zone: tzinfo) -> list[ToolStep]:
-        """서로 독립이라 동시에 부른다. 실패한 단계도 봉투다 — 그 단계만 비고 나머지로 간다."""
-        results = await asyncio.gather(*(self._run_tool(c, today, zone) for c in calls))
-        return [ToolStep(c, r) for c, r in zip(calls, results, strict=True)]
+    async def _gather(
+        self,
+        calls: Sequence[ToolCall],
+        today: date,
+        zone: tzinfo,
+        deadline: float | None = None,
+    ) -> list[ToolStep]:
+        """서로 독립이라 동시에 부른다. 실패한 단계도 봉투다 — 그 단계만 비고 나머지로 간다.
+
+        `deadline`이 있으면 남은 시간의 절반까지만 기다리고, 그때까지 끝나지 않은 단계는 버린다.
+        """
+        tasks = [asyncio.ensure_future(self._run_tool(c, today, zone)) for c in calls]
+        if deadline is not None:
+            left = (deadline - asyncio.get_running_loop().time()) / 2
+            await asyncio.wait(tasks, timeout=max(left, 0))
+            for task in tasks:
+                task.cancel()  # 끝난 것에는 아무 일도 없다
+        else:
+            await asyncio.gather(*tasks)
+        return [
+            ToolStep(c, t.result())
+            for c, t in zip(calls, tasks, strict=True)
+            if t.done() and not t.cancelled()
+        ]
 
     async def _ask[T](
         self, run: InsightState, prompt: Prompt, parse: Callable[[Mapping[str, object]], T]

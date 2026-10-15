@@ -195,3 +195,11 @@ def test_outliers_send_the_filter_and_read_the_report():
     assert seen[0].url.params["from"] == "2026-09-01T00:00:00+09:00"
     assert found.items[0].merchant == "전자랜드" and found.items[0].usual_upper.amount == 89000
     assert found.skipped[0].reason == "short_history" and found.baseline.start.month == 3
+
+
+def test_the_data_version_is_asked_over_a_period():
+    handler, seen = recorder(body={"version": "3f2a"})
+    september = TimeRange(datetime(2026, 9, 1, tzinfo=SEOUL), datetime(2026, 10, 1, tzinfo=SEOUL))
+    assert asyncio.run(api(handler).data_version(september)) == "3f2a"
+    assert seen[0].url.path == "/v1/stats/version"
+    assert seen[0].url.params["to"] == "2026-10-01T00:00:00+09:00"

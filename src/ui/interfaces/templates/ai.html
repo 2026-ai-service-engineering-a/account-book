@@ -2,5 +2,7 @@
 {#- 화면의 AI 표시. 누르면 위키의 그 자리로 간다. 자리 목록은 interfaces/ai_map 한 곳에 있다. -#}
 {% macro ai_badge(key, label="") -%}
 {%- set seat = AI_SEATS[key] -%}
-<a class="ai-badge" href="/wiki#{{ seat.key }}" title="{{ seat.name }} — {{ seat.flow_detail }}. 지금은 각본 대역이 선다">{{ icon("sparkles") }}AI{% if label %} · {{ label }}{% endif %} · {{ seat.flow }}</a>
+{#- 요청 문맥이 없는 조각(채팅 SSE)은 live_seats를 모른다 — 그때는 대역으로 적는다 -#}
+{%- set now = "agent가 진짜 LLM으로 돈다" if key in (live_seats | default(())) else "각본 대역이 선다" -%}
+<a class="ai-badge" href="/wiki#{{ seat.key }}" title="{{ seat.name }} — {{ seat.flow_detail }}. 지금은 {{ now }}">{{ icon("sparkles") }}AI{% if label %} · {{ label }}{% endif %} · {{ seat.flow }}</a>
 {%- endmacro %}

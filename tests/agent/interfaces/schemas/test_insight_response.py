@@ -5,5 +5,5 @@ from agent.interfaces.schemas import InsightResponse
 
 
 def test_an_empty_answer_is_still_an_answer():
-    body = InsightResponse.of(Insight(InsightStop.NO_PLAN)).model_dump()
+    body = InsightResponse.of(Insight(InsightStop.DISCARDED)).model_dump()
     assert body == {"charts": [], "highlights": []}

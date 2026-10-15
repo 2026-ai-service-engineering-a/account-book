@@ -175,6 +175,12 @@ class FakeLedger:
     async def frequency(self, where: TransactionFilter) -> Frequency:
         return self._reply("frequency", Frequency, where)
 
+    async def data_version(self, period: TimeRange) -> str:
+        if "data_version" not in self.replies:
+            self.calls.append(("data_version", (period,)))
+            return "v1"  # 리포트 캐시의 키 — 따로 정하지 않으면 늘 같은 데이터다
+        return self._reply("data_version", str, period)
+
     async def outliers(self, where: TransactionFilter) -> OutlierReport:
         return self._reply("outliers", OutlierReport, where)
 
@@ -230,3 +236,21 @@ class FakeRecorder:
         if self._fail is not None:
             raise self._fail
         self.runs.append((run, model))
+
+
+class FakeInsightCache:
+    """리포트 캐시 자리. `fail`을 주면 읽기·쓰기가 그것을 던진다."""
+
+    def __init__(self, fail: Exception | None = None) -> None:
+        self._fail = fail
+        self.rows: dict[str, Mapping[str, object]] = {}
+
+    async def get(self, key: str) -> Mapping[str, object] | None:
+        if self._fail is not None:
+            raise self._fail
+        return self.rows.get(key)
+
+    async def put(self, key: str, body: Mapping[str, object]) -> None:
+        if self._fail is not None:
+            raise self._fail
+        self.rows[key] = body

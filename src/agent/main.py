@@ -11,11 +11,12 @@ import time
 from fastapi import FastAPI
 
 from agent.application.dto import ClassifyThresholds, LoopLimits, RetrievalDefaults
-from agent.application.ports import Embedder, LanguageModel, LedgerApi, RunRecorder
+from agent.application.ports import Embedder, InsightCache, LanguageModel, LedgerApi, RunRecorder
 from agent.application.use_cases import (
     AnswerQuestion,
     AskDocuments,
     BuildInsights,
+    CachedInsights,
     ClassifyCategory,
     ReadCapture,
     RecordRun,
@@ -23,7 +24,7 @@ from agent.application.use_cases import (
     SyncIndex,
 )
 from agent.domain.values import ChunkStrategy, SearchMode
-from agent.infrastructure.http import HttpLedgerApi, HttpRunRecorder
+from agent.infrastructure.http import HttpInsightCache, HttpLedgerApi, HttpRunRecorder
 from agent.infrastructure.llm import LitellmEmbedder, LitellmLanguageModel
 from agent.infrastructure.settings import Settings
 from agent.interfaces.services import Services
@@ -37,6 +38,8 @@ _DEFAULT_LIMITS = LoopLimits(max_steps=8, max_cost_usd=0.5, wall_seconds=_CHAT_W
 # 감사 기록 한 번의 상한. 기록을 기다리느라 답이 늦어지면 안 된다 — LLM 호출보다 짧게.
 _RECORD_TIMEOUT_SECONDS = 2.0
 _DEFAULT_INSIGHT_CALLS = 6
+# 리포트 한 번의 벽시계 상한. 흐름이 정하는 값이다(docs/ai/agent-loop.md 8장 — 리포트 10초).
+_REPORT_WALL_SECONDS = 10.0
 
 
 def create_app(
@@ -45,6 +48,7 @@ def create_app(
     ledger: LedgerApi | None = None,
     embedder: Embedder | None = None,
     recorder: RunRecorder | None = None,
+    cache: InsightCache | None = None,
 ) -> FastAPI:
     """가짜를 넘기면 그것을 쓰고, 넘기지 않은 자리는 설정으로 진짜를 만든다."""
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -52,7 +56,7 @@ def create_app(
     logging.getLogger("LiteLLM").setLevel(logging.WARNING)
     thresholds, limits, defaults = _DEFAULT_THRESHOLDS, _DEFAULT_LIMITS, RetrievalDefaults()
     insight_calls = _DEFAULT_INSIGHT_CALLS
-    if model is None or ledger is None or recorder is None:
+    if model is None or ledger is None or recorder is None or cache is None:
         settings = settings or Settings()
         thresholds = ClassifyThresholds(
             settings.classify_min_confidence, settings.classify_abstain_below
@@ -75,6 +79,7 @@ def create_app(
         recorder = recorder or HttpRunRecorder(
             settings.api_base_url, timeout=_RECORD_TIMEOUT_SECONDS
         )
+        cache = cache or HttpInsightCache(settings.api_base_url, timeout=_RECORD_TIMEOUT_SECONDS)
         if embedder is None and settings.embedding_model:
             embedder = LitellmEmbedder(
                 settings.embedding_model,
@@ -93,7 +98,14 @@ def create_app(
             answer=answer,
             retrieve=retrieve,
             ask=AskDocuments(retrieve, model),
-            insights=BuildInsights(model, ledger, retrieve, insight_calls, time.perf_counter),
+            insights=CachedInsights(
+                BuildInsights(
+                    model, ledger, retrieve, insight_calls, time.perf_counter, _REPORT_WALL_SECONDS
+                ),
+                ledger,
+                cache,
+                model.model,
+            ),
             record=RecordRun(recorder, model.model),
         )
     )

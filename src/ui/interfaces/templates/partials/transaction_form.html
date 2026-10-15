@@ -1,4 +1,4 @@
-{% from "ai.html" import ai_badge %}
+{% from "ai.html" import ai_badge with context %}
 {% from "icons.html" import icon %}
 {% set action = "/transactions/" ~ existing.id if existing else "/transactions" %}
 {% set filled = filled or () %}

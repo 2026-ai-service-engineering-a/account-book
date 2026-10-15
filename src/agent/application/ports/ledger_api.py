@@ -44,6 +44,10 @@ class LedgerApi(Protocol):
 
     async def frequency(self, where: TransactionFilter) -> Frequency: ...
 
+    async def data_version(self, period: TimeRange) -> str:
+        """그 기간 거래와 예산의 버전 — 리포트 캐시의 키에 들어간다. 바뀌면 다른 글이다."""
+        ...
+
     async def outliers(self, where: TransactionFilter) -> OutlierReport:
         """평소 범위를 벗어난 거래. 기준은 api가 정한다 — 여기서 넘기는 것은 기간과 걸름뿐이다."""
         ...

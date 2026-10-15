@@ -164,12 +164,13 @@ DB도 LLM도 모른다. 화면을 전부 갈아엎어도 도메인 규칙은 그
 |---|---|
 | `accounts` | id, name, kind(cash/card/bank) |
 | `categories` | id, name, parent_id |
-| `transactions` | id, occurred_at, amount, direction(in/out), account_id, category_id, merchant, memo, **source**, **run_id** |
-| `budgets` | id, category_id, period(YYYY-MM), limit_amount — 바뀐 달만 적고 바꿀 때까지 이어진다 |
+| `transactions` | id, occurred_at, amount, direction(in/out), account_id, category_id, merchant, memo, **source**, **run_id**, created_at, updated_at |
+| `budgets` | id, category_id, period(YYYY-MM), limit_amount, updated_at — 바뀐 달만 적고 바꿀 때까지 이어진다 |
 | `agent_runs` | id, **seat**, **flow**, utterance, model, steps, tokens, cost_usd, status, **stop_reason** |
 | `tool_calls` | id, run_id, **call_id**, tool, args, result, confirmed_at |
 | `idempotency_keys` | key, request_hash, response, status_code, created_at |
 | `text_embeddings` | model, text_hash, vector, updated_at |
+| `insight_cache` | key(sha256), body(JSONB), created_at — 리포트 AI 영역의 캐시. TTL 없음 |
 | `category_rules` | id, merchant_pattern, category_id, source(seed/user), hit_count |
 | `documents` | id(법령명), title, source, mst(법령일련번호), effective_date, body — 받은 원문 그대로 |
 | `document_chunks` | id, document_id, strategy, heading, body(원문), search_text, text_hash, position |

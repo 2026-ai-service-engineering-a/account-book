@@ -18,7 +18,10 @@ from api.application.use_cases import (
     ListCatalog,
     ListPendingTexts,
     PutEmbedding,
+    PutInsightCache,
     ReadBudgetStatuses,
+    ReadDataVersion,
+    ReadInsightCache,
     ReadPace,
     RecordRun,
     SearchDocuments,
@@ -55,6 +58,9 @@ class Services:
     put_embedding: PutEmbedding
     search_documents: SearchDocuments
     record_run: RecordRun
+    data_version: ReadDataVersion
+    read_insight_cache: ReadInsightCache
+    put_insight_cache: PutInsightCache
 
 
 def get_services(request: Request) -> Services:

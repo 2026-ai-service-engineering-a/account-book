@@ -1,5 +1,5 @@
 """기간 집계 — `/v1/stats/frequency`(count_frequency), `/v1/stats/compare`(compare_periods),
-`/v1/stats/outliers`(detect_outliers).
+`/v1/stats/outliers`(detect_outliers), 그리고 리포트 캐시의 `/v1/stats/version`.
 
 기간은 이름이 아니라 경계로 받는다. `from`·`to`는 오프셋이 붙은 ISO 8601 시각이고 `[from, to)`다.
 naive 시각은 422다 — 어느 타임존의 자정인지 모르는 경계로 세지 않는다.
@@ -15,7 +15,7 @@ from pydantic import AwareDatetime
 
 from api.domain.values import CategoryId, Direction
 from api.interfaces.query_span import time_range
-from api.interfaces.schemas import FrequencyBody, OutliersBody, PeriodChangeBody
+from api.interfaces.schemas import DataVersionBody, FrequencyBody, OutliersBody, PeriodChangeBody
 from api.interfaces.services import ServicesDep
 
 router = APIRouter(prefix="/v1/stats")
@@ -76,3 +76,13 @@ def outliers(
         text=q,
     )
     return OutliersBody.of(found)
+
+
+@router.get("/version")
+def version(
+    services: ServicesDep,
+    start: Annotated[AwareDatetime, Query(alias="from")],
+    end: Annotated[AwareDatetime, Query(alias="to")],
+) -> DataVersionBody:
+    """기간 거래와 예산의 버전. 도구가 아니다 — 리포트 캐시의 키에 들어간다(agentic-reports 8장)."""
+    return DataVersionBody(version=services.data_version(time_range(start, end, "to")))

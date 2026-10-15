@@ -5,12 +5,15 @@ from .candidate_body import CandidateBody
 from .category_body import CategoryBody
 from .category_change_body import CategoryChangeBody
 from .chunk_hit_body import ChunkHitBody
+from .data_version_body import DataVersionBody
 from .document_search_request import DocumentSearchRequest
 from .embedding_body import EmbeddingBody
 from .error_body import ErrorBody
 from .error_response import ErrorResponse
 from .evidence_body import EvidenceBody
 from .frequency_body import FrequencyBody
+from .insight_cache_body import InsightCacheBody
+from .insight_cache_write import InsightCacheWrite
 from .month_total_body import MonthTotalBody
 from .monthly_report_body import MonthlyReportBody
 from .outlier_body import OutlierBody
@@ -37,12 +40,15 @@ __all__ = [
     "CategoryBody",
     "CategoryChangeBody",
     "ChunkHitBody",
+    "DataVersionBody",
     "DocumentSearchRequest",
     "EmbeddingBody",
     "ErrorBody",
     "ErrorResponse",
     "EvidenceBody",
     "FrequencyBody",
+    "InsightCacheBody",
+    "InsightCacheWrite",
     "MonthTotalBody",
     "MonthlyReportBody",
     "OutlierBody",
