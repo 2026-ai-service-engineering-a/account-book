@@ -11,8 +11,8 @@
 | # | 어디 | 무엇이 부딪치나 | 이 계획의 추천 |
 |---|---|---|---|
 | D1 | [README.md 2장 원칙 6](README.md#2-모든-ai-기능에-걸리는-원칙) · [tools.md 7장](tools.md#7-쓰기-도구와-확인) ↔ [tools.md 4.2](tools.md#42-쓰기) · [api-contract 4장](../api-contract.md#4-확인이-필요한-쓰기) | 원칙 6과 tools.md 7장은 "쓰기는 언제나 제안 → 확인 → 실행, 확인 전에는 api로 아무것도 가지 않는다"다. 4.2와 api-contract 4장은 `create_transaction`의 확인을 "임계값(10만 원) 이상"으로 적었다. api-contract 4장은 "412를 받으면 확인을 묻고 같은 키로 다시"라고 해서 먼저 질러 보는 흐름까지 말한다 | **언제나 확인**한다(결정 4). 임계값은 api 쪽 안전망으로 남긴다. 4.2·api-contract 4장의 문구는 "agent는 언제나 묻고, api는 임계값 이상을 한 번 더 막는다"로 고친다 |
-| D2 | [chat.md 2장](../../ui_docs/pages/chat.md#2-라우트와-데이터) ↔ [chat.md 5.1](../../ui_docs/pages/chat.md#51-카드에-담기는-것) | 2장은 확인 경로를 `POST /chat/{run_id}/confirm`으로, 5.1은 버튼이 `proposal_id`를 싣는다고 적었다. 지금 ui의 경로는 `/chat/proposals/{proposal_id}/{confirm\|cancel}`이다 | **`proposal_id`로 간다**(결정 3). 실행(run)과 제안은 다른 것이다 — 만료된 제안을 다시 내면 run이 새로 생긴다 |
-| D3 | [agent-loop 9장](agent-loop.md#9-상태와-재개) ↔ 감사 로그(#14) | 9장은 `awaiting_confirmation`이 재시작을 살아남는다고 한다. 지금 `agent`는 DB가 없다. 감사 로그는 끝날 때 한 번 `done`·`failed`로만 넣고 고치는 길이 없다(`POST /v1/runs`, CHECK `status IN ('done','failed')`) | **제안은 api의 새 표에 둔다**(결정 5). 감사 로그는 고치지 않고, 제안 때 한 줄·결정 때 한 줄을 넣는다(결정 7) |
+| D2 | [chat.md 2장](../../ui_docs/pages/chat.md#2-라우트와-데이터) ↔ [chat.md 5.1](../../ui_docs/pages/chat.md#51-카드에-담기는-것) | 2장은 확인 경로를 `POST /chat/{run_id}/confirm`으로, 5.1은 버튼이 `proposal_id`를 싣는다고 적었다. 지금 ui의 경로는 `/chat/proposals/{proposal_id}/{confirm\|cancel}`이다 | **`proposal_id`로 간다**(결정 3). 제안 하나가 실행(run) 하나라 `proposal_id`는 그 `run_id`다 — 만료된 제안을 다시 내면 run도 새로 생긴다 |
+| D3 | [agent-loop 9장](agent-loop.md#9-상태와-재개) ↔ 감사 로그(#14) | 9장은 `awaiting_confirmation`이 재시작을 살아남는다고 한다. 지금 `agent`는 DB가 없다. #14의 감사 로그는 끝날 때 한 번 `done`·`failed`로만 넣고 고치는 길이 없다(`POST /v1/runs`, CHECK `status IN ('done','failed')`) — `tool_calls.confirmed_at`은 첫 마이그레이션부터 있는데 채울 길이 없다 | **제안을 감사 테이블에 둔다**(결정 5). `awaiting_confirmation`·`aborted`를 상태에 더하고, 상태와 `confirmed_at`만 "대기일 때만" 고치는 좁은 길을 연다. #14의 "넣기만 한다"를 이만큼 푼다 |
 | D4 | [tools.md 6장](tools.md#6-자리마다-도구를-좁힌다) ↔ v1.0 범위 · [agent-loop 3장](agent-loop.md#3-어느-기능에-어느-흐름인가) | 6장의 `capture` 모드는 `suggest_category`·`search_transactions` + 쓰기 넷이다. v1.0은 채팅 기록을 `create_transaction` 하나로 정했다. agent-loop 3장은 기록을 "단발 + 확인 게이트, 순서는 코드가 정한다"라고 한다. tools.md 7장의 "도구 호출 → 제안"은 모델이 도구를 고르는 것처럼 읽힌다 | **단발**이다(결정 1). 모델은 도구를 고르지 않는다. `capture` 모드는 `suggest_category`·`create_transaction` 둘로 좁힌다 |
 | D5 | [chat.md 5.2](../../ui_docs/pages/chat.md#52-확인이-오가는-순서) ↔ 지금의 대역 | 5.2는 "ui는 확인된 쓰기를 api로 직접 보내지 않는다"다. 지금 대역은 ui 안에 있어서 확인을 누르면 ui가 `X-Confirmed-By`를 붙여 api에 직접 쓴다 | 대역이 빠지면 저절로 맞는다. capture-chat의 끝나는 조건에 넣었다(#15) |
 | D6 | 감사 로그의 `seat`·`flow` | `RunSeat.flow`는 자리에서 정해진다 — `chat`이면 `react`다. 채팅의 기록은 `/chat` 화면에서 오지만 단발이다 | `capture` 자리를 다시 쓴다(결정 7). 판단이 폼의 "한 줄로 채우기"와 같고, 쓰기가 붙었는지는 도구 호출로 드러난다 |
@@ -47,9 +47,9 @@
 | 2 | 기록/질문 가르기 | ① 지금처럼 ui의 `RoutedChatAgent`가 정규식으로 ② agent가 추출 결과의 `kind`로 | **①.** 모드는 코드가 정한다(tools.md 6장). ②는 모델이 모드를 고르는 셈이다. 기록 자리에 질문이 오면(`kind=question`) 바꿔 답하지 않고 "질문은 그대로 다시 보내 주세요"로 돌려보낸다 |
 | 3 | agent의 경로 | ① `POST /record`(SSE) + `POST /record/proposals/{id}/confirm`·`cancel` ② `/chat` 하나에 합치고 본문으로 가른다 | **①.** 경로가 곧 모드다. 질문 경로(`/chat`)에는 쓰기 도구가 없다는 사실이 경로로 보인다. 확인은 `proposal_id`로(D2) |
 | 4 | 언제 묻나 | ① 언제나 ② 임계값(10만 원) 이상만 | **①.** 원칙 6 — 조용히 쓰는 경로를 만들지 않는다(D1). 8,500원도 카드를 거친다. api의 임계값은 거짓 확인 헤더를 막지 못하지만(api-contract 4장의 한계) 안전망으로 둔다 |
-| 5 | 제안을 어디에 두나 | ① agent 메모리 ② api의 새 표 `proposals` ③ `agent_runs`에 `awaiting_confirmation`을 두고 고친다 | **②.** ①은 재시작에 사라진다(agent-loop 9장). ③은 넣기만 하는 감사 로그에 고치는 길을 연다. ②는 agent가 DB를 모른다는 경계를 지키고 수명(24시간)을 표가 안다 |
+| 5 | 제안을 어디에 두나 | ① agent 메모리 ② api의 새 표 `proposals` ③ 감사 테이블 — `agent_runs`에 `awaiting_confirmation`으로 넣고 고친다 | **③.** 원래 설계가 이것을 전제로 했다 — `tool_calls.confirmed_at`(api-contract 4장 "사후에 대조할 수 있다"), agent-loop 9장의 `awaiting_confirmation`. ①은 재시작에 사라진다. ②는 초안이 제안 표와 `tool_calls.args`에 두 번 들어간다. 처음에는 #14의 "감사 로그는 넣기만" 때문에 ②를 추천했다가 뒤집었다 — 고치는 길은 상태와 `confirmed_at` 둘로 좁힌다 |
 | 6 | 멱등 키 | ① 제안 때 `{run_id}:{seq}`로 정해 제안과 같이 저장 ② 확인 때 만든다 | **①.** 재시도해도, 두 번 눌러도, 재시작해도 같은 키다(tools.md 7장). 만료 뒤 다시 낸 제안은 새 run이라 새 키다 — 지워진 키를 다시 쓰지 않는다(agent-loop 6장) |
-| 7 | 감사 기록 | ① 제안 때 한 줄 + 결정 때 한 줄 ② 결정 때 한 줄 ③ 한 줄을 고친다 | **①.** 끝나지 않은 제안(그냥 닫은 창)도 남는다. 두 줄은 `run_id`로 잇는다(결정 줄의 `utterance`가 제안의 run). 자리는 `capture`, 흐름 `single`(D6). 결정 줄의 `create_transaction`에 `confirmed_at`을 싣는다 — `POST /v1/runs`의 도구 호출에 칸이 하나 는다 |
+| 7 | 감사 기록 | ① 제안 줄을 결정 때 고친다 ② 제안 줄 + 결정 줄 | **①** — 결정 5를 따른다. 제안이 곧 감사 줄이다: `status=awaiting_confirmation`, 도구 호출은 `suggest_category`와 `create_transaction`(인자 = 초안, 결과 없음). 확인되면 `done`(+ `confirmed_at`, 결과), 취소·만료면 `aborted`. 자리는 `capture`, 흐름 `single`(D6). 끝나지 않은 제안(그냥 닫은 창)은 대기로 남아 있다가 만료된다 |
 | 8 | 카테고리를 못 고르면 | ① "기타"로 두고 카드에 밝힌다 ② 기록하지 않고 폼으로 보낸다 | **①.** 대역과 같다. 카드 둘째 줄에 "카테고리는 AI가 고르지 못해 기타로 둡니다"를 단다. 카드에서 고치는 칸은 두지 않는다(chat.md 5.1) — 틀리면 취소하고 폼으로 |
 | 9 | 결제수단을 못 읽으면 | ① 카드로 두고 카드에 보인다 ② 묻는다 | **①.** 대역과 같다. 결제수단은 카드 둘째 줄에 늘 보인다 |
 | 10 | 날짜를 말하지 않으면 | ① 지금 ② 묻는다 | **①.** 대역과 같다. 날짜는 카드 첫 줄에 보인다 |
@@ -74,16 +74,16 @@
 | 못 고르면 `etc`·`other_income` | 같다 + 카드에 밝힌다 | 카드 문구 한 줄 |
 | 결제수단 없으면 `card` | 같다 | — |
 | 날짜: 말 안 했으면 지금, `어제`만 말하면 12시 | `SaidWhen.resolve`, 말 안 했으면 지금 | 끼니·시각 표현을 모델이 읽는다 |
-| `tool: create_transaction` 이벤트 후 `proposal` 이벤트 | 같다. 제안은 api `proposals`에 먼저 저장하고 나서 낸다 | 재시작을 살아남는다 |
-| 제안 id = uuid, `run_id` = uuid, 메모리 `dict`에 보관 | `proposal_id`·`run_id`·멱등 키 `{run_id}:2`를 표에 보관, 24시간 | 수명이 생긴다 |
+| `tool: create_transaction` 이벤트 후 `proposal` 이벤트 | 같다. 제안은 감사 테이블에 `awaiting_confirmation`으로 먼저 저장하고 나서 낸다. 저장이 실패하면 카드를 내지 않는다 | 재시작을 살아남는다 |
+| 제안 id = uuid, `run_id` = uuid, 메모리 `dict`에 보관 | `proposal_id` = `run_id`. 멱등 키 `{run_id}:2`는 저장된 줄에서 다시 만든다. 수명은 `created_at` + 24시간 | 수명이 생긴다 |
 | 카드: 날짜·카테고리 이름·금액(부호)·결제수단 이름·가맹점 | 같은 칸 + 고르지 못한 칸의 밝힘 | — |
-| 확인: 메모리에서 꺼낸다, 없으면 `not_found` | 표에서 상태를 본다 — 대기·실행됨·취소됨·만료됨 | 두 번 누름·만료가 이름을 갖는다 |
+| 확인: 메모리에서 꺼낸다, 없으면 `not_found` | 감사 줄의 상태를 본다 — 대기·쓰는 중(`confirmed_at`만 있음)·끝남·취소·만료 | 두 번 누름·만료가 이름을 갖는다 |
 | **ui가** api에 `X-Confirmed-By: user` + `{run_id}:1` + `X-Agent-Run-Id`로 쓴다 | **agent가** 같은 헤더로 쓴다. 키는 제안 때 정한 것 | D5가 풀린다 |
 | 422면 `error` 이벤트(`validation_error`, 칸별 문구) | 같다. 제안은 대기로 남긴다 — 고칠 길이 카드에 없으니 취소를 권한다 | — |
 | 기록 뒤 지출이면 `get_budget_status`로 예산 한두 줄 | 같다(코드가 쓴다) | — |
-| 취소: "취소했어요. 기록하지 않았습니다." | 같다 + 표를 취소됨으로, 감사 한 줄 | — |
+| 취소: "취소했어요. 기록하지 않았습니다." | 같다 + 감사 줄을 `aborted`(`cancelled`)로 | — |
 | 글을 6자씩 `token`으로 흘린다 | `message` 한 번 | 결정 11 |
-| 감사 로그 없음 | 제안 때·결정 때 한 줄씩(`seat=capture`) | 결정 7 |
+| 감사 로그 없음 | 제안이 곧 감사 줄(`seat=capture`), 결정 때 그 줄을 고친다 | 결정 5·7 |
 
 ---
 
@@ -106,8 +106,7 @@ sequenceDiagram
     AG->>LLM: 추출 1회
     AG-->>U: tool suggest_category
     AG->>API: POST /v1/categories/suggest
-    AG->>API: POST /v1/proposals (run_id, 초안, 멱등 키, 만료 24h)
-    AG->>API: POST /v1/runs (stop=proposed)
+    AG->>API: POST /v1/runs (status=awaiting_confirmation, 도구 호출 둘 — 저장이 실패하면 카드를 내지 않는다)
     AG-->>U: tool create_transaction · proposal · done
     U-->>B: 확인 카드
     Note over B,API: transactions에는 아직 아무것도 없다
@@ -123,12 +122,12 @@ sequenceDiagram
     participant API as api
     B->>U: POST /chat/proposals/{id}/confirm (버튼은 누른 뒤 잠근다)
     U->>AG: POST /record/proposals/{id}/confirm (SSE)
-    AG->>API: PATCH /v1/proposals/{id} 대기 → 실행 중
+    AG->>API: GET /v1/runs/{id} — 대기, 24시간 안
+    AG->>API: confirmed_at 채우기 — 비어 있을 때만
     AG->>API: POST /v1/transactions + Idempotency-Key {run_id}:2 + X-Confirmed-By + X-Agent-Run-Id
     API-->>AG: 201
-    AG->>API: PATCH /v1/proposals/{id} → 실행됨(transaction_id)
+    AG->>API: 대기 → done(stop=confirmed, 결과 = 거래)
     AG->>API: GET /v1/budgets/status (지출이면)
-    AG->>API: POST /v1/runs (stop=confirmed, confirmed_at)
     AG-->>U: message "기록했어요. 9월 식비 …" · done
     U-->>B: 카드를 결과로 바꾼다
 ```
@@ -143,8 +142,7 @@ sequenceDiagram
     participant API as api
     B->>U: POST /chat/proposals/{id}/cancel
     U->>AG: POST /record/proposals/{id}/cancel
-    AG->>API: PATCH /v1/proposals/{id} 대기 → 취소됨
-    AG->>API: POST /v1/runs (stop=cancelled)
+    AG->>API: 대기 → aborted(stop=cancelled) — confirmed_at이 비어 있을 때만
     AG-->>U: message "취소했어요. 기록하지 않았습니다." · done
     Note over AG: 조용히 지우지 않는다 — 기다리는 제안이 남지 않게(chat.md 5장)
 ```
@@ -159,10 +157,10 @@ sequenceDiagram
     participant API as api
     B->>U: 어제 띄운 카드의 확인
     U->>AG: POST /record/proposals/{id}/confirm
-    AG->>API: GET /v1/proposals/{id} → 만료됨(expires_at 지남)
+    AG->>API: GET /v1/runs/{id} → 대기인데 created_at + 24시간이 지났다
     Note over AG,API: 옛 멱등 키는 이미 지워졌을 수 있다 — 쓰지 않는다
-    AG->>API: POST /v1/proposals (새 run_id, 같은 초안, 새 키)
-    AG->>API: POST /v1/runs (옛 제안 stop=expired) · POST /v1/runs (새 제안 stop=proposed)
+    AG->>API: 옛 줄 대기 → aborted(stop=expired)
+    AG->>API: POST /v1/runs (새 run_id, 같은 초안, awaiting_confirmation)
     AG-->>U: message "시간이 지나 다시 확인할게요." · proposal(새 카드) · done
 ```
 
@@ -178,8 +176,8 @@ sequenceDiagram
     B->>U: 확인 (2) — 잠기기 전에 들어왔다
     U->>AG: confirm (1)
     U->>AG: confirm (2)
-    AG->>API: PATCH 대기 → 실행 중 (1) — 바뀜
-    AG->>API: PATCH 대기 → 실행 중 (2) — 이미 실행 중. 멈추지 않고 같은 키로 간다
+    AG->>API: confirmed_at 채우기 (1) — 채움
+    AG->>API: confirmed_at 채우기 (2) — 이미 있다. 멈추지 않고 같은 키로 간다
     AG->>API: POST /v1/transactions {run_id}:2 (1) → 201
     AG->>API: POST /v1/transactions {run_id}:2 (2) → 409 request_in_progress 또는 저장된 201
     AG-->>U: (1) message "기록했어요." · done
@@ -199,10 +197,10 @@ sequenceDiagram
     Note over AG: agent 재시작 — 메모리에 아무것도 없다
     B->>U: 확인
     U->>AG: POST /record/proposals/{id}/confirm
-    AG->>API: GET /v1/proposals/{id} → 대기(초안·키 그대로)
+    AG->>API: GET /v1/runs/{id} → 대기(초안은 create_transaction의 인자, 키는 run_id로)
     AG->>API: POST /v1/transactions (같은 키)
     AG-->>U: message "기록했어요." · done
-    Note over AG,API: "실행 중"에서 죽었으면 같은 키로 다시 보낸다 — 이미 들어갔으면 저장된 응답이 온다
+    Note over AG,API: confirmed_at만 채우고 죽었으면 같은 키로 다시 보낸다 — 이미 들어갔으면 저장된 응답이 온다
 ```
 
 ---
@@ -221,12 +219,28 @@ sequenceDiagram
  "unsure": ["category"]}
 ```
 
-**api의 `proposals` 표(새)** — `id`, `run_id`, `draft`(JSONB — 거래 칸 그대로), `idempotency_key`,
-`state`(`pending`·`executing`·`done`·`cancelled`·`expired`, CHECK), `transaction_id`, `created_at`, `expires_at`.
-상태 전이는 `PATCH`가 "지금 상태가 이것일 때만" 바꾼다. 확인이 왔을 때:
+**제안 = 감사 줄** — `agent_runs` 한 줄(`seat=capture`, `flow=single`)과 `tool_calls` 둘.
 
-| 지금 상태 | 하는 일 |
+| 칸 | 제안 때 | 확인 뒤 | 취소·만료 뒤 |
+|---|---|---|---|
+| `agent_runs.status` | `awaiting_confirmation` | `done` | `aborted` |
+| `agent_runs.stop_reason` | `proposed` | `confirmed` | `cancelled` · `expired` |
+| `create_transaction`의 `args` | 초안(거래 칸 그대로) | 그대로 | 그대로 |
+| `create_transaction`의 `confirmed_at` | 없음 | 누른 시각 | 없음 |
+| `create_transaction`의 `result` | 없음 | 거래 봉투 | 없음 |
+
+고치는 길은 상태·`stop_reason`·`confirmed_at`·`result`뿐이고, **"지금 대기일 때만"** 바꾼다. 발화·인자는 고치지
+않는다. 상태 CHECK에 `awaiting_confirmation`·`aborted`를 더한다(마이그레이션). 확인이 왔을 때:
+
+| 지금 | 하는 일 |
 |---|---|
+| 대기, `confirmed_at` 없음 | `confirmed_at`을 채우고 `{run_id}:2`로 쓴다 |
+| 대기, `confirmed_at` 있음 | **같은 키로 다시 쓴다** — 두 번 누름과 재시작이 같은 길이다. 한 건은 멱등 키가 지킨다 |
+| `done` | 쓰지 않는다. "이미 기록했어요" + 그 거래 |
+| `aborted` | 쓰지 않는다. "취소했거나 만료된 제안이에요" |
+| 대기, `confirmed_at` 없음, `created_at` + 24시간 지남 | 만료로 닫고 새 제안을 낸다(5.4) |
+
+---|---|
 | `pending` | `executing`으로 바꾸고 저장된 키로 쓴다 |
 | `executing` | 바꾸지 않고 **같은 키로 다시 쓴다** — 두 번 누름과 재시작이 같은 길이다. 한 건은 멱등 키가 지킨다 |
 | `done` | 쓰지 않는다. "이미 기록했어요" + 그 거래 |
@@ -298,7 +312,7 @@ sequenceDiagram
 
 | 회전 | 하는 일 | 끝나는 조건 |
 |---|---|---|
-| `capture-gate` | api `proposals` 표와 경로, agent `POST /record`·확인·취소(가짜 모델), 감사 두 줄, 문서 D1~D4 고치기 | 5장의 sequence 여섯이 테이프 테스트로 돈다. 두 번 눌러도 한 건, 재시작 뒤 확인 |
+| `capture-gate` | 감사 테이블의 상태 둘과 좁은 고침 경로(api), agent `POST /record`·확인·취소(가짜 모델), 문서 D1~D4 고치기 | 5장의 sequence 여섯이 테이프 테스트로 돈다. 두 번 눌러도 한 건, 재시작 뒤 확인 |
 | `capture-chat` | 진짜 모델, ui의 기록 쪽을 agent로 바꾸고 대역의 기록을 뺀다, 평가 세트 | D5가 사라진다. 평가 표, 넣지 말아야 할 문장에 카드 0 |
 
 ---
