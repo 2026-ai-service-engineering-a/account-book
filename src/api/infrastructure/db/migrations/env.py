@@ -16,7 +16,8 @@ from api.infrastructure.settings import Settings
 
 config = context.config
 if config.config_file_name is not None and not config.attributes.get("connection"):
-    fileConfig(config.config_file_name)
+    # 이미 있는 로거를 끄지 않는다 — 기본값(True)이면 같은 프로세스의 다른 로거가 조용해진다
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 
 def _run(connection: Connection) -> None:
