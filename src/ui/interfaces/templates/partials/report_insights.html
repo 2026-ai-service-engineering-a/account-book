@@ -1,0 +1,37 @@
+{# 리포트의 "눈에 띈 것" — HTMX가 load 때 받아 끼운다. AI에 닿지 못했으면 이 조각은 비어 온다 #}
+{% from "ai.html" import ai_badge %}
+<div class="card" id="ai-insights">
+  <div class="card-header"><div class="label-row"><h2 class="card-title">눈에 띈 것</h2>{{ ai_badge("insight") }}</div><p class="card-description">무엇이 달라졌는지까지. 왜는 대화가 답합니다.</p></div>
+  <div class="card-content">
+    {% if insight.is_quiet %}
+    <p class="muted" style="margin:0">크게 달라진 것이 없어요.</p>
+    {% else %}
+    {% for v in charts %}
+    <figure class="viz" style="margin:0 0 16px">
+      <figcaption class="card-title" style="font-size:14px;margin-bottom:8px">{{ v.title }}</figcaption>
+      <svg viewBox="0 0 640 {{ v.height }}" role="img" aria-label="{{ v.title }}">
+        {% if v.kind == "hbar" %}
+        <line x1="{{ v.zero }}" y1="0" x2="{{ v.zero }}" y2="{{ v.height }}" class="grid"/>
+        {% for m in v.marks %}
+        <text class="lab" x="{{ m.label_x }}" y="{{ m.label_y }}" text-anchor="end">{{ m.label }}</text>
+        <rect x="{{ m.x }}" y="{{ m.y }}" width="{{ m.w }}" height="{{ m.h }}" rx="4" fill="var(--s1)"><title>{{ m.title }}</title></rect>
+        {% if m.value %}<text class="val" x="{{ m.value_x }}" y="{{ m.label_y }}">{{ m.value }}</text>{% endif %}
+        {% endfor %}
+        {% else %}
+        <line x1="40" y1="{{ v.zero }}" x2="620" y2="{{ v.zero }}" class="grid"/>
+        {% if v.line %}<polyline points="{{ v.line }}" fill="none" stroke="var(--s1)" stroke-width="2"/>{% endif %}
+        {% for m in v.marks %}
+        {% if v.line %}<circle cx="{{ m.value_x }}" cy="{{ m.value_y + 6 }}" r="3" fill="var(--s1)"><title>{{ m.title }}</title></circle>
+        {% else %}<rect x="{{ m.x }}" y="{{ m.y }}" width="{{ m.w }}" height="{{ m.h }}" rx="4" fill="var(--s1)"><title>{{ m.title }}</title></rect>{% endif %}
+        <text x="{{ m.label_x }}" y="{{ m.label_y }}" text-anchor="middle">{{ m.label }}</text>
+        {% if m.value %}<text class="val" x="{{ m.value_x }}" y="{{ m.value_y }}" text-anchor="middle">{{ m.value }}</text>{% endif %}
+        {% endfor %}
+        {% endif %}
+      </svg>
+      {% if v.note %}<p class="muted" style="margin:4px 0 0">{{ v.note }}</p>{% endif %}
+    </figure>
+    {% endfor %}
+    {% if insight.highlights %}<ul class="insights">{% for line in insight.highlights %}<li>{{ line }}</li>{% endfor %}</ul>{% endif %}
+    {% endif %}
+  </div>
+</div>

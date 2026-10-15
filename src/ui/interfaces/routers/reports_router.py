@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 from ui.application.dto import BudgetStatus, MonthlyReport, Period
 from ui.interfaces.charts.category_bar_chart import CategoryBarChart
+from ui.interfaces.charts.insight_chart_view import InsightChartView
 from ui.interfaces.charts.month_bar_chart import MonthBarChart
 from ui.interfaces.charts.pace_chart import PaceChart
 from ui.interfaces.services import ServicesDep
@@ -39,7 +40,6 @@ async def report_page(request: Request, services: ServicesDep, period_text: str)
         "current": current,
         "budgets": [b for b in budgets if b.limit is not None],
         "has_any": not report.is_empty or await services.transactions.exists_any(),
-        "insights": await services.narrator.narrate(report, budgets) if not report.is_empty else (),
         "ask_url": "/?q=" + quote(question),
         "ask_label": "왜 늘었는지 물어보기" if rose else "이번 달에 대해 물어보기",
         "category_chart": CategoryBarChart.build(
@@ -50,6 +50,26 @@ async def report_page(request: Request, services: ServicesDep, period_text: str)
         "month_chart": MonthBarChart.build(report.months) if len(report.months) > 1 else None,
     }
     return render(request, "reports.html", context)
+
+
+@router.get("/reports/{period_text}/insights", response_class=HTMLResponse)
+async def report_insights(request: Request, services: ServicesDep, period_text: str) -> Response:
+    """ "눈에 띈 것" 조각 — 페이지가 뜬 뒤 HTMX가 받아 끼운다. 리포트는 AI를 기다리지 않는다.
+
+    AI에 닿지 못했으면 빈 조각이다 — 그 영역을 아예 그리지 않는다(docs/ai/agentic-reports.md 7장).
+    """
+    period = Period.parse(period_text)
+    if period is None:
+        raise HTTPException(status_code=404)
+    report = await services.reports.monthly(period)
+    if report.is_empty:
+        return HTMLResponse("")
+    budgets = await services.budgets.statuses(period)
+    insight = await services.narrator.narrate(period, report, budgets)
+    if insight is None:
+        return HTMLResponse("")
+    charts = [InsightChartView.build(c) for c in insight.charts if c.points]
+    return render(request, "partials/report_insights.html", {"insight": insight, "charts": charts})
 
 
 def _pace_target(budgets: tuple[BudgetStatus, ...]) -> BudgetStatus | None:

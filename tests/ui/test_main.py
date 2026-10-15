@@ -8,6 +8,7 @@ from ui.infrastructure.agent import (
     AgentCategorySuggester,
     AgentDocumentAnswerer,
     AgentDocumentGateway,
+    AgentReportNarrator,
     RoutedChatAgent,
 )
 from ui.infrastructure.api import (
@@ -41,7 +42,8 @@ def test_agent_address_brings_the_real_reader():
     assert isinstance(services.chat, RoutedChatAgent)  # 질문만 agent로, 기록은 대역으로
     assert isinstance(services.documents, AgentDocumentGateway) and services.documents_by_agent
     assert isinstance(services.answerer, AgentDocumentAnswerer)
-    assert services.live_seats == {"capture", "classify", "query"}
+    assert isinstance(services.narrator, AgentReportNarrator)  # 리포트의 "눈에 띈 것"
+    assert services.live_seats == {"capture", "classify", "query", "insight"}
 
 
 def test_api_address_brings_the_http_gateways_and_hides_the_demo_buttons():

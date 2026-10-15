@@ -109,10 +109,11 @@ SEATS: tuple[AiSeat, ...] = (
         replaces="고정 차트를 눈으로 훑으며 이번 달에 볼 것 고르기",
         screens=(("리포트 — 눈에 띈 것", "/reports"),),
         human="읽기만 한다. 문장의 숫자는 도구 결과의 값만 쓴다",
-        fallback="검증에 실패하면 고정 리포트만 보여 준다",
+        fallback="검증에서 버린 것은 빠지고, AI에 닿지 못하면 그 영역 없이 고정 리포트만 보여 준다",
         port="ReportNarrator",
         stand_in="ScriptedReportNarrator",
-        stand_in_does="늘어난 카테고리와 예산 페이스를 규칙 문구로 — 그림 고르기는 아직 고정",
+        stand_in_does="늘어난 카테고리와 예산 페이스를 규칙 문구로 — 그림은 고르지 않는다. "
+        "AGENT_BASE_URL이 있으면 agent의 /insights가 그림 두 장·문장 세 줄을 고르고 캐시한다",
         doc="docs/ai/agentic-reports.md",
     ),
 )

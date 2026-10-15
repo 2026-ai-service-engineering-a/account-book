@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ui.application.dto import BudgetStatus, MonthlyReport
+from ui.application.dto import BudgetStatus, MonthlyReport, Period, ReportInsight
 
 from .korean_josa import josa
 
@@ -8,14 +8,14 @@ _MAX_LINES = 3
 
 
 class ScriptedReportNarrator:
-    """키 없이 도는 대역. 큰 변화 두세 개를 규칙으로 골라 문장으로 낸다.
+    """키 없이 도는 대역. 큰 변화 두세 개를 규칙으로 골라 문장으로 낸다. 그림은 고르지 않는다.
 
-    reports.md 3.2의 "지금은 규칙 기반 문구로 시작"이 이것이다.
+    agent가 있으면 agent의 `POST /insights`가 대신 선다(AgentReportNarrator).
     """
 
     async def narrate(
-        self, report: MonthlyReport, budgets: tuple[BudgetStatus, ...]
-    ) -> tuple[str, ...]:
+        self, period: Period, report: MonthlyReport, budgets: tuple[BudgetStatus, ...]
+    ) -> ReportInsight:
         lines: list[str] = []
         rises = sorted(
             (c for c in report.by_category if c.delta and c.delta.amount > 0),
@@ -40,4 +40,4 @@ class ScriptedReportNarrator:
             lines.append(
                 f"{josa(lowest.category.name, '은', '는')} 예산의 {lowest.percent}%만 썼어요."
             )
-        return tuple(lines[:_MAX_LINES])
+        return ReportInsight(highlights=tuple(lines[:_MAX_LINES]))
