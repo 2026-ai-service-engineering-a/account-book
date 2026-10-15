@@ -14,6 +14,7 @@ from agent.domain.tools import (
     CategorySuggestion,
     ComparePeriodsInput,
     CountFrequencyInput,
+    CreateTransactionInput,
     DetectOutliersInput,
     DocumentLine,
     EvidenceLine,
@@ -103,6 +104,9 @@ class RunTool:
                 return await self._outliers(arguments, today, zone)
             case SuggestCategoryInput():
                 return await self._suggest(arguments)
+            case CreateTransactionInput():
+                # 쓰기는 실행기로 부르지 않는다 — 제안 → 확인 게이트만 지난다(ai/tools.md 7장)
+                raise InvalidToolArguments("name", "쓰기는 확인 카드를 거쳐야 한다")
             case SearchDocumentsInput():
                 return await self._documents(arguments)
 

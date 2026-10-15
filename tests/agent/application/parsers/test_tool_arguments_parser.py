@@ -9,6 +9,7 @@ from agent.application.parsers import parse_tool_arguments
 from agent.domain.tools import (
     ComparePeriodsInput,
     CountFrequencyInput,
+    CreateTransactionInput,
     DetectOutliersInput,
     GetBudgetStatusInput,
     SearchDocumentsInput,
@@ -114,3 +115,34 @@ def test_outliers_take_a_period_and_the_summary_filters_but_no_threshold():
     )
     with pytest.raises(InvalidToolArguments, match="threshold"):
         parse_tool_arguments(ToolName.DETECT_OUTLIERS, {"period": LAST_WEEK, "threshold": 2})
+
+
+ENTRY = {
+    "direction": "expense",
+    "amount": 8500,
+    "occurred_at": "2026-10-14T12:30:00+09:00",
+    "category_id": "food",
+    "account": "card",
+    "merchant": "김밥천국",
+}
+
+
+def test_a_write_is_rebuilt_from_its_stored_arguments():
+    found = parse_tool_arguments(ToolName.CREATE_TRANSACTION, ENTRY)
+    assert isinstance(found, CreateTransactionInput)
+    assert (
+        found.amount.amount,
+        found.account.value,
+        found.occurred_at.utcoffset() is not None,
+    ) == (
+        8500,
+        "card",
+        True,
+    )
+
+
+def test_a_write_takes_no_dry_run_and_needs_a_category():
+    with pytest.raises(InvalidToolArguments, match="dry_run"):
+        parse_tool_arguments(ToolName.CREATE_TRANSACTION, ENTRY | {"dry_run": True})
+    with pytest.raises(InvalidToolArguments, match="category_id"):
+        parse_tool_arguments(ToolName.CREATE_TRANSACTION, ENTRY | {"category_id": ""})

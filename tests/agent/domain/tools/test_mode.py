@@ -50,6 +50,16 @@ def test_insight_mode_is_the_five_aggregates_and_nothing_that_writes():
     assert all(t.permission is Permission.READ for t in Mode.INSIGHT.tools)
 
 
+def test_capture_mode_writes_one_thing_only():
+    # 채팅의 기록 — 고르기와 거래 한 건 쓰기. 고치기·지우기·예산은 없다(ai/chat-capture.md 10장)
+    assert Mode.CAPTURE.tools == (ToolName.SUGGEST_CATEGORY, ToolName.CREATE_TRANSACTION)
+    assert [t for t in Mode.CAPTURE.tools if t in WRITES] == [ToolName.CREATE_TRANSACTION]
+
+
+def test_only_the_capture_mode_can_write():
+    assert [m for m in Mode if WRITES & set(m.tools)] == [Mode.CAPTURE]
+
+
 def test_classify_mode_only_suggests():
     assert Mode.CLASSIFY.tools == (ToolName.SUGGEST_CATEGORY,)
 

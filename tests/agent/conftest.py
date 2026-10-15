@@ -25,9 +25,11 @@ from agent.domain.tools import (
     BudgetLine,
     CategoryLine,
     CategoryShift,
+    CreateTransactionInput,
     Frequency,
     OutlierReport,
     SpendingTotals,
+    TransactionLine,
     TransactionList,
 )
 from agent.domain.values import CategoryId, ChunkStrategy, Confidence, Money, TimeRange
@@ -196,6 +198,11 @@ class FakeLedger:
 
     async def categories(self) -> tuple[CategoryLine, ...]:
         return self._reply("categories", tuple)
+
+    async def create_transaction(
+        self, entry: CreateTransactionInput, idempotency_key: str, run_id: str
+    ) -> TransactionLine:
+        return self._reply("create_transaction", TransactionLine, entry, idempotency_key, run_id)
 
     async def search_documents(self, query: DocumentQuery) -> tuple[RetrievedChunk, ...]:
         return self._reply("search_documents", tuple, query)

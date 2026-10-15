@@ -15,9 +15,11 @@ from agent.domain.tools import (
     BudgetLine,
     CategoryLine,
     CategoryShift,
+    CreateTransactionInput,
     Frequency,
     OutlierReport,
     SpendingTotals,
+    TransactionLine,
     TransactionList,
 )
 from agent.domain.values import CategoryId, TimeRange
@@ -60,6 +62,13 @@ class LedgerApi(Protocol):
         self, month: date, category_id: CategoryId | None
     ) -> tuple[BudgetLine, ...]:
         """`month`는 그 달 1일이다. 예산은 달 단위로만 있다."""
+        ...
+
+    async def create_transaction(
+        self, entry: CreateTransactionInput, idempotency_key: str, run_id: str
+    ) -> TransactionLine:
+        """사람이 확인한 쓰기. `X-Confirmed-By: user`와 `X-Agent-Run-Id`를 붙인다. 키는 제안 때
+        정한 `{run_id}:{seq}`다 — 다시 보내도 한 건이다(api-contract 3장). 처리 중이면 409."""
         ...
 
     async def categories(self) -> tuple[CategoryLine, ...]:

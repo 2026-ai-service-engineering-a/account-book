@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from datetime import date
+from datetime import date, datetime
 
 from agent.application.errors import InvalidToolArguments
 from agent.domain.tools import (
@@ -15,6 +15,7 @@ from agent.domain.tools import (
     MAX_ROWS,
     ComparePeriodsInput,
     CountFrequencyInput,
+    CreateTransactionInput,
     DetectOutliersInput,
     GetBudgetStatusInput,
     SearchDocumentsInput,
@@ -24,7 +25,7 @@ from agent.domain.tools import (
     ToolName,
 )
 from agent.domain.tools.search_documents_input import QUERY_LIMIT
-from agent.domain.values import CategoryId, Direction, PeriodName, PeriodSpec
+from agent.domain.values import CategoryId, Direction, Money, PaymentMethod, PeriodName, PeriodSpec
 from agent.domain.values.period_spec import MAX_DAYS
 
 type ToolInput = (
@@ -34,6 +35,7 @@ type ToolInput = (
     | ComparePeriodsInput
     | GetBudgetStatusInput
     | DetectOutliersInput
+    | CreateTransactionInput
     | SuggestCategoryInput
     | SearchDocumentsInput
 )
@@ -48,6 +50,15 @@ _KEYS: Mapping[ToolName, set[str]] = {
     ToolName.COMPARE_PERIODS: {"a", "b", "category_id"},
     ToolName.GET_BUDGET_STATUS: {"period", "category_id"},
     ToolName.DETECT_OUTLIERS: {"period", "category_id", "merchant", "direction"},
+    ToolName.CREATE_TRANSACTION: {
+        "direction",
+        "amount",
+        "occurred_at",
+        "category_id",
+        "account",
+        "merchant",
+        "memo",
+    },
     ToolName.SUGGEST_CATEGORY: {"merchant", "memo", "direction"},
     ToolName.SEARCH_DOCUMENTS: {"query"},
 }
@@ -99,6 +110,8 @@ def _build(name: ToolName, raw: Mapping[str, object]) -> ToolInput:
                 _text(raw, "merchant"),
                 _direction(raw) or Direction.EXPENSE,
             )
+        case ToolName.CREATE_TRANSACTION:
+            return _create(raw)
         case ToolName.SEARCH_DOCUMENTS:
             return SearchDocumentsInput(" ".join(_text(raw, "query", QUERY_LIMIT).split()))
         case _:
@@ -200,3 +213,31 @@ def _limit(raw: Mapping[str, object]) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 1:
         raise InvalidToolArguments("limit", f"1~{MAX_ROWS}의 정수다")
     return min(value, MAX_ROWS)
+
+
+def _create(raw: Mapping[str, object]) -> CreateTransactionInput:
+    """쓰기의 칸. 감사 로그에 저장된 인자에서 확인 때 다시 만든다 — 재시작해도 같은 값이다."""
+    amount = raw.get("amount")
+    if isinstance(amount, bool) or not isinstance(amount, int):
+        raise InvalidToolArguments("amount", "정수 원이다")
+    when = _text(raw, "occurred_at", 40)
+    try:
+        occurred_at = datetime.fromisoformat(when)
+    except ValueError as error:
+        raise InvalidToolArguments("occurred_at", "오프셋이 붙은 ISO 8601 시각이다") from error
+    try:
+        account = PaymentMethod(_text(raw, "account"))
+    except ValueError as error:
+        raise InvalidToolArguments("account", "card·cash·bank 중 하나다") from error
+    category = _category(raw)
+    if category is None:
+        raise InvalidToolArguments("category_id", "카테고리가 있어야 기록한다")
+    return CreateTransactionInput(
+        direction=_direction(raw) or Direction.EXPENSE,
+        amount=Money(amount),
+        occurred_at=occurred_at,
+        category_id=category,
+        account=account,
+        merchant=_text(raw, "merchant"),
+        memo=_text(raw, "memo", 200),
+    )
