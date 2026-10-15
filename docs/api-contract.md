@@ -161,6 +161,9 @@ X-Agent-Run-Id: 01J9X...
 | `GET` | `/v1/embeddings/pending` | — (색인) | — |
 | `PUT` | `/v1/embeddings/{text_hash}` | — (색인) | — |
 | `POST` | `/v1/runs` | — (감사) | — |
+| `GET` | `/v1/stats/version` | — (리포트 캐시) | — |
+| `GET` | `/v1/insights/cache/{key}` | — (리포트 캐시) | — |
+| `PUT` | `/v1/insights/cache/{key}` | — (리포트 캐시) | — |
 | `GET` | `/v1/healthz` | — | — |
 
 색인 둘은 도구가 아니다. `agent`가 카테고리를 고르기 전에 색인 안 된 텍스트를 당겨 가
@@ -238,6 +241,18 @@ X-Agent-Run-Id: 01J9X...
 - 점수로 거르지 않는다. 순위를 재야 하고, 근거가 없다고 답할지는 생성 쪽이 정한다.
 - 줄마다 `id`·`document_id`·`title`·`effective_date`·`strategy`·`heading`·`body`·`score`. `body`는
   원문이고, 찾는 글(`search_text`)은 내보내지 않는다.
+
+### 리포트 캐시 — 시간이 아니라 버전으로
+
+`agent`의 리포트("눈에 띈 것")는 같은 달을 두 번 열면 두 번째가 공짜다([ai/agentic-reports.md 8장](ai/agentic-reports.md#8-캐시--시간이-아니라-버전으로)).
+키는 `period · data_version · prompt_version · model`의 sha256이고 `agent`가 만든다. **TTL이 없다.**
+
+- `GET /v1/stats/version?from=&to=` → `{"version"}`. 범위 거래의 건수·마지막 변경(`updated_at`)과 예산 전부의
+  건수·마지막 변경을 해시한 불투명한 글이다. 더하기·고치기·지우기·예산 바꾸기에 바뀌고, 범위 밖 거래로는 안 바뀐다.
+  `agent`는 그 달과 앞 여섯 달(이상치의 평소)을 범위로 준다 — 오늘 커피를 넣어도 지난달 리포트는 그대로다.
+- `GET /v1/insights/cache/{key}` → `{"key", "body"}`. 없으면 `body`가 `null`이다 — 없는 것은 오류가 아니다.
+- `PUT /v1/insights/cache/{key}` `{"body"}` → `204`. 멱등 키가 필요하다. 같은 키에 쓰면 갈아 끼운다.
+  `key`는 64자 16진수만 받는다. `api`는 `body`를 읽지 않는다 — 모양은 `agent`가 정한다.
 
 ### 감사 로그는 끝날 때 한 번 남긴다
 
