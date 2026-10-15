@@ -63,9 +63,11 @@ graph LR
   AG -->|도구 호출 = HTTP| API
   API --> DB[(db<br/>PostgreSQL)]
   AG -->|litellm| LLM[LLM 제공자<br/>Gemini / OpenAI / Anthropic]
+  EX[외부 AI 클라이언트] -.->|MCP · stdio| MCP[mcp<br/>집계 넷 · 읽기 전용]
+  MCP -->|HTTP| API
 ```
 
-docker compose 서비스는 넷이다.
+docker compose 서비스는 다섯이다. 다섯째 `mcp`는 기본으로 꺼져 있다.
 
 | 서비스 | 역할 | 포트 | 비고 |
 |---|---|---|---|
@@ -73,8 +75,10 @@ docker compose 서비스는 넷이다.
 | `agent` | 에이전트 런타임. ReAct 루프, 도구 정의, 하네스 | 8001 — 내부 | DB 접속 정보를 **모른다** |
 | `api` | FastAPI. 가계부 도메인의 **단일 진실 공급원**. CRUD·집계·검증·권한 | 8000 — 내부 | DB에 접근하는 유일한 서비스 |
 | `db` | PostgreSQL. 거래·예산·감사 로그의 저장소 | 5432 — 내부 | 볼륨으로 영속화 |
+| `mcp` | 외부 AI 클라이언트의 통로. 집계 넷을 읽기만 한다([docs/ai/mcp.md](docs/ai/mcp.md)) | 없음 — stdio | 켜야 선다. `up`에 들지 않는다(profile) |
 
 호스트로 포트를 여는 건 `ui` 하나뿐이다. `agent`·`api`·`db`는 compose 내부 네트워크에만 붙는다.
+`mcp`는 포트가 없다 — 클라이언트가 `docker compose run --rm -T mcp`로 띄운 프로세스와 파이프로 말한다.
 LLM 호출은 `litellm`으로 추상화해서 Gemini / OpenAI / Anthropic 중 아무 키나 하나로 돌아가게 한다.
 
 ### 경계 두 개
@@ -202,7 +206,8 @@ account-book/
 │   ├── api/             # 도메인 로직, 유일한 DB 접근자
 │   ├── agent/           # 에이전트 런타임 — 헤드리스
 │   ├── ui/              # 화면 서버 — 도메인 로직 없음
-│   └── shared/          # 서비스 공통 — 도메인 지식 없음
+│   ├── mcp_server/      # mcp — 외부 AI 클라이언트의 통로. 집계 넷 읽기 전용
+│   └── shared/          # 서비스끼리 나누는 데이터 — 코드가 아니다(mcp_tools.json)
 ├── tests/               # src/와 같은 구조. LLM 호출 없는 목 기반 테스트
 ├── docs/                # 다른 프로젝트에도 통하는 규칙
 │   ├── development-rules.md
@@ -237,6 +242,7 @@ account-book/
 ├── requirements.txt       # 런타임 의존성 — ui·agent 공통
 ├── requirements-agent.txt # agent만 — LLM 라이브러리. ui 이미지에는 들어가지 않는다
 ├── requirements-api.txt   # api만 — SQLAlchemy·psycopg·Alembic·pgvector
+├── requirements-mcp.txt   # mcp만 — MCP SDK
 ├── requirements-dev.txt   # 개발 도구
 └── .env.sample
 ```
@@ -357,6 +363,13 @@ DOC_TOP_K=
 
 # 상황에 맞는 통계(리포트)
 INSIGHT_MAX_TOOL_CALLS=
+
+# 외부 AI 서비스 통로(mcp) — 기본은 꺼져 있다
+MCP_ENABLED=
+MCP_TRANSPORT=
+MCP_TOKEN=
+MCP_ALLOWED_TOOLS=
+MCP_CALLS_PER_MINUTE=
 
 # 서비스 주소 — compose 내부 네트워크 기준
 API_BASE_URL=

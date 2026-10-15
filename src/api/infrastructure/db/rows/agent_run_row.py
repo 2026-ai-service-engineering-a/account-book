@@ -15,8 +15,10 @@ class AgentRunRow(Base):
 
     __tablename__ = "agent_runs"
     __table_args__ = (
-        CheckConstraint("seat IN ('capture', 'classify', 'chat', 'ask', 'insight')", name="seat"),
-        CheckConstraint("flow IN ('single', 'react', 'plan_execute')", name="flow"),
+        CheckConstraint(
+            "seat IN ('capture', 'classify', 'chat', 'ask', 'insight', 'mcp')", name="seat"
+        ),
+        CheckConstraint("flow IN ('single', 'react', 'plan_execute', 'direct')", name="flow"),
         CheckConstraint(
             "status IN ('done', 'failed', 'awaiting_confirmation', 'aborted')", name="status"
         ),
@@ -35,4 +37,6 @@ class AgentRunRow(Base):
     status: Mapped[str] = mapped_column(String(30))  # awaiting_confirmation은 21자다
     # 자리마다 값이 다르다(answered·refused·abstained…). 목록을 못 박지 않는다
     stop_reason: Mapped[str] = mapped_column(String(30))
+    # 외부 클라이언트가 MCP 초기화에서 댄 이름(docs/ai/mcp.md 9장). mcp 자리만 채운다
+    client: Mapped[str | None] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

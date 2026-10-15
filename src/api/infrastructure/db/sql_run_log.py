@@ -37,6 +37,7 @@ class SqlRunLog:
                 cost_usd=run.cost_usd,
                 status=run.status.value,
                 stop_reason=run.stop_reason,
+                client=run.client,
             )
         )
         # 실행 줄이 먼저 있어야 외래 키가 맞는다
@@ -73,6 +74,7 @@ class SqlRunLog:
             tool_calls=tuple(
                 ToolCallRecord(c.call_id, c.tool, c.args, c.result, c.confirmed_at) for c in calls
             ),
+            client=row.client,
             created_at=row.created_at,
         )
 

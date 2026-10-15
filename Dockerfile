@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # 로컬에는 아무것도 설치하지 않는다.
 #
-#   ui, agent, api — 서비스 하나씩. 그 서비스의 의존성과 코드만 굽는다 (docker-compose.yml)
+#   ui, agent, api, mcp — 서비스 하나씩. 그 서비스의 의존성과 코드만 굽는다 (docker-compose.yml)
 #   dev       — 의존성과 도구만 담는다. 코드는 바인드 마운트로 들어온다 (docker-compose.dev.yml)
 FROM python:3.13-slim AS base
 
@@ -63,6 +63,22 @@ EXPOSE 8000
 CMD ["sh", "-c", "alembic -c src/api/alembic.ini upgrade head && python -m api.seed && uvicorn api.main:create_app --factory --app-dir src --host 0.0.0.0 --port 8000"]
 
 
+FROM base AS mcp
+
+COPY requirements.txt requirements-mcp.txt ./
+RUN pip install --no-cache-dir -r requirements-mcp.txt
+
+# 자기 코드와 agent와 나누는 계약(JSON)만 굽는다. agent의 코드는 들어오지 않는다
+COPY src/mcp_server ./src/mcp_server
+COPY src/shared ./src/shared
+
+RUN useradd --create-home --uid 10001 app
+USER app
+
+# 포트가 없다. 클라이언트가 이 프로세스를 띄우고 stdin·stdout으로 말한다(docs/ai/mcp.md 6장)
+CMD ["python", "-m", "mcp_server.main"]
+
+
 FROM base AS dev
 
 # git — 변경 파일을 고르는 점검(--base)과 devcontainer 안에서의 작업에 쓴다.
@@ -72,5 +88,6 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && git config --global --add safe.directory /app
 
-COPY requirements.txt requirements-agent.txt requirements-api.txt requirements-dev.txt ./
+COPY requirements.txt requirements-agent.txt requirements-api.txt requirements-mcp.txt \
+    requirements-dev.txt ./
 RUN pip install --no-cache-dir -r requirements-dev.txt

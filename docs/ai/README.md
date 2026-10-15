@@ -250,14 +250,10 @@ insights-llm에서 붙인다. 기능 4의 `POST /retrieve`·`POST /ask`는
 계획에 있던 `CHUNK_SIZE`·`CHUNK_OVERLAP`은 없앴다 — 길이 상한과 겹침 대신 청킹 전략 셋을 견줬다.
 `EMBEDDING_MODEL`은 비어 있어도 뜬다 — 시크릿이 아니라 기능 스위치라서, 비면 벡터 단계를
 건너뛰고 규칙·이력으로만 고른다. 기능 3의 `INSIGHT_MAX_TOOL_CALLS`도 옮겼다 — 고정 호출 둘을 포함한다.
+`mcp`의 `MCP_*` 넷도 옮겼다. 분당 상한 `MCP_CALLS_PER_MINUTE`를 더했다([mcp.md 5장](mcp.md#5-신원과-권한)).
 
 ```
 DOC_MIN_SIMILARITY=0.6      # 상위 조각의 유사도가 이 아래면 모른다고 답한다. 시작값
-
-MCP_ENABLED=false           # 외부 AI 서비스 통로. 기본은 닫혀 있다
-MCP_TRANSPORT=stdio         # stdio는 노출 표면이 0이다
-MCP_TOKEN=                  # 시크릿. 비면 mcp가 뜨지 않는다
-MCP_ALLOWED_TOOLS=summarize_spending,compare_periods,count_frequency,get_budget_status
 ```
 
 설정을 읽는 자리는 서비스마다 한 곳이다([../development-rules.md 6.3](../development-rules.md#63-설정은-한-곳에서만-읽는다)).

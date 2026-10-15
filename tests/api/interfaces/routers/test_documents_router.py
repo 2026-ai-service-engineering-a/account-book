@@ -6,7 +6,11 @@ from tests.api.conftest import client_with
 
 def test_keyword_search_by_strategy():
     client = client_with(library())
-    params = {"q": "수영장 및 체력단련장", "k": 3, "strategy": "paragraph_item"}
+    params: dict[str, str | int] = {
+        "q": "수영장 및 체력단련장",
+        "k": 3,
+        "strategy": "paragraph_item",
+    }
     body = client.get("/v1/documents/search", params=params).json()
     assert len(body) == 3 and body[0]["strategy"] == "paragraph_item"
     assert body[0]["id"] == "paragraph_item:조세특례제한법 시행령/제121조의2/16"

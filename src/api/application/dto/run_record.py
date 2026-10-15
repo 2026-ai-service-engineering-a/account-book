@@ -27,4 +27,5 @@ class RunRecord:
     status: RunStatus
     stop_reason: str
     tool_calls: tuple[ToolCallRecord, ...] = ()
+    client: str | None = None  # mcp 자리만 — 외부 클라이언트가 댄 이름
     created_at: datetime | None = None  # 읽을 때만 — 제안의 수명(24시간)을 잰다

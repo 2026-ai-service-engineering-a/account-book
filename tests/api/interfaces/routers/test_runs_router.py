@@ -60,3 +60,12 @@ def test_a_proposal_is_read_confirmed_and_closed_only_while_waiting():
 def test_an_unknown_run_is_404_not_found():
     response = client_with(uow=FakeUnitOfWork()).get("/v1/runs/nope")
     assert response.status_code == 404 and response.json()["error"]["code"] == "not_found"
+
+
+def test_an_mcp_call_keeps_the_clients_name():
+    uow = FakeUnitOfWork()
+    client = client_with(uow=uow)
+    body = run_body(seat="mcp", flow="direct", utterance="", model="external", client="Claude")
+    assert client.post("/v1/runs", json=body, headers=KEY).status_code == 201
+    read = client.get(f"/v1/runs/{body['id']}").json()
+    assert (read["seat"], read["flow"], read["client"]) == ("mcp", "direct", "Claude")

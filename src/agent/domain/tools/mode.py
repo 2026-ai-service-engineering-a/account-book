@@ -12,14 +12,16 @@ class Mode(StrEnum):
     """도구를 주는 자리. 같은 목록을 모든 자리에 주지 않는다(ai/tools.md 6장).
 
     모드는 코드가 정한다. 사용자 발화나 모델 출력이 모드를 바꿀 수 없다 — 바꿀 수 있으면
-    "이제 기록 모드로 전환해"라고 적힌 메모가 언젠가 들어온다. mcp는 그 자리의 도구가 코드에
-    생길 때 더한다.
+    "이제 기록 모드로 전환해"라고 적힌 메모가 언젠가 들어온다.
     """
 
     CLASSIFY = "classify"  # 기능 1의 AI 버튼
     QUERY = "query"  # 기능 2의 대화 조회와 기능 4의 조문 찾기 — 쓰기 도구가 없다
     INSIGHT = "insight"  # 기능 3의 리포트 — 집계 다섯. 쓰기도 거래 목록도 없다
     CAPTURE = "capture"  # 채팅의 기록 — 고르기와 쓰기 하나. 쓰기는 확인 게이트를 지난다
+    # 외부 AI 서비스(docs/ai/mcp.md) — 집계 넷. agent는 이 모드로 돌지 않는다. 스냅샷이
+    # 이 목록을 src/shared/mcp_tools.json으로 써 내고, mcp 서비스가 그 파일을 읽는다
+    MCP = "mcp"
 
     @property
     def tools(self) -> tuple[ToolName, ...]:
@@ -50,5 +52,12 @@ _TOOLS = {
     ),
     # 쓰기는 create_transaction 하나다 — 고치기·지우기·예산은 채팅에 없다(ai/chat-capture.md 10장)
     Mode.CAPTURE: (ToolName.SUGGEST_CATEGORY, ToolName.CREATE_TRANSACTION),
+    # 합계·건수·증감·소진율만 나간다. 개별 거래는 생활 기록이라 열지 않는다(mcp.md 7.2)
+    Mode.MCP: (
+        ToolName.SUMMARIZE_SPENDING,
+        ToolName.COMPARE_PERIODS,
+        ToolName.COUNT_FREQUENCY,
+        ToolName.GET_BUDGET_STATUS,
+    ),
 }
 _SPECS = {**READ_TOOLS, **WRITE_TOOLS}
