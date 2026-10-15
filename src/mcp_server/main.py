@@ -52,6 +52,8 @@ def create_server(settings: Settings) -> Server[object] | list[str]:
 
 def main() -> int:
     logging.basicConfig(stream=sys.stderr, level=logging.INFO, format="%(levelname)s %(message)s")
+    # httpx는 요청 URL을 INFO로 찍는다 — 가맹점으로 좁히면 q=가 운영 로그에 남는다(6.4)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     server = create_server(Settings())
     if isinstance(server, list):
         for problem in server:

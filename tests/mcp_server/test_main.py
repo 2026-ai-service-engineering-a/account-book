@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.lowlevel import Server
@@ -31,3 +32,11 @@ def test_main_says_why_on_stderr_and_exits(monkeypatch, capsys):
     captured = capsys.readouterr()
     assert captured.out == ""  # stdout은 프로토콜의 자리다
     assert "mcp가 뜨지 않는다: MCP_ENABLED가 false다" in captured.err
+
+
+def test_request_urls_stay_out_of_the_log(monkeypatch):
+    # 가맹점으로 좁힌 호출의 URL에는 q=가 있다 — httpx의 요청 로그를 끈다(development-rules 6.4)
+    monkeypatch.chdir("/")
+    monkeypatch.setattr(logging.getLogger("httpx"), "level", logging.NOTSET)
+    main()
+    assert logging.getLogger("httpx").level == logging.WARNING
