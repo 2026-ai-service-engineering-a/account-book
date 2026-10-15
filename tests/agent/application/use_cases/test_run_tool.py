@@ -13,12 +13,15 @@ from agent.domain.tools import (
     CategoryShift,
     DocumentLine,
     Frequency,
+    OutlierReport,
+    SkippedLine,
     SpendingTotals,
     TransactionLine,
     TransactionList,
 )
 from agent.domain.values import Amount, CategoryId, Direction, TimeRange
 from tests.agent.conftest import SEOUL, FakeEmbedder, FakeLedger, chunk, evidence, search
+from tests.agent.domain.tools.test_outlier_line import big_one
 
 TODAY = date(2026, 10, 8)  # 목요일
 FREQUENCY = Frequency(3, 3, 1.0, Amount(5267))
@@ -217,3 +220,26 @@ def test_long_documents_are_cut_to_eight_kilobytes():
     result = run(ledger, "search_documents", query="할부")
     assert result.meta is not None and result.meta.truncated
     assert 0 < result.meta.row_count < 8 and "조각까지만" in result.meta.note
+
+
+def test_outliers_carry_the_usual_and_what_could_not_be_judged():
+
+    baseline = TimeRange(at(3, 1), at(9, 1))
+    report = OutlierReport(
+        baseline, (big_one(),), False, (SkippedLine(CategoryId("pet"), "too_few"),)
+    )
+    ledger = FakeLedger(replies={"outliers": report})
+    result = run(ledger, "detect_outliers", period="last_month")
+    (method, (where,)) = ledger.calls[0]
+    assert method == "outliers" and isinstance(where, TransactionFilter)
+    assert where.period == TimeRange(at(9, 1), at(10, 1)) and where.direction is Direction.EXPENSE
+    assert result.data is not None
+    rows = result.data["outliers"]
+    assert isinstance(rows, list) and len(rows) == 1
+    line = rows[0]
+    assert isinstance(line, dict)
+    assert line["occurred_at"] == "2026-09-14T15:00:00+09:00"  # 사용자 타임존으로
+    assert line["usual_upper"] == {"amount": 89000, "currency": "KRW"}
+    assert result.data["skipped"] == [{"category_id": "pet", "reason": "too_few"}]
+    # 평소를 잰 기간도 봉투의 기간에 — 답에 그 날짜를 써도 숫자 검증을 지난다
+    assert result.meta is not None and result.meta.periods["baseline"] == baseline

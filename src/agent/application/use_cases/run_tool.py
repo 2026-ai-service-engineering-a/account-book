@@ -14,6 +14,7 @@ from agent.domain.tools import (
     CategorySuggestion,
     ComparePeriodsInput,
     CountFrequencyInput,
+    DetectOutliersInput,
     DocumentLine,
     EvidenceLine,
     GetBudgetStatusInput,
@@ -98,6 +99,8 @@ class RunTool:
                 month = period.start.date()  # 달 이름만 받으니 그 달 1일이다
                 lines = await self._ledger.budget_status(month, arguments.category_id)
                 return _rows({"budgets": plain(lines)}, "budgets", {"period": period})
+            case DetectOutliersInput():
+                return await self._outliers(arguments, today, zone)
             case SuggestCategoryInput():
                 return await self._suggest(arguments)
             case SearchDocumentsInput():
@@ -124,6 +127,20 @@ class RunTool:
         data: dict[str, object] = {"changes": plain(shifts[:_MAX_CHANGES])}
         data, meta = _rows(data, "changes", {"a": a, "b": b}, more=len(shifts) > _MAX_CHANGES)
         return data, dataclasses.replace(meta, note=" ".join(filter(None, (aligned, meta.note))))
+
+    async def _outliers(
+        self, arguments: DetectOutliersInput, today: date, zone: tzinfo
+    ) -> _Outcome:
+        period = arguments.period.bounds(today, zone)
+        where = Filter(period, arguments.category_id, arguments.merchant, arguments.direction)
+        found = await self._ledger.outliers(where)
+        items = [
+            dataclasses.replace(o, occurred_at=o.occurred_at.astimezone(zone)) for o in found.items
+        ]
+        # 판정하지 못한 카테고리를 같이 낸다 — "없다"와 "모른다"를 모델이 가를 수 있게
+        data: dict[str, object] = {"outliers": plain(items), "skipped": plain(found.skipped)}
+        periods = {"period": period, "baseline": found.baseline}
+        return _rows(data, "outliers", periods, more=found.truncated)
 
     async def _suggest(self, arguments: SuggestCategoryInput) -> _Outcome:
         # 벡터 없이 묻는다 — 임베딩도 모델 호출이다. 규칙·이력 단계까지만 간다

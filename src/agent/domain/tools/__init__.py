@@ -7,14 +7,18 @@ from .category_shift import CategoryShift
 from .category_suggestion import CategorySuggestion
 from .compare_periods_input import ComparePeriodsInput
 from .count_frequency_input import CountFrequencyInput
+from .detect_outliers_input import DetectOutliersInput
 from .document_line import DocumentLine
 from .evidence_line import EvidenceLine
 from .frequency import Frequency
 from .get_budget_status_input import GetBudgetStatusInput
 from .mode import Mode
+from .outlier_line import OutlierLine
+from .outlier_report import OutlierReport
 from .permission import Permission
 from .search_documents_input import SearchDocumentsInput
 from .search_transactions_input import DEFAULT_ROWS, MAX_ROWS, SearchTransactionsInput
+from .skipped_line import SkippedLine
 from .spending_totals import SpendingTotals
 from .suggest_category_input import SuggestCategoryInput
 from .suggested_category import SuggestedCategory
@@ -34,14 +38,18 @@ __all__ = [
     "CategorySuggestion",
     "ComparePeriodsInput",
     "CountFrequencyInput",
+    "DetectOutliersInput",
     "DocumentLine",
     "EvidenceLine",
     "Frequency",
     "GetBudgetStatusInput",
     "Mode",
+    "OutlierLine",
+    "OutlierReport",
     "Permission",
     "SearchDocumentsInput",
     "SearchTransactionsInput",
+    "SkippedLine",
     "SpendingTotals",
     "SuggestCategoryInput",
     "SuggestedCategory",

@@ -19,6 +19,7 @@ from agent.domain.tools import (
     CategoryLine,
     CategoryShift,
     Frequency,
+    OutlierReport,
     SpendingTotals,
     TransactionList,
 )
@@ -30,6 +31,7 @@ from .compare_reply import CompareReply
 from .document_hits_reply import DocumentHitsReply
 from .error_reply import ErrorReply
 from .frequency_reply import FrequencyReply
+from .outliers_reply import OutliersReply
 from .pending_reply import PendingReply
 from .suggest_reply import SuggestReply
 from .totals_reply import TotalsReply
@@ -96,6 +98,10 @@ class HttpLedgerApi:
     async def frequency(self, where: TransactionFilter) -> Frequency:
         response = await self._send("GET", "/v1/stats/frequency", params=_filter(where))
         return self._parse(FrequencyReply, response).frequency()
+
+    async def outliers(self, where: TransactionFilter) -> OutlierReport:
+        response = await self._send("GET", "/v1/stats/outliers", params=_filter(where))
+        return self._parse(OutliersReply, response).report()
 
     async def compare(
         self, a: TimeRange, b: TimeRange, category_id: CategoryId | None

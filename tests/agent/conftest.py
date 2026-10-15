@@ -26,6 +26,7 @@ from agent.domain.tools import (
     CategoryLine,
     CategoryShift,
     Frequency,
+    OutlierReport,
     SpendingTotals,
     TransactionList,
 )
@@ -173,6 +174,9 @@ class FakeLedger:
 
     async def frequency(self, where: TransactionFilter) -> Frequency:
         return self._reply("frequency", Frequency, where)
+
+    async def outliers(self, where: TransactionFilter) -> OutlierReport:
+        return self._reply("outliers", OutlierReport, where)
 
     async def compare(
         self, a: TimeRange, b: TimeRange, category_id: CategoryId | None

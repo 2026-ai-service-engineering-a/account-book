@@ -17,6 +17,7 @@ class Mode(StrEnum):
 
     CLASSIFY = "classify"  # 기능 1의 AI 버튼
     QUERY = "query"  # 기능 2의 대화 조회와 기능 4의 조문 찾기 — 쓰기 도구가 없다
+    INSIGHT = "insight"  # 기능 3의 리포트 — 집계 다섯. 쓰기도 거래 목록도 없다
 
     @property
     def tools(self) -> tuple[ToolName, ...]:
@@ -36,5 +37,13 @@ _TOOLS = {
         ToolName.GET_BUDGET_STATUS,
         ToolName.SEARCH_TRANSACTIONS,
         ToolName.SEARCH_DOCUMENTS,
+    ),
+    # 숫자를 내는 집계만. 거래 목록(search_transactions)은 차트의 재료가 아니다(agentic-reports 3장)
+    Mode.INSIGHT: (
+        ToolName.SUMMARIZE_SPENDING,
+        ToolName.COUNT_FREQUENCY,
+        ToolName.COMPARE_PERIODS,
+        ToolName.GET_BUDGET_STATUS,
+        ToolName.DETECT_OUTLIERS,
     ),
 }
