@@ -133,3 +133,15 @@ def test_category_failure_keeps_the_values():
     reading = read_with_category(FakeModel(extraction()), FakeLedger(LedgerUnavailable("x")))
     assert reading.amount == Money(5000)
     assert reading.category == CategoryChoice.abstain(NO_CATEGORY)
+
+
+def test_money_not_spent_yet_is_not_a_record():
+    from agent.application.use_cases.read_capture import PLANNED
+
+    said = "내일 회식 3만원 예정"
+    planned = asyncio.run(ReadCapture(FakeModel(extraction(kind="planned")))(said, NOW))
+    assert planned.refusal == PLANNED and planned.amount is None
+    # 모델이 놓쳐도 지금보다 늦은 시각이면 코드가 막는다(NOW는 18시)
+    tonight = extraction(day="today", hour=21, minute=0)
+    later = asyncio.run(ReadCapture(FakeModel(tonight))("오늘 밤 9시 회식 3만원", NOW))
+    assert later.refusal == PLANNED

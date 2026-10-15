@@ -17,13 +17,14 @@ from agent.application.dto import (
 from agent.application.errors import LedgerUnavailable, ModelUnavailable
 from agent.domain.values import CaptureReading, CategoryChoice, Direction
 
-from .read_capture import CANCELLED, NO_AMOUNT, QUESTION, UNREADABLE
+from .read_capture import CANCELLED, NO_AMOUNT, PLANNED, QUESTION, UNREADABLE
 
 _REFUSALS = {
     QUESTION: "question",
     CANCELLED: "cancelled",
     NO_AMOUNT: "no_amount",
     UNREADABLE: "unreadable",
+    PLANNED: "planned",
 }
 
 
