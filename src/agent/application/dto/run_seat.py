@@ -10,8 +10,11 @@ class RunSeat(StrEnum):
     CLASSIFY = "classify"
     CHAT = "chat"
     ASK = "ask"
+    INSIGHT = "insight"  # 리포트의 "눈에 띈 것"
 
     @property
     def flow(self) -> str:
-        """자리마다 흐름이 정해져 있다(ai/agent-loop.md 3장). 채팅만 ReAct, 나머지는 단발."""
-        return "react" if self is RunSeat.CHAT else "single"
+        """자리마다 흐름이 정해져 있다(ai/agent-loop.md 3장)."""
+        if self is RunSeat.CHAT:
+            return "react"
+        return "plan_execute" if self is RunSeat.INSIGHT else "single"
