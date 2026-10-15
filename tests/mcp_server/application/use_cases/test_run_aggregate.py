@@ -3,7 +3,10 @@ from __future__ import annotations
 import asyncio
 from datetime import date
 
+import pytest
+
 from mcp_server.application.dto import LedgerFilter
+from mcp_server.application.errors import InvalidArguments
 from mcp_server.application.parsers import parse_arguments
 from mcp_server.application.use_cases import RunAggregate
 from mcp_server.domain.tools import ToolName
@@ -53,3 +56,20 @@ def test_more_than_thirty_changes_are_cut_and_said_so():
     data, meta = run(FakeLedger(changes=40), ToolName.COMPARE_PERIODS, arguments)
     assert len(data["changes"]) == 30
     assert meta["truncated"] is True and "30줄까지만" in str(meta["note"])
+
+
+def test_a_category_name_instead_of_an_id_is_sent_back_with_the_dictionary():
+    # 바깥 모델은 사전을 모른다 — 그대로 넘기면 api가 빈 결과를 내고 "0원"이 된다
+    ledger = FakeLedger()
+    with pytest.raises(InvalidArguments) as caught:
+        run(ledger, ToolName.GET_BUDGET_STATUS, {"period": "this_month", "category_id": "식비"})
+    assert caught.value.field == "category_id"
+    assert "food(식비), cafe(카페)" in caught.value.hint
+    assert ledger.seen == []  # 집계는 부르지 않았다
+
+
+def test_a_known_category_id_goes_through():
+    ledger = FakeLedger()
+    run(ledger, ToolName.SUMMARIZE_SPENDING, {"period": "this_month", "category_id": "cafe"})
+    where = ledger.seen[0]
+    assert isinstance(where, LedgerFilter) and where.category_id == "cafe"

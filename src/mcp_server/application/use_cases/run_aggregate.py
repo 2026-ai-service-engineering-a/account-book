@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta, tzinfo
 
 from mcp_server.application.dto import LedgerFilter
+from mcp_server.application.errors import InvalidArguments
 from mcp_server.application.ports import LedgerApi
 from mcp_server.domain.tools import ToolName, ToolRequest
 from mcp_server.domain.values import TimeRange
@@ -25,6 +26,8 @@ class RunAggregate:
 
     async def __call__(self, request: ToolRequest, today: date, zone: tzinfo) -> Outcome:
         """`today`는 사용자 타임존의 오늘이다. 기간 이름은 이것으로 푼다."""
+        if request.category_id:
+            await self._known(request.category_id)
         if request.name is ToolName.COMPARE_PERIODS:
             return await self._compare(request, today, zone)
         period = request.periods["period"].bounds(today, zone)
@@ -37,6 +40,15 @@ class RunAggregate:
         if request.name is ToolName.COUNT_FREQUENCY:
             return await self._ledger.frequency(where), _meta(1, False, periods)
         return await self._ledger.summary(where), _meta(1, False, periods)
+
+    async def _known(self, category_id: str) -> None:
+        """바깥 모델은 카테고리 사전을 모른다 — "식비"처럼 이름을 넣는다. api는 모르는 id를
+        빈 결과로 답하니 그대로 넘기면 "0원"이 된다. 사전을 담아 고치게 돌려준다."""
+        known = await self._ledger.categories()
+        if any(c.get("id") == category_id for c in known):
+            return
+        listed = ", ".join(f"{c.get('id')}({c.get('name')})" for c in known)
+        raise InvalidArguments("category_id", f"카테고리 사전의 id만 받는다 — {listed}")
 
     async def _compare(self, request: ToolRequest, today: date, zone: tzinfo) -> Outcome:
         a = request.periods["a"].bounds(today, zone)

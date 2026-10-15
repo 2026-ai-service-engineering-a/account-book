@@ -11,6 +11,7 @@ from mcp_server.application.ports import Row
 from mcp_server.domain.values import TimeRange
 
 from .budget_status_reply import BudgetStatusReply
+from .categories_reply import CategoriesReply
 from .compare_reply import CompareReply
 from .error_reply import ErrorReply
 from .frequency_reply import FrequencyReply
@@ -62,6 +63,10 @@ class HttpLedgerApi:
             params["category_id"] = category_id
         response = await self._get("/v1/budgets/status", params)
         return self._parse(BudgetStatusReply, response).rows()
+
+    async def categories(self) -> list[Row]:
+        response = await self._get("/v1/categories", {})
+        return self._parse(CategoriesReply, response).rows()
 
     async def _get(self, path: str, params: _Params) -> httpx.Response:
         try:

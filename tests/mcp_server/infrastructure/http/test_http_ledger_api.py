@@ -53,3 +53,9 @@ def test_a_4xx_is_a_refusal_and_a_5xx_or_odd_shape_is_unavailable():
     for response in (httpx.Response(503), httpx.Response(200, json={"total": 1})):
         with pytest.raises(LedgerUnavailable):
             asyncio.run(api(lambda r, response=response: response).frequency(LedgerFilter(OCTOBER)))
+
+
+def test_reads_the_category_dictionary():
+    reply = [{"id": "food", "name": "식비", "direction": "expense"}]
+    rows = asyncio.run(api(lambda r: httpx.Response(200, json=reply)).categories())
+    assert rows == [{"id": "food", "name": "식비"}]

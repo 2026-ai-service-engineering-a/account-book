@@ -49,6 +49,9 @@ class FakeLedger:
         self._called((month, category_id))
         return [{"category_id": "food", "name": "식비", "spent": won(300000)}]
 
+    async def categories(self) -> list[Row]:
+        return [{"id": "food", "name": "식비"}, {"id": "cafe", "name": "카페"}]
+
     def _called(self, what: object) -> None:
         self.seen.append(what)
         if self.error is not None:
