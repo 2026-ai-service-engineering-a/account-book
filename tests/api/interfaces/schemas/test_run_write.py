@@ -41,7 +41,8 @@ def test_turns_into_a_record():
     [
         {"seat": "insights"},  # 자리 이름은 insight다
         {"flow": "loop"},
-        {"status": "running"},  # 끝날 때만 남긴다
+        {"status": "running"},  # 그런 상태는 없다
+        {"status": "aborted"},  # 대기인 제안을 닫을 때만 생긴다(/close)
         {"stop_reason": ""},
         {"steps": -1},
     ],

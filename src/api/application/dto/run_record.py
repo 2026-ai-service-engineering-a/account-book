@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 
 from api.domain.values import RunFlow, RunSeat, RunStatus
@@ -26,3 +27,4 @@ class RunRecord:
     status: RunStatus
     stop_reason: str
     tool_calls: tuple[ToolCallRecord, ...] = ()
+    created_at: datetime | None = None  # 읽을 때만 — 제안의 수명(24시간)을 잰다

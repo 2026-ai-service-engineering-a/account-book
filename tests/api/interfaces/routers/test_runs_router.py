@@ -27,3 +27,36 @@ def test_missing_key_is_400_and_a_bad_body_is_422():
     assert client.post("/v1/runs", json=run_body()).status_code == 400
     bad = client.post("/v1/runs", json=run_body(seat="insights"), headers=KEY)
     assert bad.status_code == 422 and bad.json()["error"]["code"] == "validation_error"
+
+
+def test_a_proposal_is_read_confirmed_and_closed_only_while_waiting():
+    uow = FakeUnitOfWork()
+    client = client_with(uow=uow)
+    waiting = run_body(seat="capture", flow="single", status="awaiting_confirmation")
+    waiting["tool_calls"] = [{"call_id": "c2", "tool": "create_transaction", "args": {}}]
+    run_id = waiting["id"]
+    assert client.post("/v1/runs", json=waiting, headers=KEY).status_code == 201
+    read = client.get(f"/v1/runs/{run_id}").json()
+    assert read["status"] == "awaiting_confirmation" and read["created_at"]
+    confirm = client.post(
+        f"/v1/runs/{run_id}/confirm", json={"call_id": "c2"}, headers={"Idempotency-Key": "k1"}
+    ).json()
+    assert confirm["tool_calls"][0]["confirmed_at"]
+    cancel = client.post(
+        f"/v1/runs/{run_id}/close",
+        json={"status": "aborted", "stop_reason": "cancelled"},
+        headers={"Idempotency-Key": "k2"},
+    ).json()
+    assert cancel["status"] == "awaiting_confirmation"  # 확인된 제안은 취소되지 않는다
+    done = client.post(
+        f"/v1/runs/{run_id}/close",
+        json={"status": "done", "stop_reason": "confirmed", "results": [
+            {"call_id": "c2", "result": {"id": "t1"}}]},
+        headers={"Idempotency-Key": "k3"},
+    ).json()  # fmt: skip
+    assert done["status"] == "done" and done["tool_calls"][0]["result"] == {"id": "t1"}
+
+
+def test_an_unknown_run_is_404_not_found():
+    response = client_with(uow=FakeUnitOfWork()).get("/v1/runs/nope")
+    assert response.status_code == 404 and response.json()["error"]["code"] == "not_found"

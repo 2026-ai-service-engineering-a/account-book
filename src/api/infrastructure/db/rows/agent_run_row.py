@@ -17,7 +17,9 @@ class AgentRunRow(Base):
     __table_args__ = (
         CheckConstraint("seat IN ('capture', 'classify', 'chat', 'ask', 'insight')", name="seat"),
         CheckConstraint("flow IN ('single', 'react', 'plan_execute')", name="flow"),
-        CheckConstraint("status IN ('done', 'failed')", name="status"),
+        CheckConstraint(
+            "status IN ('done', 'failed', 'awaiting_confirmation', 'aborted')", name="status"
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -30,7 +32,7 @@ class AgentRunRow(Base):
     cost_usd: Mapped[Decimal] = mapped_column(
         Numeric(10, 6), default=Decimal(0), server_default="0"
     )
-    status: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(30))  # awaiting_confirmation은 21자다
     # 자리마다 값이 다르다(answered·refused·abstained…). 목록을 못 박지 않는다
     stop_reason: Mapped[str] = mapped_column(String(30))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

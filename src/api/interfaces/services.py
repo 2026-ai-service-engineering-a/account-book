@@ -11,6 +11,7 @@ from api.application.use_cases import (
     ComparePeriods,
     CountFrequency,
     CreateTransaction,
+    DecideRun,
     DeleteTransaction,
     DetectOutliers,
     GetTransaction,
@@ -23,6 +24,7 @@ from api.application.use_cases import (
     ReadDataVersion,
     ReadInsightCache,
     ReadPace,
+    ReadRun,
     RecordRun,
     SearchDocuments,
     SearchTransactions,
@@ -58,6 +60,8 @@ class Services:
     put_embedding: PutEmbedding
     search_documents: SearchDocuments
     record_run: RecordRun
+    read_run: ReadRun
+    decide_run: DecideRun
     data_version: ReadDataVersion
     read_insight_cache: ReadInsightCache
     put_insight_cache: PutInsightCache

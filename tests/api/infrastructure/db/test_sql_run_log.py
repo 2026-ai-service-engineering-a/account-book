@@ -39,3 +39,39 @@ def test_the_same_run_twice_is_refused(migrated):
     with pytest.raises(IntegrityError), SqlUnitOfWork(sessions) as uow:
         uow.runs.add(run_record("r1"))
         uow.commit()
+
+
+def test_only_a_waiting_run_is_stamped_and_closed(migrated):
+    from datetime import UTC, datetime
+
+    from api.domain.values import RunSeat, RunStatus
+
+    write = ToolCallRecord("c2", "create_transaction", {"amount": 8500}, None)
+    sessions = SqlUnitOfWork.factory(migrated)
+    waiting = run_record(
+        "r1",
+        seat=RunSeat.CAPTURE,
+        status=RunStatus.AWAITING_CONFIRMATION,
+        stop_reason="proposed",
+        tool_calls=(write,),
+    )
+    first, later = datetime(2026, 10, 15, 3, tzinfo=UTC), datetime(2026, 10, 15, 4, tzinfo=UTC)
+    with SqlUnitOfWork(sessions) as uow:
+        uow.runs.add(waiting)
+        uow.commit()
+    with SqlUnitOfWork(sessions) as uow:
+        uow.runs.confirm("r1", "c2", first)
+        uow.runs.confirm("r1", "c2", later)  # 두 번 눌러도 처음 시각
+        uow.runs.close("r1", RunStatus.ABORTED, "cancelled", {})  # 확인된 제안은 취소되지 않는다
+        uow.commit()
+    with SqlUnitOfWork(sessions) as uow:
+        run = uow.runs.get("r1")
+        assert run is not None and run.status is RunStatus.AWAITING_CONFIRMATION
+        assert run.tool_calls[0].confirmed_at == first and run.created_at is not None
+        uow.runs.close("r1", RunStatus.DONE, "confirmed", {"c2": {"id": "t1"}})
+        uow.runs.close("r1", RunStatus.ABORTED, "late", {})  # 닫힌 뒤에는 그대로
+        uow.commit()
+    with SqlUnitOfWork(sessions) as uow:
+        run = uow.runs.get("r1")
+        assert run is not None and (run.status, run.stop_reason) == (RunStatus.DONE, "confirmed")
+        assert run.tool_calls[0].result == {"id": "t1"}

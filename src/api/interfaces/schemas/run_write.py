@@ -30,6 +30,13 @@ class RunWrite(BaseModel):
     tool_calls: list[ToolCallWrite] = Field(default_factory=list, max_length=MAX_TOOL_CALLS)
 
     @model_validator(mode="after")
+    def _not_closed_by_writing(self) -> Self:
+        # aborted는 대기인 제안을 닫을 때만 생긴다(/close) — 처음부터 aborted로 넣지 않는다
+        if self.status is RunStatus.ABORTED:
+            raise ValueError("aborted는 /v1/runs/{id}/close로만 된다")
+        return self
+
+    @model_validator(mode="after")
     def _unique_call_ids(self) -> Self:
         ids = [c.call_id for c in self.tool_calls]
         if len(ids) != len(set(ids)):
