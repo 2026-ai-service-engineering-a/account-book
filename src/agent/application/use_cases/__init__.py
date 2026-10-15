@@ -3,6 +3,8 @@ from .ask_documents import AskDocuments
 from .build_insights import BuildInsights
 from .cached_insights import CachedInsights
 from .classify_category import ClassifyCategory
+from .decide_record import DecideRecord
+from .propose_record import ProposeRecord
 from .read_capture import ReadCapture
 from .record_run import RecordRun
 from .retrieve import Retrieve
@@ -15,6 +17,8 @@ __all__ = [
     "BuildInsights",
     "CachedInsights",
     "ClassifyCategory",
+    "DecideRecord",
+    "ProposeRecord",
     "ReadCapture",
     "RecordRun",
     "Retrieve",

@@ -10,6 +10,8 @@ from agent.application.use_cases import (
     AskDocuments,
     CachedInsights,
     ClassifyCategory,
+    DecideRecord,
+    ProposeRecord,
     ReadCapture,
     RecordRun,
     Retrieve,
@@ -26,6 +28,8 @@ class Services:
     retrieve: Retrieve
     ask: AskDocuments
     insights: CachedInsights
+    propose: ProposeRecord
+    decide: DecideRecord
     record: RecordRun
 
 
