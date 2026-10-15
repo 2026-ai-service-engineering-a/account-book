@@ -200,9 +200,11 @@ def _same_length(a: TimeRange, b: TimeRange, today: date, zone: tzinfo) -> tuple
     10월 8일에 "지난달보다 늘었어?"를 9월 전체와 견주면 늘 줄었다고 나온다.
     """
     midnight = datetime.combine(today, time(0), tzinfo=zone)
-    if not b.start <= midnight < b.end:
+    tomorrow = midnight + timedelta(days=1)
+    # b가 오늘로 끝나면(지난달 리포트의 기준일이 말일이다) 다 지나온 것으로 본다 — 자르지 않는다
+    if not b.start <= midnight < b.end or tomorrow >= b.end:
         return a, ""
-    elapsed = midnight + timedelta(days=1) - b.start
+    elapsed = tomorrow - b.start
     clipped = a.first(elapsed)
     if clipped == a:
         return a, ""

@@ -157,6 +157,17 @@ def test_compare_of_two_finished_periods_is_left_alone():
     assert result.meta is not None and result.meta.note == "" and result.meta.row_count == 1
 
 
+def test_a_period_that_ends_today_is_not_in_progress():
+    # 9월 리포트는 기준일이 9/30이다. 8월을 30일로 잘라 8/31을 빼면 안 된다
+    ledger = FakeLedger(replies={"compare": ()})
+    tool = RunTool(ledger, Retrieve(ledger, FakeEmbedder(), None), READ_TOOLS, Ticks())
+    call = ToolCall("call_1", "compare_periods", {"a": "last_month", "b": "this_month"})
+    result = asyncio.run(tool(call, date(2026, 9, 30), SEOUL))
+    a, b, _ = ledger.calls[0][1]
+    assert a == TimeRange(at(8, 1), at(9, 1)) and b == TimeRange(at(9, 1), at(10, 1))
+    assert result.meta is not None and result.meta.note == ""
+
+
 def test_budget_is_asked_by_month():
     ledger = FakeLedger(replies={"budget_status": ()})
     assert run(ledger, "get_budget_status", period="this_month").ok
