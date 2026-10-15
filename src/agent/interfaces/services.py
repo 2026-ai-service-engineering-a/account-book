@@ -8,6 +8,7 @@ from fastapi import Depends, Request
 from agent.application.use_cases import (
     AnswerQuestion,
     AskDocuments,
+    BuildInsights,
     ClassifyCategory,
     ReadCapture,
     RecordRun,
@@ -24,6 +25,7 @@ class Services:
     answer: AnswerQuestion
     retrieve: Retrieve
     ask: AskDocuments
+    insights: BuildInsights
     record: RecordRun
 
 
