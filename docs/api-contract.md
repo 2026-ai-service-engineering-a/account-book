@@ -281,8 +281,9 @@ X-Agent-Run-Id: 01J9X...
 
 - `POST /v1/runs/{id}/confirm` `{"call_id"}` — 그 호출의 `confirmed_at`을 비어 있을 때만 채운다(시각은 `api`가).
   두 번 눌러도 처음 시각이 남는다.
-- `POST /v1/runs/{id}/close` `{"status": "done"|"aborted", "stop_reason", "results": [{"call_id", "result"}]}` —
-  **확인된 호출이 있으면 `aborted`로 닫히지 않는다.** 확인된 제안은 취소되지 않는다.
+- `POST /v1/runs/{id}/close` `{"status": "done"|"aborted"|"failed", "stop_reason", "results": [{"call_id", "result"}]}` —
+  **확인된 호출이 있으면 `aborted`로 닫히지 않는다.** 확인된 제안은 취소되지 않는다. `failed`는 확인한 쓰기를
+  `api`가 거절한 것(422)이라 확인됐어도 닫힌다.
 - `GET /v1/runs/{id}` — 실행과 도구 호출(`confirmed_at` 포함), `created_at`. 없으면 `404 not_found`.
   제안의 수명(24시간)은 `agent`가 `created_at`으로 잰다.
 

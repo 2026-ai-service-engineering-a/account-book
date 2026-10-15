@@ -53,9 +53,17 @@ def test_closed_runs_stay_closed():
     assert (again.status, again.stop_reason) == (RunStatus.ABORTED, "cancelled")
 
 
-def test_only_done_or_aborted_and_only_known_runs():
+def test_a_rejected_write_closes_as_failed_even_after_confirming():
+    # 확인한 쓰기를 api가 422로 거절했다 — 취소가 아니라 닫을 수 있어야 한다
+    uow, decide = proposed(), DecideRun(FixedClock(NOW))
+    decide.confirm(uow, "r1", "c2")
+    closed = decide.close(uow, "r1", RunStatus.FAILED, "rejected", {})
+    assert (closed.status, closed.stop_reason) == (RunStatus.FAILED, "rejected")
+
+
+def test_only_closing_states_and_only_known_runs():
     uow, decide = proposed(), DecideRun(FixedClock(NOW))
     with pytest.raises(ValueError):
-        decide.close(uow, "r1", RunStatus.FAILED, "x", {})
+        decide.close(uow, "r1", RunStatus.AWAITING_CONFIRMATION, "x", {})
     with pytest.raises(RunNotFound):
         decide.confirm(uow, "nope", "c2")

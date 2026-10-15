@@ -14,7 +14,7 @@ class RunDecision(BaseModel):
     """쓰기 제안의 결정 — `/confirm`은 `call_id`만, `/close`는 `status`·`stop_reason`·`results`."""
 
     call_id: str = Field(default="", max_length=1000)
-    status: Literal["done", "aborted"] | None = None
+    status: Literal["done", "aborted", "failed"] | None = None
     stop_reason: str = Field(default="", max_length=30)
     results: list[_Result] = Field(default_factory=list, max_length=10)
 
