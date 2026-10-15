@@ -24,6 +24,7 @@ class RunBody(BaseModel):
     utterance: str
     status: str
     stop_reason: str
+    client: str | None
     created_at: AwareDatetime | None
     tool_calls: list[_CallBody]
 
@@ -36,6 +37,7 @@ class RunBody(BaseModel):
             utterance=run.utterance,
             status=run.status.value,
             stop_reason=run.stop_reason,
+            client=run.client,
             created_at=run.created_at,
             tool_calls=[
                 _CallBody(

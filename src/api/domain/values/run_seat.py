@@ -14,3 +14,4 @@ class RunSeat(StrEnum):
     CHAT = "chat"
     ASK = "ask"
     INSIGHT = "insight"  # 리포트의 "눈에 띈 것"(docs/ai/agentic-reports.md)
+    MCP = "mcp"  # 외부 AI 클라이언트의 도구 호출(docs/ai/mcp.md) — agent가 아니라 mcp가 남긴다

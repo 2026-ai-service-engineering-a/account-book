@@ -28,6 +28,7 @@ class RunWrite(BaseModel):
     status: RunStatus
     stop_reason: str = Field(min_length=1, max_length=30)
     tool_calls: list[ToolCallWrite] = Field(default_factory=list, max_length=MAX_TOOL_CALLS)
+    client: str | None = Field(default=None, min_length=1, max_length=100)
 
     @model_validator(mode="after")
     def _not_closed_by_writing(self) -> Self:
@@ -56,4 +57,5 @@ class RunWrite(BaseModel):
             status=self.status,
             stop_reason=self.stop_reason,
             tool_calls=tuple(c.record() for c in self.tool_calls),
+            client=self.client,
         )

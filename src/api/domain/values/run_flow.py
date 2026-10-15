@@ -9,3 +9,4 @@ class RunFlow(StrEnum):
     SINGLE = "single"  # 단발 — 코드가 순서를 정하고 LLM은 한 자리에서 판단
     REACT = "react"
     PLAN_EXECUTE = "plan_execute"
+    DIRECT = "direct"  # LLM 없이 도구 하나 — 판단은 바깥 클라이언트의 모델이 했다(mcp)

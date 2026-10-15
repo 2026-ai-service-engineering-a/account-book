@@ -75,3 +75,18 @@ def test_only_a_waiting_run_is_stamped_and_closed(migrated):
         run = uow.runs.get("r1")
         assert run is not None and (run.status, run.stop_reason) == (RunStatus.DONE, "confirmed")
         assert run.tool_calls[0].result == {"id": "t1"}
+
+
+def test_keeps_the_mcp_clients_name(migrated):
+    from api.domain.values import RunFlow, RunSeat
+
+    sessions = SqlUnitOfWork.factory(migrated)
+    mcp = run_record("r1", seat=RunSeat.MCP, flow=RunFlow.DIRECT, utterance="", client="Claude")
+    with SqlUnitOfWork(sessions) as uow:
+        uow.runs.add(mcp)
+        uow.runs.add(run_record("r2"))
+        uow.commit()
+    with SqlUnitOfWork(sessions) as uow:
+        first, second = uow.runs.get("r1"), uow.runs.get("r2")
+    assert first is not None and (first.seat, first.client) == (RunSeat.MCP, "Claude")
+    assert second is not None and second.client is None

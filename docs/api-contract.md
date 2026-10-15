@@ -264,10 +264,11 @@ X-Agent-Run-Id: 01J9X...
 [ai/README.md 2장 원칙 7](ai/README.md#2-모든-ai-기능에-걸리는-원칙)). 도구가 아니다 — 모델이 고르는 길이 없고,
 `agent`의 자리가 끝날 때 코드가 부른다.
 
-- 본문 `{id, seat, flow, utterance, model, steps, tokens, cost_usd, status, stop_reason, tool_calls}`.
+- 본문 `{id, seat, flow, utterance, model, steps, tokens, cost_usd, status, stop_reason, tool_calls, client}`.
+  `client`는 `mcp` 자리만 채운다 — 외부 클라이언트가 MCP 초기화에서 댄 이름이다([ai/mcp.md 7.3](ai/mcp.md#73-남는-것)).
   `tool_calls`는 `{call_id, tool, args, result}`의 목록이고 `call_id`는 실행 안에서 유일하다.
 - 키는 `run:{run_id}`다. 기록을 다시 보내도 줄이 둘이 되지 않는다. 응답은 `201 {"id"}`.
-- 값의 목록은 `seat` = `capture`·`classify`·`chat`·`ask`·`insight`, `flow` = `single`·`react`·`plan_execute`,
+- 값의 목록은 `seat` = `capture`·`classify`·`chat`·`ask`·`insight`·`mcp`, `flow` = `single`·`react`·`plan_execute`·`direct`(LLM 없이 도구 하나 — `mcp`),
   `status` = `done`(답이 나갔다 — 모른다는 답과 부분 결과도)·`failed`(503으로 끝났다)·`awaiting_confirmation`(쓰기 제안이 사람을 기다린다)·`aborted`(제안이 취소·만료됐다).
   `stop_reason`은 자리마다 다르다 — 채팅은 루프의 정지 조건([ai/agent-loop.md 4.2](ai/agent-loop.md#42-정지-조건)),
   기록은 `read`·`question`·`cancelled`·`no_amount`·`unreadable`, 분류는 고른 길, 문서 Q&A는 답의 상태.
