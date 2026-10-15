@@ -18,3 +18,9 @@ def test_becomes_a_ui_transaction():
 def test_rejects_what_the_contract_rules_out(broken):
     with pytest.raises(ValidationError):
         TransactionReply.model_validate(TX | broken)
+
+
+def test_keeps_the_run_that_made_it_and_a_manual_one_has_none():
+    made = TransactionReply.model_validate(TX | {"run_id": "run-7"}).transaction()
+    typed = TransactionReply.model_validate(TX | {"source": "manual", "run_id": None}).transaction()
+    assert (made.run_id, typed.run_id) == ("run-7", None)

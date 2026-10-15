@@ -26,6 +26,7 @@ from ui.application.ports import (
     DocumentGateway,
     ReportGateway,
     ReportNarrator,
+    RunGateway,
     TransactionGateway,
 )
 from ui.infrastructure.agent import (
@@ -43,6 +44,7 @@ from ui.infrastructure.api import (
     HttpCatalogGateway,
     HttpDocumentGateway,
     HttpReportGateway,
+    HttpRunGateway,
     HttpTransactionGateway,
 )
 from ui.infrastructure.memory import (
@@ -51,6 +53,7 @@ from ui.infrastructure.memory import (
     MemoryDemoData,
     MemoryDocumentGateway,
     MemoryReportGateway,
+    MemoryRunGateway,
     MemoryStore,
     MemoryTransactionGateway,
 )
@@ -110,6 +113,7 @@ def create_app(
             suggester=_category_suggester(settings),
             chat=chat,
             narrator=_narrator(settings, clock),
+            runs=_runs(settings),
             clock=clock,
             demo=demo,
             capture=_capture_reader(settings, capture_delay),
@@ -148,6 +152,13 @@ def _memory_ledger(zone: ZoneInfo, clock: Clock, seeded: bool) -> _Ledger:
         MemoryCatalogGateway(store),
         MemoryDemoData(store, clock),
     )
+
+
+def _runs(settings: Settings) -> RunGateway:
+    """실행 기록(감사 로그). api가 없으면 비어 있는 대역 — 각본 대역은 실행을 남기지 않는다."""
+    if not settings.api_base_url:
+        return MemoryRunGateway()
+    return HttpRunGateway(ApiClient(settings.api_base_url, timeout=_API_TIMEOUT))
 
 
 def _documents(settings: Settings) -> DocumentGateway:

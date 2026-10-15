@@ -18,6 +18,7 @@ from ui.application.ports import (
     DocumentGateway,
     ReportGateway,
     ReportNarrator,
+    RunGateway,
     TransactionGateway,
 )
 
@@ -35,6 +36,7 @@ class Services:
     suggester: CategorySuggester
     chat: ChatAgent
     narrator: ReportNarrator
+    runs: RunGateway  # 감사 로그 — 읽기만
     clock: Clock
     demo: DemoData | None = None
     # AI를 끄면 None이다. 한 줄로 채우기 칸이 사라질 뿐 폼은 그대로 돈다.

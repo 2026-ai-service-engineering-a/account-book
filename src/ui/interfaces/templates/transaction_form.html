@@ -7,6 +7,7 @@
     <h1 class="page-title">{{ "거래 고치기" if existing else "거래 입력" }}</h1>
     <p class="page-description">
       {% if existing and existing.source == "agent" %}에이전트가 넣은 기록입니다. 고쳐도 출처는 그대로 남습니다.
+      {% if existing.run_id %}<a class="btn btn-link" href="/runs/{{ existing.run_id }}">이 기록을 만든 실행</a>{% endif %}
       {% elif existing %}고친 값은 저장을 눌러야 반영됩니다.
       {% else %}저장이 곧 확인입니다. 필드를 눈으로 보고 누르세요.{% endif %}
     </p>

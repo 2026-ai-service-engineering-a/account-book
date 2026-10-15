@@ -1,0 +1,10 @@
+{# 실행 한 줄의 요약 — 목록의 행과 실행 하나 페이지가 같이 쓴다(ui_docs/pages/runs.md 3장) #}
+{% macro run_summary(line, zone) %}
+<span class="run-when">{{ line.created_at.astimezone(zone).strftime("%m-%d %H:%M") }}</span>
+<span class="badge {{ 'badge-ai' if line.seat == 'mcp' else 'badge-secondary' }}">{{ RUN_SEATS.get(line.seat, line.seat) }}</span>
+<span class="muted">{{ RUN_FLOWS.get(line.flow, line.flow) }}</span>
+<span class="run-status"><strong>{{ RUN_STATUSES.get(line.status, line.status) }}</strong> <span class="muted">({{ line.stop_reason }})</span></span>
+<span class="muted">{{ "도구 %d" | format(line.tool_count) if line.tool_count else "도구 없음" }}</span>
+{% set what = (line.client or "클라이언트 모름") if line.seat == "mcp" else line.utterance %}
+<span class="run-what">{{ what[:40] }}{% if what | length > 40 %}…{% endif %}</span>
+{% endmacro %}

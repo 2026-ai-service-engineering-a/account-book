@@ -19,6 +19,11 @@ from .pace_series import PaceSeries
 from .period import Period
 from .proposal import Proposal
 from .report_insight import ReportInsight
+from .run_call import RunCall
+from .run_detail import RunDetail
+from .run_filter import RunFilter
+from .run_line import RunLine
+from .run_page import RunPage
 from .search_mode import SearchMode
 from .source import Source
 from .totals import Totals
@@ -50,6 +55,11 @@ __all__ = [
     "Period",
     "Proposal",
     "ReportInsight",
+    "RunCall",
+    "RunDetail",
+    "RunFilter",
+    "RunLine",
+    "RunPage",
     "SearchMode",
     "Source",
     "Totals",

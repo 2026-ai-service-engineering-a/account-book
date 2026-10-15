@@ -10,6 +10,7 @@ from .http_budget_gateway import HttpBudgetGateway
 from .http_catalog_gateway import HttpCatalogGateway
 from .http_document_gateway import HttpDocumentGateway
 from .http_report_gateway import HttpReportGateway
+from .http_run_gateway import HttpRunGateway
 from .http_transaction_gateway import HttpTransactionGateway
 from .monthly_report_reply import MonthlyReportReply
 from .pace_reply import PaceReply
@@ -24,6 +25,7 @@ __all__ = [
     "HttpCatalogGateway",
     "HttpDocumentGateway",
     "HttpReportGateway",
+    "HttpRunGateway",
     "HttpTransactionGateway",
     "MonthlyReportReply",
     "PaceReply",

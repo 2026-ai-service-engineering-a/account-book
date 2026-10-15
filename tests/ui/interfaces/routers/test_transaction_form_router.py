@@ -229,3 +229,21 @@ def test_question_is_sent_to_chat(empty_client):
     )
     assert "질문은 채팅에서 물어 주세요" in page.text
     assert "AI가 채움" not in page.text
+
+
+def test_an_agent_record_links_to_the_run_that_made_it():
+    import asyncio
+
+    from fastapi.testclient import TestClient
+
+    from tests.ui.conftest import FixedClock, draft, key
+    from ui.application.values import RunId
+    from ui.main import create_app
+
+    app = create_app(clock=FixedClock(), seeded=False)
+    gateway = app.state.services.transactions
+    made = asyncio.run(gateway.create(draft(), key("k1"), RunId("run-7")))
+    typed = asyncio.run(gateway.create(draft(), key("k2")))
+    browser = TestClient(app)
+    assert 'href="/runs/run-7"' in browser.get(f"/transactions/{made.id}").text
+    assert "/runs/" not in browser.get(f"/transactions/{typed.id}").text

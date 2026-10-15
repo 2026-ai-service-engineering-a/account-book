@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}실행 기록{% endblock %}
+{% block main %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">실행 기록</h1>
+    <p class="page-description">AI가 한 일을 거슬러 봅니다. 여기서는 아무것도 바꾸지 않습니다.</p>
+  </div>
+  <a class="btn btn-outline btn-sm" href="/wiki">{{ icon("book") }}AI 위키</a>
+</div>
+
+<div class="stack">
+  <form id="run-filters" class="filters" action="/runs" method="get"
+        hx-get="/partials/runs" hx-target="#run-list" hx-swap="outerHTML" hx-trigger="change, submit">
+    <select class="select" name="seat" aria-label="자리">
+      <option value="">모든 자리</option>
+      {% for key, name in RUN_SEATS.items() %}<option value="{{ key }}" {% if criteria.seat == key %}selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+    <select class="select" name="status" aria-label="상태">
+      <option value="">모든 상태</option>
+      {% for key, name in RUN_STATUSES.items() %}<option value="{{ key }}" {% if criteria.status == key %}selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+    <noscript><button class="btn btn-outline btn-sm" type="submit">거르기</button></noscript>
+  </form>
+
+  {% include "partials/run_list.html" %}
+</div>
+{% endblock %}

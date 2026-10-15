@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from ui.application.values import AccountId, CategoryId, Money, TransactionId
+from ui.application.values import AccountId, CategoryId, Money, RunId, TransactionId
 
 from .direction import Direction
 from .source import Source
@@ -20,6 +20,7 @@ class Transaction:
     merchant: str
     memo: str
     source: Source
+    run_id: RunId | None = None  # agent가 넣었으면 그 실행 — 실행 기록으로 잇는다
 
     @property
     def title(self) -> str:
