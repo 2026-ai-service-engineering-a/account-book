@@ -149,12 +149,13 @@ def test_the_plan_table():
     assert [s.call.call_id for s in insight.steps] == [f"call_{n}" for n in range(1, 7)]
 
 
-def test_nothing_more_to_see_ends_quietly_without_assembling():
-    model = FakeModel(plan())
+def test_nothing_more_to_see_is_assembled_from_the_two_fixed_calls():
+    # 빈 계획은 "더 볼 것이 없다"다 — 고정 호출에 이미 있는 것으로 말한다
+    model = FakeModel(plan(), assembled([chart()], "식비는 412,000원이었어요."))
     insight, found = build(model)
-    assert insight.stop is InsightStop.NO_PLAN and insight.model_calls == 1
-    assert insight.charts == () and insight.highlights == ()
-    assert len(found.calls) == 2
+    assert insight.stop is InsightStop.ASSEMBLED and insight.model_calls == 2
+    assert insight.highlights == ("식비는 412,000원이었어요.",)
+    assert len(found.calls) == 2  # 추가 호출은 없다
 
 
 def test_replans_once_when_everything_came_back_empty():
@@ -247,6 +248,6 @@ def test_a_failed_planned_step_is_left_empty_and_the_rest_go_on():
 
 
 def test_the_current_month_is_read_up_to_today():
-    model = FakeModel(plan())
+    model = FakeModel(plan(), assembled([]))
     _, found = build(model, month=date(2026, 10, 1))
     assert found.calls[1][1][0] == date(2026, 10, 1)

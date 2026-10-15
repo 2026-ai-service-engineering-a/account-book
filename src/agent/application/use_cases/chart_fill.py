@@ -32,10 +32,12 @@ def fill_chart(spec: ChartSpec, steps: Iterable[ToolStep]) -> Chart | None:
     if step is None or step.result.data is None:
         return None
     rows = _rows(step.result.data)
+    # 금액은 {"amount", "currency"} 봉투라 모델이 "spent.amount"로 짚기도 한다 — 같은 칸이다
+    y_field = spec.y_field.removesuffix(".amount")
     points: list[ChartPoint] = []
     marks = set(spec.annotate[:MAX_ANNOTATE])
     for row in rows:
-        label, value = row.get(spec.x_field), _number(row.get(spec.y_field))
+        label, value = row.get(spec.x_field), _number(row.get(y_field))
         if not isinstance(label, str | int) or isinstance(label, bool) or value is None:
             return None  # 행마다 두 필드가 다 있어야 한다 — 빠진 점을 0으로 그리지 않는다
         points.append(ChartPoint(str(label), value, str(label) in marks))

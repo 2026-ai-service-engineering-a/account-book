@@ -59,8 +59,8 @@ def test_a_new_version_or_model_or_month_is_a_new_key():
 
 def test_failures_and_timeouts_are_not_kept():
     cache = FakeInsightCache()
-    asyncio.run(cached(FakeModel(plan()), ledger(), cache)(SEPTEMBER, TODAY, SEOUL))
-    assert len(cache.rows) == 1  # 볼 것이 없다(no_plan)는 같은 입력에 같은 답이라 담는다
+    asyncio.run(cached(FakeModel(plan(), assembled([])), ledger(), cache)(SEPTEMBER, TODAY, SEOUL))
+    assert len(cache.rows) == 1  # 전부 버린 것(discarded)은 같은 입력에 같은 답이라 담는다
     broken = ledger(budget_status=LedgerUnavailable("down"), data_version="v9")
     asyncio.run(cached(FakeModel(), broken, cache)(SEPTEMBER, TODAY, SEOUL))
     assert len(cache.rows) == 1  # 고정 호출 장애(no_base)는 담지 않는다

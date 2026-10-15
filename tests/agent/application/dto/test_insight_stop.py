@@ -7,7 +7,6 @@ def test_the_ways_a_report_run_ends():
     assert {s.value for s in InsightStop} == {
         "assembled",
         "discarded",
-        "no_plan",
         "no_base",
         "malformed",
         "wall_clock",
@@ -20,5 +19,4 @@ def test_only_answers_that_would_come_out_the_same_are_cached():
     assert {s for s in InsightStop if s.cacheable} == {
         InsightStop.ASSEMBLED,
         InsightStop.DISCARDED,
-        InsightStop.NO_PLAN,
     }

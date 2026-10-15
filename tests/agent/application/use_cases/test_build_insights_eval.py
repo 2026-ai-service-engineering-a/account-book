@@ -27,6 +27,7 @@ import pytest
 from agent.application.dto import Insight, ModelReply, Prompt, ToolPrompt
 from agent.application.parsers import parse_insight_draft
 from agent.application.use_cases import BuildInsights, Retrieve
+from agent.application.use_cases.chart_fill import fill_chart
 from agent.application.use_cases.highlight_check import SCOLDING
 from agent.application.use_cases.number_check import numbers_from_tools, unsupported
 from agent.domain.tools import (
@@ -77,6 +78,7 @@ class Run:
     insight: Insight
     drafted_charts: int
     drafted_lines: list[str]
+    dropped: list[str]  # 버려진 차트 — 프롬프트를 어디서 고칠지 보인다
     seconds: float
 
 
@@ -147,12 +149,18 @@ def run_once(name: str, case: dict[str, Any], real: LitellmLanguageModel) -> Run
     started = time.perf_counter()
     insight = asyncio.run(flow(month, TODAY, ZONE))
     seconds = time.perf_counter() - started
-    charts, lines = 0, []
+    charts, lines, dropped = 0, [], []
     for raw in model.drafts:
         draft = parse_insight_draft(raw)
         charts += len(draft.charts)
         lines += [h.text for h in draft.highlights]
-    return Run(name, insight, charts, lines, seconds)
+        tools = {s.call.call_id: s.call.name for s in insight.steps}
+        dropped += [
+            f"{c.kind}/{c.unit} {tools.get(c.source, c.source)}.{c.x_field}·{c.y_field}"
+            for c in draft.charts
+            if fill_chart(c, insight.steps) is None
+        ]
+    return Run(name, insight, charts, lines, dropped, seconds)
 
 
 def _said(run: Run) -> str:
@@ -200,6 +208,9 @@ def test_report_insights_on_the_three_sets():
     print(f"p95 지연         {latencies[max(int(len(latencies) * 0.95) - 1, 0)]:.1f}s")
     for line in scolding + unbacked:
         print(f"  걸림: {line}")
+    for r in runs:
+        for spec in r.dropped:
+            print(f"  버린 차트 [{r.name}]: {spec}")
 
     assert not scolding, "훈계가 초안에 있다 — 검증이 버렸어도 프롬프트를 고칠 일이다"
     assert drafted == 0 or kept / drafted >= 0.95, "스펙 유효율이 95% 아래다"

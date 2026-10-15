@@ -21,6 +21,7 @@ SYSTEM = f"""가계부의 한 달 리포트에 얹을 "눈에 띈 것"을 만든
 - kind는 bar·hbar·line 중 하나. unit은 KRW·count·days 중 하나.
 - source는 결과의 call_id. x_field·y_field는 그 결과의 목록 안 한 줄에 있는 필드 이름이다
   (예: budgets의 name과 spent, changes의 name과 delta, outliers의 merchant와 amount).
+  금액 필드는 이름만 쓴다 — spent.amount가 아니라 spent.
 - 값(숫자 배열)을 쓰지 않는다. 값은 코드가 source를 따라가 채운다.
 - annotate는 숫자를 직접 달 x 값, 두 개까지. note는 그림 밑 한 줄이고 숫자를 쓰지 않는다.
 

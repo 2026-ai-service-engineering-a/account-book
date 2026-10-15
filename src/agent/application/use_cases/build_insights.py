@@ -90,7 +90,9 @@ class BuildInsights:
             )  # fmt: skip
             run.whys |= {call.call_id: step.why for call, step in planned}
             if not planned:
-                return self._end(run, InsightStop.NO_PLAN)
+                # 빈 계획은 "더 볼 것이 없다"이지 "말할 것이 없다"가 아니다 — 고정 호출의 결과로
+                # 조립한다. 평가에서 새 카테고리(병원)가 고정 호출에 있었는데 놓친 적이 있다
+                break
             ran = await self._gather([call for call, _ in planned], reference, zone, deadline)
             run.steps += ran
             if empty_before or not _all_empty(ran):

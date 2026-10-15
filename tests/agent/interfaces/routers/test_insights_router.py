@@ -39,7 +39,8 @@ def test_charts_with_values_and_sentences_and_the_run_is_left():
 
 
 def test_a_quiet_month_is_200_and_empty():
-    response = client_with(FakeModel(plan()), ledger()).post("/insights", json=BODY)
+    model = FakeModel(plan(), assembled([]))
+    response = client_with(model, ledger()).post("/insights", json=BODY)
     assert response.status_code == 200 and response.json() == {"charts": [], "highlights": []}
 
 
