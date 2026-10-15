@@ -1,5 +1,5 @@
 {# 리포트의 "눈에 띈 것" — HTMX가 load 때 받아 끼운다. AI에 닿지 못했으면 이 조각은 비어 온다 #}
-{% from "ai.html" import ai_badge %}
+{% from "ai.html" import ai_badge with context %}
 <div class="card" id="ai-insights">
   <div class="card-header"><div class="label-row"><h2 class="card-title">눈에 띈 것</h2>{{ ai_badge("insight") }}</div><p class="card-description">무엇이 달라졌는지까지. 왜는 대화가 답합니다.</p></div>
   <div class="card-content">

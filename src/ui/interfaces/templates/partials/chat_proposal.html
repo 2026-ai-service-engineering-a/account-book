@@ -1,4 +1,4 @@
-{% from "ai.html" import ai_badge %}
+{% from "ai.html" import ai_badge with context %}
 <div class="card-confirm" data-proposal-id="{{ proposal.id }}">
   <div class="card-confirm-head"><strong>이렇게 기록할게요</strong>{{ ai_badge("capture") }}</div>
   <p class="card-main">

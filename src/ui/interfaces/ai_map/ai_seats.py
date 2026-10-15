@@ -112,9 +112,18 @@ SEATS: tuple[AiSeat, ...] = (
         fallback="검증에서 버린 것은 빠지고, AI에 닿지 못하면 그 영역 없이 고정 리포트만 보여 준다",
         port="ReportNarrator",
         stand_in="ScriptedReportNarrator",
-        stand_in_does="늘어난 카테고리와 예산 페이스를 규칙 문구로 — 그림은 고르지 않는다. "
-        "AGENT_BASE_URL이 있으면 agent의 /insights가 그림 두 장·문장 세 줄을 고르고 캐시한다",
+        stand_in_does="늘어난 카테고리와 예산 페이스를 규칙 문구로 — 그림은 고르지 않는다",
         doc="docs/ai/agentic-reports.md",
+        live=(
+            "리포트 페이지는 고정 영역을 먼저 보내고,"
+            " 눈에 띈 것만 HTMX로 뒤에 채운다 — agent의 POST /insights가"
+            " 고정 집계 둘을 훑고, 더 볼 것을 계획해 동시에 부르고,"
+            " 그림 두 장·문장 세 줄로 조립한다."
+            " 그림의 값은 코드가 도구 결과에서 채우고,"
+            " 문장의 숫자·훈계는 검증이 거른다."
+            " 10초 안에 끊고, 같은 달·같은 데이터면 캐시에서 바로 낸다."
+            " agent에 닿지 못하면 이 영역 없이 고정 리포트만 남는다"
+        ),
     ),
 )
 

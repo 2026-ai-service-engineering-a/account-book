@@ -53,5 +53,22 @@ def test_cited_doc_exists(seat):
     assert Path(seat.doc.split()[0]).is_file()
 
 
-def test_capture_classify_and_query_have_a_real_agent():
-    assert {s.key for s in SEATS if s.live} == {"capture", "classify", "query"}
+def test_every_seat_the_agent_takes_says_what_stands_there():
+    # main.py가 agent에 넘기는 자리마다 위키의 "지금" 칸이 있어야 한다 — 비면 대역 설명이 남는다
+    from ui.main import _LIVE
+
+    assert {s.key for s in SEATS if s.live} == _LIVE == {"capture", "classify", "query", "insight"}
+
+
+def test_the_badge_says_whether_the_agent_or_the_stand_in_is_there(client):
+    from fastapi.testclient import TestClient
+
+    from tests.ui.conftest import FixedClock
+    from ui.infrastructure.settings import Settings
+    from ui.main import create_app
+
+    stand_in = client.get("/reports/2026-09").text
+    assert "지금은 각본 대역이 선다" in stand_in
+    settings = Settings(_env_file=None, agent_base_url="http://agent:8001")
+    live = TestClient(create_app(settings, clock=FixedClock())).get("/reports/2026-09").text
+    assert "지금은 agent가 진짜 LLM으로 돈다" in live and "각본 대역이 선다" not in live

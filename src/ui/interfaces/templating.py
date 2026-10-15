@@ -18,6 +18,8 @@ def _page_context(request: Request) -> dict[str, object]:
     services = getattr(request.app.state, "services", None)
     return {
         "demo": getattr(services, "demo", None) is not None,
+        # 진짜 agent가 선 자리 — AI 표시의 설명이 대역인지 진짜인지 이걸로 가른다
+        "live_seats": getattr(services, "live_seats", frozenset()),
         "request_id": request_id_of(request),
     }
 
