@@ -1,6 +1,7 @@
 from .answer_question import AnswerQuestion
 from .ask_documents import AskDocuments
 from .build_insights import BuildInsights
+from .cached_insights import CachedInsights
 from .classify_category import ClassifyCategory
 from .read_capture import ReadCapture
 from .record_run import RecordRun
@@ -12,6 +13,7 @@ __all__ = [
     "AnswerQuestion",
     "AskDocuments",
     "BuildInsights",
+    "CachedInsights",
     "ClassifyCategory",
     "ReadCapture",
     "RecordRun",

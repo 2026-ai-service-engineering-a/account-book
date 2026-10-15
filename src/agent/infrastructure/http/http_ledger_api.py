@@ -36,6 +36,7 @@ from .pending_reply import PendingReply
 from .suggest_reply import SuggestReply
 from .totals_reply import TotalsReply
 from .transaction_page_reply import TransactionPageReply
+from .version_reply import VersionReply
 
 type _Params = dict[str, str | int]
 
@@ -98,6 +99,11 @@ class HttpLedgerApi:
     async def frequency(self, where: TransactionFilter) -> Frequency:
         response = await self._send("GET", "/v1/stats/frequency", params=_filter(where))
         return self._parse(FrequencyReply, response).frequency()
+
+    async def data_version(self, period: TimeRange) -> str:
+        params: _Params = {"from": period.start.isoformat(), "to": period.end.isoformat()}
+        response = await self._send("GET", "/v1/stats/version", params=params)
+        return self._parse(VersionReply, response).version
 
     async def outliers(self, where: TransactionFilter) -> OutlierReport:
         response = await self._send("GET", "/v1/stats/outliers", params=_filter(where))

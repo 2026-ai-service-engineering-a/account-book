@@ -55,3 +55,13 @@ def test_an_unreachable_model_is_503_and_left_as_failed():
 def test_a_month_not_yet_come_is_422():
     late = BODY | {"month": "2026-11"}
     assert client_with(FakeModel(), ledger()).post("/insights", json=late).status_code == 422
+
+
+def test_a_cached_answer_is_left_as_a_run_without_model_calls():
+    recorder = FakeRecorder()
+    client = client_with(FakeModel(plan(OUTLIERS), assembled([chart()], SAID)), ledger(), recorder)
+    first = client.post("/insights", json=BODY).json()
+    again = client.post("/insights", json=BODY).json()  # 같은 앱 — 같은 캐시
+    assert again == first
+    run = recorder.runs[1][0]
+    assert (run.stop_reason, run.steps, run.tool_calls) == ("cached", 0, ())
