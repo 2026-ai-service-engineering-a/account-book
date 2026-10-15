@@ -45,9 +45,9 @@ def usual_upper(median: Money, mad: Money) -> Money:
     return Money(max(median.amount + spread, median.amount * _FLOOR_RATIO))
 
 
-def unjudged(first_at: datetime, since: datetime, count: int) -> str | None:
-    """판정하지 않는 이유. 판정할 수 있으면 None."""
-    if first_at > since:
+def unjudged(first_at: datetime | None, since: datetime, count: int) -> str | None:
+    """판정하지 않는 이유. 판정할 수 있으면 None. `first_at`이 없으면 판정 기간이 첫 거래다."""
+    if first_at is None or first_at > since:
         return SHORT_HISTORY
     if count < MIN_BASELINE:
         return TOO_FEW

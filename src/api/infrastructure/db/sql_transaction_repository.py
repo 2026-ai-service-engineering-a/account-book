@@ -19,7 +19,7 @@ class SqlTransactionRepository:
 
     def get(self, transaction_id: TransactionId) -> Transaction | None:
         row = self._session.get(TransactionRow, transaction_id)
-        return _entity(row) if row else None
+        return transaction_of(row) if row else None
 
     def search(self, query: TransactionQuery) -> TransactionPage:
         statement = select(TransactionRow).where(*filter_conditions(query))
@@ -35,7 +35,7 @@ class SqlTransactionRepository:
         page, more = rows[: query.limit], len(rows) > query.limit
         last = page[-1] if page else None
         cursor = encode_cursor(last.occurred_at, last.id) if more and last else None
-        return TransactionPage(tuple(_entity(r) for r in page), cursor)
+        return TransactionPage(tuple(transaction_of(r) for r in page), cursor)
 
     def add(self, transaction: Transaction) -> None:
         self._session.add(_row(transaction))
@@ -49,7 +49,8 @@ class SqlTransactionRepository:
         self._session.execute(delete(TransactionRow).where(TransactionRow.id == transaction_id))
 
 
-def _entity(row: TransactionRow) -> Transaction:
+def transaction_of(row: TransactionRow) -> Transaction:
+    """행 하나를 거래로. 목록과 이상치가 같은 식으로 옮긴다."""
     return Transaction(
         id=TransactionId(row.id),
         direction=Direction(row.direction),

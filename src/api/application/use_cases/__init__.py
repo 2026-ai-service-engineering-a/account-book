@@ -3,6 +3,7 @@ from .compare_periods import ComparePeriods
 from .count_frequency import CountFrequency
 from .create_transaction import CreateTransaction
 from .delete_transaction import DeleteTransaction
+from .detect_outliers import DetectOutliers
 from .get_transaction import GetTransaction
 from .idempotent_write import IdempotentWrite
 from .list_catalog import ListCatalog
@@ -25,6 +26,7 @@ __all__ = [
     "CountFrequency",
     "CreateTransaction",
     "DeleteTransaction",
+    "DetectOutliers",
     "GetTransaction",
     "IdempotentWrite",
     "ListCatalog",
