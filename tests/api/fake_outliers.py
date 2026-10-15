@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import statistics
 from collections.abc import Iterable, Mapping
 from datetime import datetime
@@ -62,3 +63,9 @@ def above(
 def _won(value: float) -> Money:
     """Postgres의 round()처럼 .5는 0에서 멀어지는 쪽으로."""
     return Money(int(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
+
+
+def data_version(rows: Iterable[Transaction], start: datetime, end: datetime) -> str:
+    """기간 안 거래의 내용으로 — 가짜 거래에는 updated_at이 없어 값을 통째로 본다."""
+    inside = sorted(repr(t) for t in rows if start <= t.occurred_at < end)
+    return hashlib.sha256("|".join(inside).encode()).hexdigest()[:16]

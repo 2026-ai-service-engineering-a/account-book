@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, Identity, String, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Identity,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from api.infrastructure.db.base import Base
@@ -24,3 +35,8 @@ class BudgetRow(Base):
     category_id: Mapped[str] = mapped_column(ForeignKey("categories.id"))
     period: Mapped[str] = mapped_column(String(7))
     limit_amount: Mapped[int | None] = mapped_column(BigInteger)
+    # 예산을 바꾸면 리포트가 달라진다 — data_version이 본다. upsert는 onupdate가 돌지 않아
+    # 저장소가 직접 넣는다
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

@@ -32,6 +32,11 @@ class StatsRepository(Protocol):
 
     def first_occurred_at(self) -> datetime | None: ...
 
+    def data_version(self, start: datetime, end: datetime) -> str:
+        """`[start, end)` 거래와 예산 전부의 버전 — 건수와 마지막 변경 시각으로 만든 불투명한 글.
+        더하거나 고치거나 지우면 바뀐다. 리포트 캐시의 키가 된다(agentic-reports 8장)."""
+        ...
+
     def baselines(self, query: TransactionQuery, since: datetime) -> tuple[CategoryBaseline, ...]:
         """걸름에 맞는 거래가 있는 카테고리마다 평소. 기준은 `[since, query.start)`의 같은 방향
         거래 전부다 — 걸름의 카테고리·글자는 판정할 거래를 고를 뿐 평소를 좁히지 않는다."""

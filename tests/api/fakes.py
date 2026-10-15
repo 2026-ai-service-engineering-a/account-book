@@ -165,6 +165,9 @@ class FakeStats:
     def first_occurred_at(self) -> datetime | None:
         return min((t.occurred_at for t in self._transactions.rows.values()), default=None)
 
+    def data_version(self, start: datetime, end: datetime) -> str:
+        return fake_outliers.data_version(self._transactions.rows.values(), start, end)
+
     def baselines(self, query: TransactionQuery, since: datetime) -> tuple[CategoryBaseline, ...]:
         return fake_outliers.baselines(self._transactions.rows.values(), query, since)
 
@@ -204,6 +207,17 @@ class FakeRuns:
         self.rows[run.id] = run
 
 
+class FakeInsightCache:
+    def __init__(self) -> None:
+        self.rows: dict[str, dict[str, object]] = {}
+
+    def get(self, key: str) -> Mapping[str, object] | None:
+        return self.rows.get(key)
+
+    def put(self, key: str, body: Mapping[str, object]) -> None:
+        self.rows[key] = dict(body)
+
+
 class FixedClock:
     def __init__(self, now: datetime) -> None:
         self.current = now
@@ -227,6 +241,7 @@ class FakeUnitOfWork:
         self.index = FakeIndex(self.transactions)
         self.documents = FakeDocuments(self.index)
         self.runs = FakeRuns()
+        self.insight_cache = FakeInsightCache()
         self.commits = 0
 
     def __call__(self) -> FakeUnitOfWork:
@@ -237,6 +252,7 @@ class FakeUnitOfWork:
         self._records = dict(self.idempotency.records)
         self._budgets = dict(self.budgets.rows)
         self._runs = dict(self.runs.rows)
+        self._cache = dict(self.insight_cache.rows)
         self._documents = (dict(self.documents.documents), dict(self.documents.chunks))
         self._committed = False
         return self
@@ -252,6 +268,7 @@ class FakeUnitOfWork:
             self.idempotency.records = self._records
             self.budgets.rows = self._budgets
             self.runs.rows = self._runs
+            self.insight_cache.rows = self._cache
             self.documents.documents, self.documents.chunks = self._documents
 
     def commit(self) -> None:

@@ -26,7 +26,10 @@ from api.application.use_cases import (
     ListCatalog,
     ListPendingTexts,
     PutEmbedding,
+    PutInsightCache,
     ReadBudgetStatuses,
+    ReadDataVersion,
+    ReadInsightCache,
     ReadPace,
     RecordRun,
     SearchDocuments,
@@ -91,5 +94,8 @@ def create_app(
             put_embedding=PutEmbedding(),
             search_documents=SearchDocuments(unit_of_work),
             record_run=RecordRun(),
+            data_version=ReadDataVersion(unit_of_work),
+            read_insight_cache=ReadInsightCache(unit_of_work),
+            put_insight_cache=PutInsightCache(),
         )
     )

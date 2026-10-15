@@ -5,6 +5,7 @@ from .clock import Clock
 from .database_probe import DatabaseProbe
 from .document_repository import DocumentRepository
 from .idempotency_store import IdempotencyStore
+from .insight_cache import InsightCache
 from .run_log import RunLog
 from .stats_repository import StatsRepository
 from .transaction_repository import TransactionRepository
@@ -18,6 +19,7 @@ __all__ = [
     "DatabaseProbe",
     "DocumentRepository",
     "IdempotencyStore",
+    "InsightCache",
     "RunLog",
     "StatsRepository",
     "TransactionRepository",
