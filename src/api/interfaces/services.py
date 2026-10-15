@@ -12,6 +12,7 @@ from api.application.use_cases import (
     CountFrequency,
     CreateTransaction,
     DeleteTransaction,
+    DetectOutliers,
     GetTransaction,
     IdempotentWrite,
     ListCatalog,
@@ -43,6 +44,7 @@ class Services:
     catalog: ListCatalog
     summarize: SummarizeSpending
     frequency: CountFrequency
+    outliers: DetectOutliers
     compare: ComparePeriods
     monthly: BuildMonthlyReport
     pace: ReadPace
