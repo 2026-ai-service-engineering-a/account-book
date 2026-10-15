@@ -87,7 +87,7 @@ def create_app(
     clock = clock or SystemClock(zone)
     ledger = _api_ledger(settings) if settings.api_base_url else _memory_ledger(zone, clock, seeded)
     transactions, reports, budgets, catalog, demo = ledger
-    # 채팅의 기록 쪽은 아직 각본 대역이다. 질문 쪽만 agent가 있으면 agent가 받는다.
+    # agent가 없을 때 채팅의 기록과 질문을 둘 다 받는 각본 대역
     scripted = ScriptedChatAgent(
         transactions,
         reports,
@@ -208,8 +208,12 @@ def _narrator(settings: Settings, clock: Clock) -> ReportNarrator:
 def _chat_agent(settings: Settings, clock: Clock, scripted: ChatAgent) -> ChatAgent:
     if not settings.agent_base_url:
         return scripted
-    # 이벤트 사이 한 번의 읽기 상한. 도구 고르기 LLM 한 번과 스키마 재시도까지 기다린다.
-    # 실행 전체는 agent가 벽시계(대화 20초)로 끊는다.
-    timeout = settings.agent_timeout_seconds * 2 + 2
-    questions = AgentChatAgent(settings.agent_base_url, settings.user_timezone, clock, timeout)
-    return RoutedChatAgent(questions, scripted)
+    base, zone = settings.agent_base_url, settings.user_timezone
+    # 이벤트 사이 한 번의 읽기 상한. 질문은 도구 고르기 LLM 한 번과 스키마 재시도까지,
+    # 실행 전체는 agent가 벽시계(대화 20초)로 끊는다. 기록은 읽기·분류가 LLM을 각각 한 번씩
+    # 부르고 스키마를 못 맞추면 한 번씩 더 — 카드가 뜰 때까지 이벤트가 없다
+    questions = AgentChatAgent(base, zone, clock, settings.agent_timeout_seconds * 2 + 2)
+    records = AgentChatAgent(
+        base, zone, clock, settings.agent_timeout_seconds * 4 + 2, path="/record"
+    )
+    return RoutedChatAgent(questions, records)
