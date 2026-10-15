@@ -38,6 +38,18 @@ def test_only_the_query_mode_searches_documents():
     assert [m for m in Mode if ToolName.SEARCH_DOCUMENTS in m.tools] == [Mode.QUERY]
 
 
+def test_insight_mode_is_the_five_aggregates_and_nothing_that_writes():
+    # 리포트의 재료는 숫자를 내는 집계뿐이다. 거래 목록도 쓰기도 없다(agentic-reports 3장)
+    assert {t.value for t in Mode.INSIGHT.tools} == {
+        "summarize_spending",
+        "count_frequency",
+        "compare_periods",
+        "get_budget_status",
+        "detect_outliers",
+    }
+    assert all(t.permission is Permission.READ for t in Mode.INSIGHT.tools)
+
+
 def test_classify_mode_only_suggests():
     assert Mode.CLASSIFY.tools == (ToolName.SUGGEST_CATEGORY,)
 

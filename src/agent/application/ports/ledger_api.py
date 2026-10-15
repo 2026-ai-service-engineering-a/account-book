@@ -16,6 +16,7 @@ from agent.domain.tools import (
     CategoryLine,
     CategoryShift,
     Frequency,
+    OutlierReport,
     SpendingTotals,
     TransactionList,
 )
@@ -42,6 +43,10 @@ class LedgerApi(Protocol):
     async def summary(self, where: TransactionFilter) -> SpendingTotals: ...
 
     async def frequency(self, where: TransactionFilter) -> Frequency: ...
+
+    async def outliers(self, where: TransactionFilter) -> OutlierReport:
+        """평소 범위를 벗어난 거래. 기준은 api가 정한다 — 여기서 넘기는 것은 기간과 걸름뿐이다."""
+        ...
 
     async def compare(
         self, a: TimeRange, b: TimeRange, category_id: CategoryId | None

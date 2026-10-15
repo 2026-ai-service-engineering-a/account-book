@@ -15,6 +15,7 @@ from agent.domain.tools import (
     MAX_ROWS,
     ComparePeriodsInput,
     CountFrequencyInput,
+    DetectOutliersInput,
     GetBudgetStatusInput,
     SearchDocumentsInput,
     SearchTransactionsInput,
@@ -32,6 +33,7 @@ type ToolInput = (
     | CountFrequencyInput
     | ComparePeriodsInput
     | GetBudgetStatusInput
+    | DetectOutliersInput
     | SuggestCategoryInput
     | SearchDocumentsInput
 )
@@ -45,6 +47,7 @@ _KEYS: Mapping[ToolName, set[str]] = {
     ToolName.COUNT_FREQUENCY: {"period", "category_id", "merchant", "direction"},
     ToolName.COMPARE_PERIODS: {"a", "b", "category_id"},
     ToolName.GET_BUDGET_STATUS: {"period", "category_id"},
+    ToolName.DETECT_OUTLIERS: {"period", "category_id", "merchant", "direction"},
     ToolName.SUGGEST_CATEGORY: {"merchant", "memo", "direction"},
     ToolName.SEARCH_DOCUMENTS: {"query"},
 }
@@ -89,6 +92,13 @@ def _build(name: ToolName, raw: Mapping[str, object]) -> ToolInput:
             return ComparePeriodsInput(_period(raw, "a"), _period(raw, "b"), _category(raw))
         case ToolName.GET_BUDGET_STATUS:
             return GetBudgetStatusInput(_period(raw, "period"), _category(raw))
+        case ToolName.DETECT_OUTLIERS:
+            return DetectOutliersInput(
+                _period(raw, "period"),
+                _category(raw),
+                _text(raw, "merchant"),
+                _direction(raw) or Direction.EXPENSE,
+            )
         case ToolName.SEARCH_DOCUMENTS:
             return SearchDocumentsInput(" ".join(_text(raw, "query", QUERY_LIMIT).split()))
         case _:

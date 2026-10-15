@@ -122,7 +122,7 @@ count_frequency — 기간 안의 거래 건수와 거래가 있던 날 수를 �
 | `summarize_spending` | 기간, 카테고리, 가맹점 | 지출·수입 합 | — |
 | `count_frequency` | 기간, 카테고리, 가맹점 | 건수, 날 수, 평균 간격, 회당 평균 | — |
 | `compare_periods` | 기간 둘, 카테고리 | 카테고리별 합과 증감. b가 진행 중이면 a를 같은 날 수로 자른다 | 카테고리 30개 |
-| `detect_outliers` | 기간 | 평소 범위를 벗어난 건 | 5건 |
+| `detect_outliers` | 기간, 카테고리, 가맹점, 방향 | 평소 범위를 벗어난 건 + 판정하지 못한 카테고리와 이유. 기준은 받지 않는다 | 5건 |
 | `get_budget_status` | 기간 | 카테고리별 소진율·페이스 | — |
 | `suggest_category` | 가맹점, 메모, 방향 | 후보 + 근거 거래 + 그 방향의 카테고리 사전 | 근거 8건 |
 | `search_documents` | 질문 한 문장 | 조문 조각 — `ref`, 법령명, 자리, 시행일, 본문. 찾기는 `/retrieve`와 같다 | `DOC_TOP_K`(8), 8KB |

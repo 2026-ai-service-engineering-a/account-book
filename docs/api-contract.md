@@ -248,7 +248,7 @@ X-Agent-Run-Id: 01J9X...
 - 본문 `{id, seat, flow, utterance, model, steps, tokens, cost_usd, status, stop_reason, tool_calls}`.
   `tool_calls`는 `{call_id, tool, args, result}`의 목록이고 `call_id`는 실행 안에서 유일하다.
 - 키는 `run:{run_id}`다. 기록을 다시 보내도 줄이 둘이 되지 않는다. 응답은 `201 {"id"}`.
-- 값의 목록은 `seat` = `capture`·`classify`·`chat`·`ask`, `flow` = `single`·`react`·`plan_execute`,
+- 값의 목록은 `seat` = `capture`·`classify`·`chat`·`ask`·`insight`, `flow` = `single`·`react`·`plan_execute`,
   `status` = `done`(답이 나갔다 — 모른다는 답과 부분 결과도)·`failed`(503으로 끝났다).
   `stop_reason`은 자리마다 다르다 — 채팅은 루프의 정지 조건([ai/agent-loop.md 4.2](ai/agent-loop.md#42-정지-조건)),
   기록은 `read`·`question`·`cancelled`·`no_amount`·`unreadable`, 분류는 고른 길, 문서 Q&A는 답의 상태.

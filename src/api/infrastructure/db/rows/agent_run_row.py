@@ -15,7 +15,7 @@ class AgentRunRow(Base):
 
     __tablename__ = "agent_runs"
     __table_args__ = (
-        CheckConstraint("seat IN ('capture', 'classify', 'chat', 'ask')", name="seat"),
+        CheckConstraint("seat IN ('capture', 'classify', 'chat', 'ask', 'insight')", name="seat"),
         CheckConstraint("flow IN ('single', 'react', 'plan_execute')", name="flow"),
         CheckConstraint("status IN ('done', 'failed')", name="status"),
     )

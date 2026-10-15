@@ -17,6 +17,7 @@ class ToolName(StrEnum):
     COUNT_FREQUENCY = "count_frequency"
     COMPARE_PERIODS = "compare_periods"
     GET_BUDGET_STATUS = "get_budget_status"
+    DETECT_OUTLIERS = "detect_outliers"
     SUGGEST_CATEGORY = "suggest_category"
     SEARCH_DOCUMENTS = "search_documents"
     CREATE_TRANSACTION = "create_transaction"

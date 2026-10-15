@@ -15,6 +15,7 @@ from agent.application.ports import Embedder, LanguageModel, LedgerApi, RunRecor
 from agent.application.use_cases import (
     AnswerQuestion,
     AskDocuments,
+    BuildInsights,
     ClassifyCategory,
     ReadCapture,
     RecordRun,
@@ -35,6 +36,7 @@ _CHAT_WALL_SECONDS = 20.0
 _DEFAULT_LIMITS = LoopLimits(max_steps=8, max_cost_usd=0.5, wall_seconds=_CHAT_WALL_SECONDS)
 # 감사 기록 한 번의 상한. 기록을 기다리느라 답이 늦어지면 안 된다 — LLM 호출보다 짧게.
 _RECORD_TIMEOUT_SECONDS = 2.0
+_DEFAULT_INSIGHT_CALLS = 6
 
 
 def create_app(
@@ -49,6 +51,7 @@ def create_app(
     # litellm은 호출마다 INFO 두 줄을 찍는다. 우리 로그(capture done …)가 그 사이에 묻힌다.
     logging.getLogger("LiteLLM").setLevel(logging.WARNING)
     thresholds, limits, defaults = _DEFAULT_THRESHOLDS, _DEFAULT_LIMITS, RetrievalDefaults()
+    insight_calls = _DEFAULT_INSIGHT_CALLS
     if model is None or ledger is None or recorder is None:
         settings = settings or Settings()
         thresholds = ClassifyThresholds(
@@ -57,6 +60,7 @@ def create_app(
         limits = LoopLimits(
             settings.agent_max_steps, settings.agent_max_cost_usd, _CHAT_WALL_SECONDS
         )
+        insight_calls = settings.insight_max_tool_calls
         defaults = RetrievalDefaults(
             ChunkStrategy(settings.doc_chunk_strategy),
             SearchMode(settings.doc_search_mode),
@@ -89,6 +93,7 @@ def create_app(
             answer=answer,
             retrieve=retrieve,
             ask=AskDocuments(retrieve, model),
+            insights=BuildInsights(model, ledger, retrieve, insight_calls, time.perf_counter),
             record=RecordRun(recorder, model.model),
         )
     )

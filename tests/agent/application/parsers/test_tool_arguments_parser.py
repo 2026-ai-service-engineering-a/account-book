@@ -9,6 +9,7 @@ from agent.application.parsers import parse_tool_arguments
 from agent.domain.tools import (
     ComparePeriodsInput,
     CountFrequencyInput,
+    DetectOutliersInput,
     GetBudgetStatusInput,
     SearchDocumentsInput,
     SearchTransactionsInput,
@@ -102,3 +103,14 @@ def test_wrong_arguments_name_the_field(name, raw, field):
     with pytest.raises(InvalidToolArguments) as error:
         parse_tool_arguments(name, raw)
     assert error.value.field == field
+
+
+def test_outliers_take_a_period_and_the_summary_filters_but_no_threshold():
+    found = parse_tool_arguments(
+        ToolName.DETECT_OUTLIERS, {"period": "last_month", "category_id": "living"}
+    )
+    assert found == DetectOutliersInput(
+        PeriodSpec(PeriodName.LAST_MONTH), CategoryId("living"), "", Direction.EXPENSE
+    )
+    with pytest.raises(InvalidToolArguments, match="threshold"):
+        parse_tool_arguments(ToolName.DETECT_OUTLIERS, {"period": LAST_WEEK, "threshold": 2})

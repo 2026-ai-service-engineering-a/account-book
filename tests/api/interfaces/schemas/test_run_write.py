@@ -39,7 +39,7 @@ def test_turns_into_a_record():
 @pytest.mark.parametrize(
     "overrides",
     [
-        {"seat": "insights"},  # 아직 없는 자리
+        {"seat": "insights"},  # 자리 이름은 insight다
         {"flow": "loop"},
         {"status": "running"},  # 끝날 때만 남긴다
         {"stop_reason": ""},

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from agent.application.dto import (
     DocumentAnswer,
+    Insight,
     LoopOutcome,
     RunRecord,
     RunSeat,
@@ -86,6 +87,29 @@ def ask_run(run_id: str, question: str, answer: DocumentAnswer) -> RunRecord:
     return RunRecord(run_id, RunSeat.ASK, question, answer.status.value, tool_calls=(search,))
 
 
+def insight_run(run_id: str, month: str, insight: Insight) -> RunRecord:
+    """고정 호출과 계획의 단계를 실제 인자와 봉투로. 계획 단계에는 모델이 쓴 이유(why)를 붙인다 —
+    "왜 이 집계를 불렀지"에 답할 수 있게(ai/agent-loop.md 5.1). 사람이 쓴 글이 없으니 발화는
+    그 달이다."""
+    calls = tuple(
+        ToolCallRecord(
+            step.call.call_id,
+            step.call.name,
+            dict(step.call.arguments),
+            _with_why(step.result.envelope(), insight.whys.get(step.call.call_id, "")),
+        )
+        for step in insight.steps
+    )
+    return RunRecord(
+        run_id,
+        RunSeat.INSIGHT,
+        month,
+        insight.stop.value,
+        steps=insight.model_calls,
+        tool_calls=calls,
+    )
+
+
 def failed_run(run_id: str, seat: RunSeat, utterance: str, error: Exception) -> RunRecord:
     """503으로 끝난 실행. 끝난 이유는 닿지 못한 곳이다."""
     if isinstance(error, ModelUnavailable):
@@ -95,6 +119,10 @@ def failed_run(run_id: str, seat: RunSeat, utterance: str, error: Exception) -> 
     else:
         stop = "internal_error"
     return RunRecord(run_id, seat, utterance, stop, failed=True)
+
+
+def _with_why(envelope: dict[str, object], why: str) -> dict[str, object]:
+    return {**envelope, "why": why} if why else envelope
 
 
 def _suggest(
