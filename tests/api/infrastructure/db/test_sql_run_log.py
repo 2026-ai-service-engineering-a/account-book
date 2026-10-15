@@ -90,3 +90,37 @@ def test_keeps_the_mcp_clients_name(migrated):
         first, second = uow.runs.get("r1"), uow.runs.get("r2")
     assert first is not None and (first.seat, first.client) == (RunSeat.MCP, "Claude")
     assert second is not None and second.client is None
+
+
+def test_pages_newest_first_with_the_call_count(migrated):
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import update
+
+    from api.application.dto import RunQuery
+    from api.domain.values import RunSeat
+
+    sessions = SqlUnitOfWork.factory(migrated)
+    with SqlUnitOfWork(sessions) as uow:
+        for n in range(3):
+            seat = RunSeat.MCP if n == 1 else RunSeat.CHAT
+            calls = tuple(ToolCallRecord(f"c{i}", "summarize_spending", {}, None) for i in range(n))
+            uow.runs.add(run_record(f"r{n}", seat=seat, tool_calls=calls))
+        uow.commit()
+    # created_at은 DB가 채운다 — 한 트랜잭션이면 같은 시각이라 순서를 맞춰 둔다
+    start = datetime(2026, 10, 15, 3, tzinfo=UTC)
+    with migrated.begin() as connection:
+        for n in range(3):
+            connection.execute(
+                update(AgentRunRow)
+                .where(AgentRunRow.id == f"r{n}")
+                .values(created_at=start + timedelta(minutes=n))
+            )
+    with SqlUnitOfWork(sessions) as uow:
+        first = uow.runs.page(RunQuery(limit=2))
+        rest = uow.runs.page(RunQuery(cursor=first.next_cursor, limit=2))
+        chat = uow.runs.page(RunQuery(seat=RunSeat.CHAT))
+    assert [(x.run.id, x.tool_count) for x in first.items] == [("r2", 2), ("r1", 1)]
+    assert [x.run.id for x in rest.items] == ["r0"] and rest.next_cursor is None
+    assert [x.run.id for x in chat.items] == ["r2", "r0"]
+    assert first.items[0].run.tool_calls == ()

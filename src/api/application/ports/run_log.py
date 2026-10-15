@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from datetime import datetime
 from typing import Protocol
 
-from api.application.dto import RunRecord
+from api.application.dto import RunPage, RunQuery, RunRecord
 from api.domain.values import RunStatus
 
 
@@ -21,6 +21,10 @@ class RunLog(Protocol):
         ...
 
     def get(self, run_id: str) -> RunRecord | None: ...
+
+    def page(self, query: RunQuery) -> RunPage:
+        """최신순 한 쪽. 줄마다 도구 호출의 수만 — 호출은 `get`으로 읽는다."""
+        ...
 
     def confirm(self, run_id: str, call_id: str, at: datetime) -> None:
         """대기인 실행의 그 호출에 `confirmed_at`이 비어 있으면 채운다.
